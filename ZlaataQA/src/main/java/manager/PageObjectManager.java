@@ -14,31 +14,16 @@ public class PageObjectManager {
     private Hooks hooks;
     private LoginPage login;
     private HomePage home;
-    private AddressPage address;
     private AdminPanelPage admin;
-    private AdminPanelSortingPage adminSort;
-    private AdminPanelExportExcelFileMatchPage adminExport;
-    private AdminPanelAllImortPage adminImport;
-    private AdminPanelInfluencerPage adminInflu;
-    private AdminPanelCouponPage adminCoupon;
     private AdminPanelExportPage adminExports;
-    private AdminProductSecondaryColorPage adminSColor;
-    private AdminEmailVerifyOrderFlowPage adminEmail;
-    private Admin_Order_Page adminorder;
-    private Calculation_MyOrder_Page calculation;
-    private Landing_Page land;
-    private  ExpressDeliveryPage express;
-    private AdminFlashNotification adminFlashNotification;
-    private Estimatdelivery_Page estimate;
-   
+   private Raw_Material_Page raw;
+   private AdminLogin_Page adminLogin;
    
 
     public PageObjectManager(WebDriver driver) {
         this.driver = driver;
     }
-    public AddressPage getAddressPage() {
-        return (address == null) ? address = new AddressPage(driver) : address;
-    }
+   
     
 	public Hooks getHooks() {
         TestContext testContext = null;
@@ -61,67 +46,21 @@ public class PageObjectManager {
     
 	}
 	
-	public AdminPanelSortingPage getAdminPanelSortingPage() {
-        return (adminSort == null) ? adminSort = new AdminPanelSortingPage(driver) : adminSort;
-    
-	}
-	public AdminPanelExportExcelFileMatchPage getAdminPanelExportExcelFileMatchPage() {
-		return (adminExport == null) ? adminExport = new AdminPanelExportExcelFileMatchPage(driver) : adminExport;
-	}
-	
-	
-	public AdminPanelAllImortPage getAdminPanelAllImortPage() {
-		return (adminImport == null) ? adminImport = new AdminPanelAllImortPage(driver) : adminImport;
-	}
-	
-	public AdminPanelInfluencerPage getAdminPanelInfluencerPage() {
-		return (adminInflu == null) ? adminInflu = new AdminPanelInfluencerPage(driver) : adminInflu;
-	}
-	
-	public AdminPanelCouponPage getAdminPanelCouponPage() {
-		return (adminCoupon == null) ? adminCoupon = new AdminPanelCouponPage(driver) : adminCoupon;
-	}
 	
 	public AdminPanelExportPage getAdminPanelExportPage() {
 		return (adminExports == null) ? adminExports = new AdminPanelExportPage(driver) : adminExports;
 	}
 	
-	public AdminProductSecondaryColorPage getAdminProductSecondaryColorPage() {
-		return (adminSColor == null) ? adminSColor = new AdminProductSecondaryColorPage(driver) : adminSColor;
+	public AdminLogin_Page getAdminLogin_Page() {
+        return (adminLogin == null) ? adminLogin = new AdminLogin_Page(driver) : adminLogin;
+    
 	}
 	
-	public AdminEmailVerifyOrderFlowPage getAdminEmailVerifyOrderFlowPage() {
-		return (adminEmail == null) ? adminEmail = new AdminEmailVerifyOrderFlowPage(driver) : adminEmail;
-	}
-	
-	public Admin_Order_Page getAdmin_Order_Page() {
-		return (adminorder == null) ? adminorder = new Admin_Order_Page(driver) : adminorder;
-	}
-	
-	public Calculation_MyOrder_Page getCalculation_MyOrder_Page() {
-		return (calculation == null) ? calculation = new Calculation_MyOrder_Page(driver) : calculation;
+	public Raw_Material_Page getRaw_Material_Page() {
+		return (raw == null) ? raw = new Raw_Material_Page(driver) : raw;
 	}
 	
 
-	public Landing_Page getLanding_Page() {
-		return (land == null) ? land = new Landing_Page(driver): land;
-	}
-
-
-	public ExpressDeliveryPage getExpressDeliveryPage() {
-		return (express == null) ? express = new  ExpressDeliveryPage(driver): express;
-	}
-	
-	
-	
-	
-	public AdminFlashNotification getAdminFlashNotification() {
-		return (adminFlashNotification == null) ? adminFlashNotification = new AdminFlashNotification(driver) : adminFlashNotification;
-	}
-	
-	public Estimatdelivery_Page getEstimatdelivery_Page() {
-		return (estimate == null) ? estimate = new Estimatdelivery_Page(driver) : estimate;
-	}
 	
 	
 }
