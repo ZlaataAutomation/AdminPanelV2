@@ -17,8 +17,8 @@ public class Raw_Material_StepDef {
 
 	//TC-01
 		@Given("the admin adds a new raw material with valid details")
-		public void the_admin_adds_a_new_raw_material_with_valid_details() {
-		   raw.adminLogin();
+		public void the_admin_adds_a_new_raw_material_with_valid_details() throws InterruptedException {
+		   raw.validateRawMaterialCreation();
 		}
 		@Then("the raw material should be added successfully and displayed correctly in the Raw Material List page")
 		public void the_raw_material_should_be_added_successfully_and_displayed_correctly_in_the_raw_material_list_page() {
