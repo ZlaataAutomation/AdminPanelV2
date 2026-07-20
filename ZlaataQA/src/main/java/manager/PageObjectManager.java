@@ -18,6 +18,7 @@ public class PageObjectManager {
     private AdminPanelExportPage adminExports;
    private Raw_Material_Page raw;
    private AdminLogin_Page adminLogin;
+   private ProductStock_Page productstock;
    
 
     public PageObjectManager(WebDriver driver) {
@@ -60,7 +61,9 @@ public class PageObjectManager {
 		return (raw == null) ? raw = new Raw_Material_Page(driver) : raw;
 	}
 	
-
+	public ProductStock_Page getProductStock_Page() {
+		return (raw == null) ? productstock = new ProductStock_Page(driver) : productstock;
+	}
 	
 	
 }
