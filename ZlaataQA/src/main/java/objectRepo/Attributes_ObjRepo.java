@@ -1,7 +1,6 @@
 package objectRepo;
 
 import java.time.Duration;
-import java.util.List;
 
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -10,7 +9,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import basePage.BasePage;
 
-public abstract class Raw_Material_ObjRepo extends BasePage {
+public abstract class Attributes_ObjRepo extends BasePage {
 	public void waitFor(WebElement el) {
         new WebDriverWait(driver, Duration.ofSeconds(15))
             .until(ExpectedConditions.elementToBeClickable(el));
@@ -31,15 +30,5 @@ public abstract class Raw_Material_ObjRepo extends BasePage {
  	
  	@FindBy(xpath = "//button[@type='submit']")
  	protected WebElement adminLogin;
- 	
- 	  @FindBy(xpath = "//table//tbody//tr[contains(@class,'even') or contains(@class,'odd')]")
-      protected List<WebElement> productDataRows;
- 	  
- 	 @FindBy(xpath = "//a[contains(@class,'actions-buttons-column')]")
-     protected List<WebElement> editButtons;
- 	 
- 	
- 	  
- 	
 
 }
