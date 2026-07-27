@@ -1,10 +1,12 @@
 package pages;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Random;
 
 import org.junit.Assert;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -231,11 +233,420 @@ public class Raw_Material_Page extends Raw_Material_ObjRepo {
 	    System.out.println("--------------------------------------------");
 	}
 	
+	String capturedProductName;
+	int capturedStockQuantity;
+	String capturedStockStatus;
+	String caturedSKU;
 	
 	
+	public void selectRandomProductonRawMaterialSection() {
+		WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+	    Actions actions = new Actions(driver);
+	    
+	    // Hover on Inventory
+	    WebElement inventory = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("//button[contains(@class,'sidebar_menu_btn')]//span[normalize-space()='Inventory']")));
+	    actions.moveToElement(inventory).perform();
+
+	    // Click Raw Material Stocks
+	    WebElement rawMaterial = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//li[normalize-space()='Raw Material Stocks']")));
+	    rawMaterial.click();
+
+	    Common.waitForElement(2);
+	    
+	    wait.until(ExpectedConditions.visibilityOfAllElements(productDataRows));
+        int totalRows = productDataRows.size();
+        if (totalRows == 0) {
+            throw new RuntimeException("No product rows found in the table!");
+        }
+        int selectedIndex = new Random().nextInt(totalRows);
+        WebElement selectedRow = productDataRows.get(selectedIndex);
+
+        WebElement nameCell = selectedRow.findElement(By.xpath(".//td[2]"));
+        wait.until(ExpectedConditions.visibilityOf(nameCell));
+        capturedProductName = nameCell.getText().trim();
+        WebElement skuCell = selectedRow.findElement(By.xpath(".//td[1]"));
+        wait.until(ExpectedConditions.visibilityOf(skuCell));
+        caturedSKU = skuCell.getText().trim();
+         System.out.println(":information_source: Selected Raw Material Name: " + capturedProductName);
+        System.out.println(":information_source: Selected Raw Material SKU: " + caturedSKU);
+
+        
+        WebElement searchBar = driver.findElement(By.id("text-filter-sku"));
+        searchBar.click();
+        searchBar.clear();
+        searchBar.sendKeys(caturedSKU); 
+	    Common.waitForElement(2);
+
+        
+	 // ===== Capture Quantity (3rd column) =====
+	    WebElement qtyCell = driver.findElement(By.xpath("(//tbody/tr/td[6])[1]"));
+	    wait.until(ExpectedConditions.visibilityOf(qtyCell));
+
+	    String qtyText = qtyCell.getText().trim();
+	    capturedStockQuantity = Integer.parseInt(qtyText);
+
+	    System.out.println("Captured Quantity: " + capturedStockQuantity);
+
+	    // ===== Capture Stock Status (4th column) =====
+	    WebElement stockStatusElement = driver.findElement(
+	            By.xpath("(//tbody/tr/td[5])[1]"));
+	    wait.until(ExpectedConditions.visibilityOf(stockStatusElement));
+
+	    capturedStockStatus = stockStatusElement.getText().trim();
+
+	    System.out.println("Captured Stock Status: " + capturedStockStatus);
+
+        wait.until(ExpectedConditions.visibilityOfAllElements(editButtons));
+     // Click the three-dot menu
+        WebElement menu = wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//a[contains(@class,'actions-buttons-column')]")));
+        menu.click();
+        Common.waitForElement(1);
+        // Click the Edit option
+        WebElement previewBtn = wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//a[@bp-button='show']")));
+        previewBtn.click();
+        System.out.println(":three_button_mouse: Clicked preview  button for: " + capturedProductName + " — navigating to preview page");
+        Common.waitForElement(2);
+	}
 	
 	
+	public void completeStockAdjustmentFlow() {
+	    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+	    // Click Update Stock button
+	    WebElement updateStockBtn = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//button[@data-target='#UpdateStockModal']")));
+	    updateStockBtn.click();
+	    System.out.println("🖱️ Clicked Update Stock button");
+	    Common.waitForElement(2);
+
+	    // Select "Adjust Stock" radio button
+	    WebElement adjustRadio = wait.until(ExpectedConditions.presenceOfElementLocated(
+	            By.id("adjust")));
+
+	    ((JavascriptExecutor) driver).executeScript("arguments[0].click();", adjustRadio);
+
+	    System.out.println("✅ Selected Adjust Stock");
+	    Common.waitForElement(1);
+	    // Enter reason
+	    WebElement reasonTextArea = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.id("reason")));
+	    reasonTextArea.clear();
+	    reasonTextArea.sendKeys("Stock adjustment for automation testing.");
+	    System.out.println("✅ Entered adjustment reason");
+
+	    // Enter captured stock quantity
+	    WebElement quantityField = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("//input[@name='add_quantity']")));
+	    quantityField.clear();
+	    quantityField.sendKeys(String.valueOf(capturedStockQuantity));
+	    System.out.println("✅ Entered Quantity: " + capturedStockQuantity);
+
+	    // Click Save Changes
+	    WebElement saveChangesBtn = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//button[normalize-space()='Save Changes']")));
+	    saveChangesBtn.click();
+	    System.out.println("💾 Clicked Save Changes");
+
+	    Common.waitForElement(3);
+	}
 	
+	
+	public void verifyOutOfStockStatusAndStockHistory() {
+	    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+	    // ===== Verify Out of Stock status =====
+	    WebElement stockStatus = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("//p[contains(@class,'stock_inactive_para')]")));
+
+	    String actualStatus = stockStatus.getText().trim();
+
+	    Assert.assertEquals("Stock status is incorrect.",
+	            "Out of Stock",
+	            actualStatus);
+
+	    System.out.println("✅ Stock Status : " + actualStatus);
+
+	    // ===== Verify table quantity = 0 =====
+	    WebElement tableQty = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("(//tbody//tr[1]//td[2])[1]")));
+
+	    String actualQty = tableQty.getText().trim();
+
+	    Assert.assertEquals("Table quantity is not zero.",
+	            "0",
+	            actualQty);
+
+	    System.out.println("✅ Table Quantity : " + actualQty);
+
+	    // ===== Verify preview quantity = 0 =====
+	    WebElement previewQty = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("//div[p[normalize-space()='Quantity']]/p[@class='modal_para_dark']")));
+
+	    String actualPreviewQty = previewQty.getText().trim();
+
+	    Assert.assertEquals("Preview quantity is not zero.",
+	            "0",
+	            actualPreviewQty);
+
+	    System.out.println("✅ Preview Quantity : " + actualPreviewQty);
+
+	    // ===== Click three-dot menu =====
+	    WebElement threeDot = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//div[contains(@class,'material_action_dropdown')]//label")));
+	    threeDot.click();
+
+	    // ===== Click Stock History =====
+	    WebElement stockHistory = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//li[normalize-space()='Stock History']")));
+	    stockHistory.click();
+	    System.out.println("✅ Opened Stock History");
+	    Common.waitForElement(3);
+
+	    // ===== Verify adjusted quantity =====
+	    WebElement adjustedQty = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("(//p[contains(@class,'count_para')])[1]")));
+
+	    String actualQty1 = adjustedQty.getText().trim();
+	    String expectedQty = "-" + capturedStockQuantity;
+
+	    Assert.assertEquals("Adjusted quantity mismatch.",
+	            expectedQty,
+	            actualQty1);
+
+	    System.out.println("✅ Adjusted Quantity : " + actualQty1);
+
+	    // ===== Verify Stocks Adjusted =====
+	    WebElement stockAdjusted = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("(//p[normalize-space()='Stocks Adjusted'])[1]")));
+
+	    String actualStatus1 = stockAdjusted.getText().trim();
+	    String expectedStatus = "Stocks Adjusted";
+
+	    Assert.assertEquals("Stock adjustment status mismatch.",
+	            expectedStatus,
+	            actualStatus1);
+
+	    System.out.println("✅ Stock Adjustment Status Verified : " + actualStatus1);
+	    // ===== Verify Reason =====
+	    WebElement reason = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("(//div[p[normalize-space()='Reason']]/p[@class='date_para m-0'])[1]")));
+
+	    String actualReason = reason.getText().trim();
+	    String expectedReason = "Stock adjustment for automation testing.";
+
+	    Assert.assertEquals("Reason mismatch.",
+	            expectedReason,
+	            actualReason);
+
+	    System.out.println("✅ Reason Verified : " + actualReason);
+	}
+	String currentStockQty;
+	public void completeStockAddFlow() {
+	    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+	    // Click Update Stock button
+	    WebElement updateStockBtn = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//button[@data-target='#UpdateStockModal']")));
+	    updateStockBtn.click();
+	    System.out.println("🖱️ Clicked Update Stock button");
+	    Common.waitForElement(2);
+
+	    WebElement currentStock = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("(//tbody/tr[1]/td[2])[2]")));
+
+	     currentStockQty = currentStock.getText().trim();
+
+	    System.out.println("✅ Current Stock Quantity : " + currentStockQty);
+	    Common.waitForElement(1);
+	    // Enter captured stock quantity
+	    WebElement quantityField = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("//input[@name='add_quantity']")));
+	    quantityField.clear();
+	    quantityField.sendKeys("2000");
+	    System.out.println("✅ Entered Quantity: 2000" );
+
+	    // Click Save Changes
+	    WebElement saveChangesBtn = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//button[normalize-space()='Save Changes']")));
+	    saveChangesBtn.click();
+	    System.out.println("💾 Clicked Save Changes");
+
+	    Common.waitForElement(3);
+	    
+	}
+	
+	public void verifyInStockStatusAndStockHistory() {
+	    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+	 // ===== Verify In Stock status =====
+	    WebElement stockStatus = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("//p[contains(@class,'stock_active_para') and contains(@class,'in-stock')]")));
+
+	    String actualStatus = stockStatus.getText().trim();
+
+	    Assert.assertEquals("Stock status is incorrect.",
+	            "In Stock",
+	            actualStatus);
+
+	    System.out.println("✅ Stock Status : " + actualStatus);
+
+	 // ===== Verify updated table quantity =====
+	    WebElement tableQty = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("(//tbody//tr[1]//td[2])[1]")));
+
+	    String actualQty = tableQty.getText().trim();
+
+	    // Calculate expected quantity
+	    int expectedQty = Integer.parseInt(currentStockQty) + 2000;
+	    
+	    Assert.assertEquals("Updated table quantity is incorrect.",
+	            String.valueOf(expectedQty),
+	            actualQty);
+
+	    System.out.println("✅ Expected Quantity : " + expectedQty);
+	    System.out.println("✅ Actual Quantity   : " + actualQty);
+
+	    // ===== Verify preview quantity = 0 =====
+	    WebElement previewQty = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("//div[p[normalize-space()='Quantity']]/p[@class='modal_para_dark']")));
+
+	    String actualPreviewQty = previewQty.getText().trim();
+
+	 // Calculate expected quantity
+	    int  expectedPreviewQty = Integer.parseInt(currentStockQty) + 2000;
+
+	    Assert.assertEquals("Updated table quantity is incorrect.",
+	            String.valueOf(expectedPreviewQty),
+	            actualPreviewQty);
+
+	    System.out.println("✅ Expected Quantity : " + expectedPreviewQty);
+	    System.out.println("✅ Actual Quantity   : " + actualPreviewQty);
+	    Common.waitForElement(2);
+	    // ===== Click three-dot menu =====
+	    WebElement threeDot = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//div[contains(@class,'material_action_dropdown')]//label")));
+	    threeDot.click();
+
+	    // ===== Click Stock History =====
+	    WebElement stockHistory = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//li[normalize-space()='Stock History']")));
+	    stockHistory.click();
+	    System.out.println("✅ Opened Stock History");
+	    Common.waitForElement(3);
+
+	    // ===== Verify adjusted quantity =====
+	    WebElement adjustedQty = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("(//p[contains(@class,'count_para')])[1]")));
+
+	    String actualQty1 = adjustedQty.getText().trim();
+	    String expectedHistoryQty = "+" + 2000;
+
+	    Assert.assertEquals("Adjusted quantity mismatch.",
+	    		expectedHistoryQty,
+	            actualQty1);
+
+	    System.out.println("✅ Adjusted Quantity : " + actualQty1);
+
+	    // ===== Verify Stocks Adjusted =====
+	    WebElement stockAdjusted = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("(//p[normalize-space()='Stock Added'])[1]")));
+
+	    String actualStatus1 = stockAdjusted.getText().trim();
+	    String expectedStatus = "Stock Added";
+
+	    Assert.assertEquals("Stock Added status mismatch.",
+	            expectedStatus,
+	            actualStatus1);
+
+	    System.out.println("✅ Stock Added Status Verified : " + actualStatus1);
+	    
+	}
+	String currentStockQty1;
+	public void completeLowAlertFlow() {
+	    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+	    WebElement currentStock = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("(//tbody/tr[1]/td[2])[1]")));
+
+	     currentStockQty1 = currentStock.getText().trim();
+
+	    System.out.println("✅ Current Stock Quantity : " + currentStockQty1);
+	    Common.waitForElement(1);
+	    
+	    
+	    // Click three-dot menu
+	    WebElement threeDots = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//div[contains(@class,'material_action_dropdown')]//label")));
+	    threeDots.click();
+	    System.out.println("🖱️ Clicked Three Dots");
+	    Common.waitForElement(1);
+	    // Click Set Low Stock Alert
+	    WebElement lowStockAlert = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//li[normalize-space()='Set Low Stock Alert']")));
+	    lowStockAlert.click();
+	    System.out.println("🖱️ Clicked Set Low Stock Alert");
+	    Common.waitForElement(1);
+	    // Wait for modal
+	    wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.cssSelector(".modal.show")));
+
+	    // Enter captured quantity
+	    WebElement qtyField = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("//input[@name='low_alert_level']")));   // <-- verify name attribute
+
+	    qtyField.clear();
+	    qtyField.sendKeys(String.valueOf(currentStockQty1));
+
+	    System.out.println("✅ Entered Low Stock Quantity : " + currentStockQty1);
+
+	    // Click Save Alert
+	    WebElement saveAlertBtn = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//button[normalize-space()='Save Alert']")));
+	    saveAlertBtn.click();
+
+	    System.out.println("💾 Clicked Save Alert");
+
+	    Common.waitForElement(3);
+	    
+	}
+	
+	
+	public void verifyLowStockStatus() {
+	    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+	 // ===== Verify Low Stock status =====
+	    WebElement stockStatus = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("//p[contains(@class,'stock_warning_para')]")));
+
+	    String actualStatus = stockStatus.getText().trim();
+
+	    Assert.assertEquals("Stock status is incorrect.",
+	            "Low Stock",
+	            actualStatus);
+
+	    System.out.println("✅ Stock Status : " + actualStatus);
+
+	 // ===== Verify updated table quantity =====
+	    WebElement tableQty = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("(//tbody//tr[1]//td[3])[1]")));
+
+	    String actualQty = tableQty.getText().trim();
+
+	    // Calculate expected quantity
+	    int expectedQty = Integer.parseInt(currentStockQty1);
+	    
+	    Assert.assertEquals("Updated table quantity is incorrect.",
+	            String.valueOf(expectedQty),
+	            actualQty);
+
+	    System.out.println("✅ Expected Quantity : " + expectedQty);
+	    System.out.println("✅ Actual Quantity   : " + actualQty);
+
+	    
+	}
 //TC-01	
 	public void validateRawMaterialCreation() throws InterruptedException {
 		
@@ -247,12 +658,46 @@ public class Raw_Material_Page extends Raw_Material_ObjRepo {
 		
 	}
 	
+//TC-02
+	public void validateRawMaterialStockAdjust() {
+		
+		adminLogin();
+		
+		selectRandomProductonRawMaterialSection();
+		
+		completeStockAdjustmentFlow();
+		
+		verifyOutOfStockStatusAndStockHistory();
+
+	}
+	
+//TC-03
+	public void validateRawMaterialStockAdd() {
+
+		adminLogin();
+		
+		selectRandomProductonRawMaterialSection();
+		
+		completeStockAddFlow();
+		
+		verifyInStockStatusAndStockHistory();
+		
+		
+	}
 	
 	
-	
-	
-	
-	
+//TC-04
+	public void validateRawMaterialLowAlert() {
+		
+		adminLogin();
+		
+		selectRandomProductonRawMaterialSection();	
+		
+		completeLowAlertFlow();
+		
+		verifyLowStockStatus();
+		
+	}
 	
 	
 	

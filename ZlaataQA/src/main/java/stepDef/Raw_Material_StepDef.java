@@ -25,6 +25,53 @@ public class Raw_Material_StepDef {
 		    
 		}
 
+			@Given("the admin navigates to the Raw Material module for stock adjust")
+			public void the_admin_navigates_to_the_raw_material_module_for_stock_adjust() {
+				raw.validateRawMaterialStockAdjust();
+			}
+			@When("the admin adjusts the stock of an existing product with valid stock details on Raw Material")
+			public void the_admin_adjusts_the_stock_of_an_existing_product_with_valid_stock_details_on_raw_material() {
+			   
+			}
+			@Then("the adjusted stock quantity should be updated successfully and reflected correctly in the Raw Material list, History, and Preview Page.")
+			public void the_adjusted_stock_quantity_should_be_updated_successfully_and_reflected_correctly_in_the_raw_material_list_history_and_preview_page() {
+			    
+			}
+
+//TC-02
+
+				@Given("the admin navigates to the Raw Material module for stock add.")
+				public void the_admin_navigates_to_the_raw_material_module_for_stock_add() {
+				   raw.validateRawMaterialStockAdd();
+				}
+				@When("the admin adds stock to an existing product with valid stock details on Raw Material")
+				public void the_admin_adds_stock_to_an_existing_product_with_valid_stock_details_on_raw_material() {
+			
+				}
+				@Then("the stock quantity should be updated successfully and reflected correctly in the Raw Material list, History, and Preview Page")
+				public void the_stock_quantity_should_be_updated_successfully_and_reflected_correctly_in_the_raw_material_list_history_and_preview_page() {
+				   
+				}
+
+//TC-03
+		
+					@Given("the admin navigates to the Raw Material module and click for set low stock")
+					public void the_admin_navigates_to_the_raw_material_module_and_click_for_set_low_stock() {
+					 raw.validateRawMaterialLowAlert();
+					}
+					@When("the admin sets a low stock alert for an existing product with valid details on Raw Material module")
+					public void the_admin_sets_a_low_stock_alert_for_an_existing_product_with_valid_details_on_raw_material_module() {
+					   
+					}
+					@Then("the low stock alert should be saved successfully and reflected correctly Raw Material module.")
+					public void the_low_stock_alert_should_be_saved_successfully_and_reflected_correctly_raw_material_module() {
+					
+					}
+
+
+
+
+
 
 
 	
