@@ -19,7 +19,7 @@ public Attributes_StefDef(TestContext context) {
 //TC-01
 @Given("the admin adds a new Attributes with valid details")
 public void the_admin_adds_a_new_attributes_with_valid_details() {
-    atbs.adminLogin();
+    atbs.validateAttributesCreateFlow();
 }
 
 @Then("the Attributes should be added successfully and displayed correctly in the Attributes List page")
