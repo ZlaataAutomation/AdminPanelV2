@@ -20,6 +20,7 @@ public class PageObjectManager {
    private AdminLogin_Page adminLogin;
    private ProductStock_Page productstock;
    private AttributesPage atbs;
+   private Supplier_Page supplier;
 
     public PageObjectManager(WebDriver driver) {
         this.driver = driver;
@@ -67,6 +68,10 @@ public class PageObjectManager {
 	
 	public AttributesPage getAttributesPage() {
 		return (atbs == null) ? atbs = new AttributesPage(driver) : atbs;
+	}
+	
+	public Supplier_Page getSupplier_Page() {
+		return (supplier == null) ? supplier = new Supplier_Page(driver) : supplier;
 	}
 	
 	
