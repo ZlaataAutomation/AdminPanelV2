@@ -38,7 +38,7 @@ Feature: Raw Material Management
       | TD_ID              |
       | TD_UI_Zlaata_Raw_03 |     
       
-        @Regression
+  @Regression
   @TC_UI_Zlaata_Raw_04
   Scenario Outline: TC_UI_Zlaata_Raw_04 |Verify that the low stock alert is saved and reflected successfully on Raw Material Section.| "<TD_ID>"
 
@@ -48,4 +48,26 @@ Feature: Raw Material Management
 
     Examples:
       | TD_ID              |
-      | TD_UI_Zlaata_Raw_04 |     
+      | TD_UI_Zlaata_Raw_04 |    
+      
+       @Regression
+  @TC_UI_Zlaata_Raw_05
+  Scenario Outline: TC_UI_Zlaata_Raw_05 |Verify admin can import Raw Material successfully.| "<TD_ID>"
+
+  	Given the admin imports the Raw Material file successfully
+    Then the imported Raw Material should be displayed in the list
+
+    Examples:
+      | TD_ID              |
+      | TD_UI_Zlaata_Raw_05 |  
+      
+            @Regression
+  @TC_UI_Zlaata_Raw_06
+  Scenario Outline: TC_UI_Zlaata_Raw_06 |Verify admin can Export Last 7 Days Raw Material.| "<TD_ID>"
+
+  	Given the admin exports the Raw Material for the last 7 days successfully
+    Then the exported Raw Material data should be validated
+
+    Examples:
+      | TD_ID              |
+      | TD_UI_Zlaata_Raw_06 |  

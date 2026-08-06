@@ -16,7 +16,7 @@ features = {"src/test/resources/features/"},
 glue = "stepDef",	
 monochrome = true,	
 dryRun = false,
-tags= "@SM"		
+tags= "@TC_UI_Zlaata_Atbs_01"		
 
 )
 		
