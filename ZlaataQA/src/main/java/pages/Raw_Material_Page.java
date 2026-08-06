@@ -1,23 +1,42 @@
 package pages;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.junit.Assert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Keys;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
 import objectRepo.Raw_Material_ObjRepo;
 import utils.Common;
+import utils.ExcelXLSReader;
+import utils.ExportValidator;
 
 public class Raw_Material_Page extends Raw_Material_ObjRepo {
 	
@@ -84,34 +103,107 @@ public class Raw_Material_Page extends Raw_Material_ObjRepo {
 	    material.sendKeys(materialName);
 
 	    // Category
-	    Select category = new Select(wait.until(
-	            ExpectedConditions.elementToBeClickable(By.name("category_id"))));
-	    category.selectByIndex(1);
+	 // Click the Category dropdown
 
-	    // Material Type
-	    Select materialType = new Select(wait.until(
-	            ExpectedConditions.elementToBeClickable(By.name("type_id"))));
-	    materialType.selectByIndex(1);
+	    WebElement categoryDropdown = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("(//button[contains(@class,'select-trigger-btn')])[1]")));
+	    categoryDropdown.click();
 
-	    // Unit Measurement
-	    Select measurement = new Select(wait.until(
-	            ExpectedConditions.elementToBeClickable(By.name("measurement_id"))));
-	    measurement.selectByIndex(1);
+	    try {
+	        WebElement buttonOption = wait.until(ExpectedConditions.elementToBeClickable(
+	                By.xpath("//li[@data-label='Button']")));
+	        buttonOption.click();
+	        System.out.println("Button selected.");
 
-	    // Supplier (Select2)
-	    wait.until(ExpectedConditions.elementToBeClickable(
-	            By.xpath("//span[contains(@class,'select2-selection--multiple')]"))).click();
+	    } catch (Exception e) {
 
-	    WebElement supplierSearch = wait.until(ExpectedConditions.visibilityOfElementLocated(
-	            By.xpath("//input[@class='select2-search__field']")));
+	        System.out.println("Button not found. Selecting Zipper.");
 
-	    supplierSearch.sendKeys(Keys.ENTER);
-
+	        WebElement zipperOption = wait.until(ExpectedConditions.elementToBeClickable(
+	                By.xpath("//li[@data-label='Zipper']")));
+	        zipperOption.click();
+	    }
 	    Common.waitForElement(1);
+	    // Material Type
+	 // Click the Material Type dropdown (2nd dropdown on the page)
+	 WebElement materialTypeDropdown = wait.until(
+	         ExpectedConditions.elementToBeClickable(
+	                 By.xpath("(//button[contains(@class,'select-trigger-btn')])[2]")));
+	 materialTypeDropdown.click();
+
+	 try {
+	     // Try selecting Cotton
+	     wait.until(ExpectedConditions.elementToBeClickable(
+	             By.xpath("//li[@data-label='Cotton']"))).click();
+	     System.out.println("Cotton selected.");
+
+	 } catch (Exception e) {
+
+	     System.out.println("Cotton not found. Selecting Polyester.");
+
+	     // If Cotton is not available, select Polyester
+	     wait.until(ExpectedConditions.elementToBeClickable(
+	             By.xpath("//li[@data-label='Polyester']"))).click();
+	 }
+	  Common.waitForElement(1);
+	    // Unit Measurement
+	// Click the Unit Measurement dropdown (3rd dropdown)
+	WebElement measurementDropdown = wait.until(
+	        ExpectedConditions.elementToBeClickable(
+	                By.xpath("(//button[contains(@class,'select-trigger-btn')])[3]")));
+	measurementDropdown.click();
+
+	try {
+	    // Try selecting Mm
+	    wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//li[@data-label='Mm']"))).click();
+	    System.out.println("Mm selected.");
+
+	} catch (Exception e) {
+
+	    System.out.println("Mm not found. Selecting Cm.");
+
+	    // If M is not available, select Cm
+	    wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//li[@data-label='Cm']"))).click();
+	}
+	  Common.waitForElement(1);
+	    // Supplier (Select2)
+	// Click Supplier dropdown
+	wait.until(ExpectedConditions.elementToBeClickable(
+	        By.xpath("(//button[contains(@class,'select-trigger-btn')])[4]"))).click();
+
+	try {
+	    // Try selecting ABC dddTextiles Pvt Ltd
+	    wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//li[@data-label='ABC dddTextiles Pvt Ltd']"))).click();
+
+	    System.out.println("ABC dddTextiles Pvt Ltd selected.");
+	    Common.waitForElement(1);
+	   
+
+	} catch (Exception e) {
+
+	    System.out.println("ABC supplier not found. Selecting PGR Sun Production.");
+
+	    wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//li[@data-label='PGR Sun Production']"))).click();
+	    Common.waitForElement(1);
+	   
+	}
+	Common.waitForElement(2);
+	WebElement searchBox = wait.until(ExpectedConditions.elementToBeClickable(
+	        By.xpath("//input[contains(@class,'select-search-input')]")));
+
+	// Click the search box
+	searchBox.click();
+	searchBox.sendKeys(Keys.ENTER);
+
+	    
 
 	    // Get Selected Supplier Name
 	    String supplierName = wait.until(ExpectedConditions.visibilityOfElementLocated(
-	            By.xpath("//li[contains(@class,'select2-selection__choice')]")))
+	            By.xpath("//span[@class='chip-label']")))
 	            .getText()
 	            .replace("×", "")
 	            .replace("\n", "")
@@ -129,9 +221,25 @@ public class Raw_Material_Page extends Raw_Material_ObjRepo {
 	    Common.waitForElement(2);
 	    // Store values for verification
 	    expectedMaterialName = materialName;
-	    expectedCategory = category.getFirstSelectedOption().getText();
-	    expectedMaterialType = materialType.getFirstSelectedOption().getText();
-	    expectedMeasurement = measurement.getFirstSelectedOption().getText();
+	    expectedCategory = driver.findElement(
+	            By.xpath("(//span[@class='selected-text-display'])[1]"))
+	            .getText()
+	            .trim();
+
+	    System.out.println("Selected Category: " + expectedCategory);
+	    
+	    expectedMaterialType = driver.findElement(
+	            By.xpath("(//span[@class='selected-text-display'])[2]"))
+	            .getText()
+	            .trim();
+
+	    System.out.println("Selected Material: " + expectedMaterialType);
+	    expectedMeasurement =driver.findElement(
+	            By.xpath("(//span[@class='selected-text-display'])[3]"))
+	            .getText()
+	            .trim();
+
+	    System.out.println("Selected Measurement: " + expectedMeasurement);
 	    expectedSupplier = supplierName;
 	    expectedQuantity = "100";
 	    expectedSku = sku;
@@ -647,6 +755,657 @@ public class Raw_Material_Page extends Raw_Material_ObjRepo {
 
 	    
 	}
+	
+	
+	String uploadedFileName;
+	public void verifyRawmaterialImportFlow() throws Exception {
+
+	    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+	    Actions actions = new Actions(driver);
+
+	    // Hover on Inventory
+	    WebElement inventory = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("//button[contains(@class,'sidebar_menu_btn')]//span[normalize-space()='Inventory']")));
+	    actions.moveToElement(inventory).perform();
+
+	    // Click Raw Material Stocks
+	    WebElement rawMaterial = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//li[normalize-space()='Raw Material Stocks']")));
+	    rawMaterial.click();
+
+	    Common.waitForElement(2);
+
+	    // Click Import/Export button
+	    WebElement importExportBtn = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//button[contains(@class,'import-export-btn')]")));
+	    importExportBtn.click();
+
+	    System.out.println("✅ Clicked Import/Export button");
+
+	    // Click Import option
+	    WebElement importOption = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//button[contains(@class,'js-custom-import-trigger') and normalize-space()='Import']")));
+	    importOption.click();
+
+	    System.out.println("✅ Clicked Import option");
+	    
+	    updateRawMaterialExcel();
+
+	    Common.waitForElement(4);
+
+	    // Upload Excel file
+	    String excelFilePath = System.getProperty("user.dir") + "/src/test/resources/ImportFile/RawMaterial.xlsx";
+
+	    WebElement uploadInput = wait.until(ExpectedConditions.presenceOfElementLocated(
+	            By.id("simFileInput")));
+
+	    uploadInput.sendKeys(excelFilePath);
+
+	    System.out.println("✅ Excel file selected");
+
+	 // Verify upload successful
+	    WebElement uploadedFile = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("//div[@id='simDropzone' and contains(@class,'uploaded')]")));
+
+	    Assert.assertTrue("Excel file upload failed.", uploadedFile.isDisplayed());
+
+	    System.out.println(GREEN + "✅ Excel file uploaded successfully." + RESET);
+
+	     uploadedFileName = driver.findElement(
+	            By.xpath("//div[@id='simDropzone']//div[contains(@class,'drop-title')]"))
+	            .getText().trim();
+
+	    System.out.println(CYAN + "📄 Uploaded File : " + uploadedFileName + RESET);
+	    
+	}
+	
+	
+	// Class variables
+	public String expectedExcelSku;
+	public String expectedExcelMaterialName;
+	public String expectedExcelCategory;
+	public String expectedExcelQuantity;
+	public String expectedExcelLowAlertLevel;
+	public String expectedExcelSupplier;
+	public String expectedExcelUnitMeasurement;
+	public String expectedExcelMaterialType;
+	// ANSI Colors
+	final String RESET  = "\u001B[0m";
+	final String GREEN  = "\u001B[32m";
+	final String CYAN   = "\u001B[36m";
+	final String YELLOW = "\u001B[33m";
+	public void updateRawMaterialExcel() throws Exception {
+		
+		String excelFilePath = System.getProperty("user.dir") + "/src/test/resources/ImportFile/RawMaterial.xlsx";
+	    FileInputStream fis = new FileInputStream(excelFilePath);
+	    Workbook workbook = new XSSFWorkbook(fis);
+	    Sheet sheet = workbook.getSheetAt(0);
+
+	    // Row 0 = Main Heading
+	    // Row 1 = Column Names
+	    // Row 2 = First Data Row
+	    Row row = sheet.getRow(2);
+
+	    Random random = new Random();
+
+	    expectedExcelSku = "Test" + (100 + random.nextInt(900));
+	    expectedExcelMaterialName = "Auto Material " + (100 + random.nextInt(900));
+
+	    row.getCell(0).setCellValue(expectedExcelSku);           // SKU
+	    row.getCell(1).setCellValue(expectedExcelMaterialName);  // Name
+
+	    // Copy all values after modification
+	    expectedExcelCategory = row.getCell(2).getStringCellValue();
+	    expectedExcelQuantity = String.valueOf((int) row.getCell(3).getNumericCellValue());
+	    expectedExcelLowAlertLevel = String.valueOf((int) row.getCell(4).getNumericCellValue());
+	    expectedExcelSupplier = row.getCell(5).getStringCellValue();
+	    expectedExcelUnitMeasurement = row.getCell(6).getStringCellValue();
+	    expectedExcelMaterialType = row.getCell(7).getStringCellValue();
+
+	    fis.close();
+
+	    FileOutputStream fos = new FileOutputStream(excelFilePath);
+	    workbook.write(fos);
+
+	    fos.close();
+	    workbook.close();
+	    System.out.println(GREEN + "========== UPDATED EXCEL DATA ==========" + RESET);
+
+	    System.out.println(CYAN + "SKU              : " + RESET + expectedExcelSku);
+	    System.out.println(CYAN + "Name             : " + RESET + expectedExcelMaterialName);
+	    System.out.println(CYAN + "Category         : " + RESET + expectedExcelCategory);
+	    System.out.println(CYAN + "Quantity         : " + RESET + expectedExcelQuantity);
+	    System.out.println(CYAN + "Low Alert Level  : " + RESET + expectedExcelLowAlertLevel);
+	    System.out.println(CYAN + "Supplier         : " + RESET + expectedExcelSupplier);
+	    System.out.println(CYAN + "Unit Measurement : " + RESET + expectedExcelUnitMeasurement);
+	    System.out.println(CYAN + "Material Type    : " + RESET + expectedExcelMaterialType);
+
+	    System.out.println(YELLOW + "========================================" + RESET);
+	}
+	
+	
+	public void verifyImportPreviewAndStartImport() {
+
+	    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+	    // ANSI Colors
+	    final String RESET  = "\u001B[0m";
+	    final String GREEN  = "\u001B[32m";
+	    final String CYAN   = "\u001B[36m";
+	    final String YELLOW = "\u001B[33m";
+
+	    // ==============================
+	    // Click Next (Upload Screen)
+	    // ==============================
+	    WebElement nextBtn = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.id("simNextBtn")));
+	    nextBtn.click();
+
+	    System.out.println(GREEN + "✅ Clicked First Next Button" + RESET);
+
+	    Common.waitForElement(2);
+
+	    // ==============================
+	    // Verify Uploaded File Name
+	    // ==============================
+	    WebElement fileName = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.id("simFileName")));
+
+	    Assert.assertEquals(uploadedFileName,
+	            fileName.getText().trim());
+
+	    System.out.println(CYAN + "Uploaded File Matched : "
+	            + fileName.getText().trim() + RESET);
+
+	    // ==============================
+	    // Click Next (Preview Screen)
+	    // ==============================
+	    nextBtn = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.id("simNextBtn")));
+	    nextBtn.click();
+
+	    System.out.println(GREEN + "✅ Clicked Second Next Button" + RESET);
+
+	    Common.waitForElement(3);
+
+	    // ==============================
+	    // Verify Preview Data
+	    // ==============================
+
+	    WebElement row = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("//tbody[@id='simPreviewBody']/tr")));
+
+	    String actualSku =
+	            row.findElement(By.xpath("./td[1]")).getText().trim();
+
+	    String actualName =
+	            row.findElement(By.xpath("./td[2]")).getText().trim();
+
+	    String actualCategory =
+	            row.findElement(By.xpath("./td[3]")).getText().trim();
+
+	    String actualQuantity =
+	            row.findElement(By.xpath("./td[4]")).getText().trim();
+
+	    String actualLowAlert =
+	            row.findElement(By.xpath("./td[5]")).getText().trim();
+
+	    String actualUnit =
+	            row.findElement(By.xpath("./td[6]")).getText().trim();
+
+	    String actualSupplier =
+	            row.findElement(By.xpath("./td[7]")).getText().trim();
+
+	    String actualMaterialType =
+	            row.findElement(By.xpath("./td[8]")).getText().trim();
+
+	    System.out.println(YELLOW + "\n========== IMPORT PREVIEW DATA ==========" + RESET);
+
+	    System.out.println(CYAN + "SKU              : " + actualSku + RESET);
+	    System.out.println(CYAN + "Name             : " + actualName + RESET);
+	    System.out.println(CYAN + "Category         : " + actualCategory + RESET);
+	    System.out.println(CYAN + "Quantity         : " + actualQuantity + RESET);
+	    System.out.println(CYAN + "Low Alert Level  : " + actualLowAlert + RESET);
+	    System.out.println(CYAN + "Unit Measurement : " + actualUnit + RESET);
+	    System.out.println(CYAN + "Supplier         : " + actualSupplier + RESET);
+	    System.out.println(CYAN + "Material Type    : " + actualMaterialType + RESET);
+
+	    Assert.assertEquals(expectedExcelSku, actualSku);
+	    Assert.assertEquals(expectedExcelMaterialName, actualName);
+	    Assert.assertEquals(expectedExcelCategory, actualCategory);
+	    Assert.assertEquals(expectedExcelQuantity, actualQuantity);
+	    Assert.assertEquals(expectedExcelLowAlertLevel, actualLowAlert);
+	    Assert.assertEquals(expectedExcelUnitMeasurement, actualUnit);
+	    Assert.assertEquals(expectedExcelSupplier, actualSupplier);
+	    Assert.assertEquals(expectedExcelMaterialType, actualMaterialType);
+
+	    System.out.println(GREEN + "✅ Import Preview Data Verified Successfully." + RESET);
+
+	    // ==============================
+	    // Select Overwrite
+	    // ==============================
+	    WebElement overwrite = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.id("previewOverwrite")));
+	    overwrite.click();
+
+	    System.out.println(GREEN + "✅ Selected Overwrite Option" + RESET);
+
+	    // ==============================
+	    // Click Start Import
+	    // ==============================
+	    WebElement startImport = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.id("simStartImportBtn")));
+	    startImport.click();
+
+	    System.out.println(GREEN + "✅ Clicked Start Import Button" + RESET);
+	    
+	    Common.waitForElement(4);
+
+	 // ==============================
+	 // Verify Import Successful
+	 // ==============================
+	 WebElement successMsg = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	         By.id("simResultTitle")));
+
+	 String actualMessage = successMsg.getText().trim();
+
+	 Assert.assertEquals("Import success message mismatch.",
+	         "Import Successful!",
+	         actualMessage);
+
+	 System.out.println(GREEN + "✅ Import Status : " + actualMessage + RESET);
+
+	 // ==============================
+	 // Click Close Button
+	 // ==============================
+	 WebElement closeBtn = wait.until(ExpectedConditions.elementToBeClickable(
+	         By.xpath("//button[normalize-space()='Close']")));
+
+	 closeBtn.click();
+
+	 System.out.println(GREEN + "✅ Clicked Close Button" + RESET);
+	}
+	
+	
+	public void validateImportedRawMaterialData() {
+		Common.waitForElement(2);
+		driver.navigate().refresh();
+		Common.waitForElement(2);
+	    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+	    // ANSI Colors
+	    final String RESET  = "\u001B[0m";
+	    final String GREEN  = "\u001B[32m";
+	    final String RED    = "\u001B[31m";
+	    final String CYAN   = "\u001B[36m";
+	    final String YELLOW = "\u001B[33m";
+
+	    // Wait for first row
+	    WebElement firstRow = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("//table//tbody/tr[1]")));
+
+	    String actualSku          = firstRow.findElement(By.xpath("./td[1]")).getText().trim();
+	    String actualName         = firstRow.findElement(By.xpath("./td[2]")).getText().trim();
+	    String actualCategory     = firstRow.findElement(By.xpath("./td[3]")).getText().trim();
+	    String actualMaterialType = firstRow.findElement(By.xpath("./td[4]")).getText().trim();
+	    String actualQuantity     = firstRow.findElement(By.xpath("./td[6]")).getText().trim();
+	    String actualSupplier     = firstRow.findElement(By.xpath("./td[7]")).getText().trim();
+
+	    // Supplier Mapping
+	    String expectedSupplierName = expectedExcelSupplier;
+	    if ("S10".equalsIgnoreCase(expectedExcelSupplier)) {
+	        expectedSupplierName = "Supplier-02";
+	    }
+
+	    System.out.println(YELLOW + "\n=========== IMPORTED RAW MATERIAL VERIFICATION ===========" + RESET);
+
+	    validateField("SKU", expectedExcelSku, actualSku, CYAN, GREEN, RED, RESET);
+	    validateField("Material Name", expectedExcelMaterialName, actualName, CYAN, GREEN, RED, RESET);
+	    validateField("Category", expectedExcelCategory, actualCategory, CYAN, GREEN, RED, RESET);
+	    validateField("Material Type", expectedExcelMaterialType, actualMaterialType, CYAN, GREEN, RED, RESET);
+	    validateField("Quantity", expectedExcelQuantity, actualQuantity, CYAN, GREEN, RED, RESET);
+	    validateField("Supplier", expectedSupplierName, actualSupplier, CYAN, GREEN, RED, RESET);
+
+	    System.out.println(YELLOW + "==========================================================" + RESET);
+
+	    Assert.assertEquals("SKU mismatch.", expectedExcelSku, actualSku);
+	    Assert.assertEquals("Material Name mismatch.", expectedExcelMaterialName, actualName);
+	    Assert.assertEquals("Category mismatch.", expectedExcelCategory, actualCategory);
+	    Assert.assertEquals("Material Type mismatch.", expectedExcelMaterialType, actualMaterialType);
+	    Assert.assertEquals("Quantity mismatch.", expectedExcelQuantity, actualQuantity);
+	    Assert.assertEquals("Supplier mismatch.", expectedSupplierName, actualSupplier);
+
+	    System.out.println(GREEN + "✅ Imported Raw Material verified successfully." + RESET);
+	}
+	
+	
+	public static List<Map<String, Object>> readProductsWithMultiple(String filePath) throws IOException {
+
+	    List<Map<String, Object>> data = new ArrayList<>();
+
+	    FileInputStream fis = new FileInputStream(filePath);
+	    Workbook workbook = WorkbookFactory.create(fis);
+	    Sheet sheet = workbook.getSheetAt(0);
+
+	    // Header Row (Row 0)
+	    Row headerRow = sheet.getRow(0);
+	    
+
+	    for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+
+	        Row row = sheet.getRow(i);
+
+	        if (row == null)
+	            continue;
+
+	        Map<String, Object> rowData = new LinkedHashMap<>();
+
+	        for (int j = 0; j < headerRow.getLastCellNum(); j++) {
+
+	            Cell headerCell = headerRow.getCell(j);
+	            Cell cell = row.getCell(j);
+
+	            String columnName = headerCell.getStringCellValue().trim();
+
+	            Object value = "";
+
+	            if (cell != null) {
+
+	                switch (cell.getCellType()) {
+
+	                case STRING:
+	                    value = cell.getStringCellValue().trim();
+	                    break;
+
+	                case NUMERIC:
+	                    if (DateUtil.isCellDateFormatted(cell)) {
+	                        value = cell.getDateCellValue();
+	                    } else {
+
+	                        double num = cell.getNumericCellValue();
+
+	                        if (num == (long) num)
+	                            value = String.valueOf((long) num);
+	                        else
+	                            value = String.valueOf(num);
+	                    }
+	                    break;
+
+	                case BOOLEAN:
+	                    value = cell.getBooleanCellValue();
+	                    break;
+
+	                case FORMULA:
+	                    value = cell.toString().trim();
+	                    break;
+
+	                case BLANK:
+	                    value = "";
+	                    break;
+
+	                default:
+	                    value = cell.toString().trim();
+	                }
+	            }
+
+	            rowData.put(columnName, value);
+	        }
+
+	        data.add(rowData);
+	    }
+
+	    workbook.close();
+	    fis.close();
+
+	    return data;
+	}
+	
+	public void exportRawMaterialLast7Days() {
+
+	    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+	    Actions actions = new Actions(driver);
+
+	    // Hover on Inventory
+	    WebElement inventory = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("//button[contains(@class,'sidebar_menu_btn')]//span[normalize-space()='Inventory']")));
+	    actions.moveToElement(inventory).perform();
+
+	    // Click Raw Material Stocks
+	    WebElement rawMaterial = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//li[normalize-space()='Raw Material Stocks']")));
+	    rawMaterial.click();
+
+	    Common.waitForElement(2);
+	    
+	    // Click Import/Export button
+	    WebElement importExportBtn = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//button[contains(@class,'import-export-btn')]")));
+	    importExportBtn.click();
+
+	    System.out.println("✅ Clicked Import/Export button");
+
+	    // Click Export option
+	    WebElement exportOption = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//button[@class='js-option' and normalize-space()='Export']")));
+	    exportOption.click();
+	    Common.waitForElement(2);
+	    System.out.println("✅ Clicked Export option");
+
+	    // ANSI Colors
+	    final String RESET = "\u001B[0m";
+	    final String GREEN = "\u001B[32m";
+
+	    // ==============================
+	    // Select Updated At -> Last 7 Days
+	    // ==============================
+	    WebElement updatedAt = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.name("export_updated_at_range")));
+
+	    Select updatedSelect = new Select(updatedAt);
+	    updatedSelect.selectByValue("7");
+
+	    System.out.println(GREEN + "✅ Updated At : Last 7 Days selected" + RESET);
+
+	    // ==============================
+	    // Select Created At -> Last 7 Days
+	    // ==============================
+	    WebElement createdAt = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.name("export_created_at_range")));
+
+	    Select createdSelect = new Select(createdAt);
+	    createdSelect.selectByValue("7");
+
+	    System.out.println(GREEN + "✅ Created At : Last 7 Days selected" + RESET);
+
+	    Common.waitForElement(1);
+	    WebElement xlsxOption = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//label[@for='xlsx']")));
+	    xlsxOption.click();
+
+	    System.out.println("✅ Selected XLSX file format");
+	    Common.waitForElement(2);
+	    // ==============================
+	    // Click Export Button
+	    // ==============================
+	    WebElement exportBtn = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//button[@type='submit' and normalize-space()='Export']")));
+
+	    exportBtn.click();
+
+	    System.out.println(GREEN + "✅ Clicked Export Button" + RESET);
+	    Common.waitForElement(2);
+	}
+	
+	 private ExportValidator validator = new ExportValidator();
+	    private String downloadDir ="C:\\Users\\Sarojkumar\\Downloads\\";
+	public void downloadExportHistory() throws InterruptedException {
+		// ✅ Go to Export Histories
+        Common.waitForElement(2);
+        WebDriverWait wait1 = new WebDriverWait(driver, Duration.ofSeconds(20));
+	    Actions actions = new Actions(driver);
+
+	    // Hover on Inventory
+	    WebElement exportHistory = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//button[contains(@class,'sidebar_menu_btn')]//span[normalize-space()='Export History']")));
+	    exportHistory.click();
+        System.out.println("✅ Opened Export Histories page");
+
+        // ✅ Wait until export = Success
+        FluentWait<WebDriver> wait = new FluentWait<>(driver)
+                .withTimeout(Duration.ofMinutes(10))
+                .pollingEvery(Duration.ofSeconds(5))
+                .ignoring(NoSuchElementException.class)
+                .ignoring(StaleElementReferenceException.class);
+
+        // Wait until first row status becomes Success
+        wait.until(driver -> {
+
+            driver.navigate().refresh();
+            Common.waitForElement(2);
+
+            WebElement status = driver.findElement(
+                    By.xpath("//tbody/tr[1]/td[7]//span[@class='d-inline-flex']"));
+
+            String currentStatus = status.getText().trim();
+            System.out.println("📊 Current Status : " + currentStatus);
+
+            return currentStatus.equalsIgnoreCase("Success");
+        });
+
+        System.out.println("✅ Export completed successfully.");
+
+        // Click first row three-dot button
+        WebElement threeDotBtn = wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//tbody/tr[1]/td[last()]//a[contains(@class,'actions-buttons-column')]")));
+        threeDotBtn.click();
+	    Common.waitForElement(2);
+
+
+        System.out.println("✅ Clicked Three Dot");
+
+        // Click Download
+        WebElement downloadBtn = wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("(//a[normalize-space()='Download'])[1]")));
+        downloadBtn.click();
+
+        System.out.println("✅ Export download started.");
+        int randomNum = new Random().nextInt(1000);
+        fileName = "RawMaterialExport_"  + randomNum + ".xlsx";
+
+        Thread.sleep(10000);
+        File file = validator.waitForDownload(downloadDir, fileName, 30);
+        System.out.println("✅  Export saved: " + file.getAbsolutePath());
+	}
+	
+	public String dateRange;
+    String fileName;
+	public void storeLast7DaysDateRange() {
+
+	    final String RESET = "\u001B[0m";
+	    final String GREEN = "\u001B[32m";
+
+	    SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+
+	    Calendar calendar = Calendar.getInstance();
+
+	    // End Date = Today
+	    String endDate = sdf.format(calendar.getTime());
+
+	    // Start Date = Today - 7 Days
+	    calendar.add(Calendar.DAY_OF_MONTH, -7);
+	    String startDate = sdf.format(calendar.getTime());
+
+	    dateRange = startDate + " - " + endDate;
+
+	    System.out.println(GREEN + "✅ Selected Date Range : " + dateRange + RESET);
+	}
+	
+	public void verifyExportedRawMaterialDates() throws Exception {
+		
+		storeLast7DaysDateRange();
+
+	    String[] parts = dateRange.split(" - ");
+
+	    String startDateStr = parts[0].trim();
+	    String endDateStr = parts[1].trim();
+
+	    String excelPath = downloadDir + fileName;
+
+	    List<Map<String, Object>> exportedData =readProductsWithMultiple(excelPath);
+	    
+
+	    SimpleDateFormat excelFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	    SimpleDateFormat rangeFormat = new SimpleDateFormat("dd-MM-yyyy");
+	    Date startDate = rangeFormat.parse(startDateStr);
+	    Date endDate = rangeFormat.parse(endDateStr);
+
+	    Calendar cal = Calendar.getInstance();
+	    cal.setTime(endDate);
+	    cal.add(Calendar.DAY_OF_MONTH, 1);
+	    cal.add(Calendar.SECOND, -1);
+
+	    Date inclusiveEndDate = cal.getTime();
+
+	    boolean invalidFound = false;
+
+	    System.out.println("=================================================");
+	    System.out.println("Checking Date Range : " + dateRange);
+	    System.out.println("=================================================");
+
+	    for (Map<String, Object> row : exportedData) {
+
+	        // Verify Last Updated
+	    	Object updatedObj = row.get("Last Updated");
+
+	    	if (updatedObj == null) {
+	    	    System.out.println("Available Columns : " + row.keySet());
+	    	    throw new RuntimeException("Column 'Last Updated' not found in Excel.");
+	    	}
+
+	    	String updated = updatedObj.toString().trim();
+
+	        Date updatedDate = excelFormat.parse(updated);
+
+	        if (updatedDate.before(startDate) ||
+	                updatedDate.after(inclusiveEndDate)) {
+
+	            System.out.println("❌ Last Updated Out of Range : " + updated);
+	            invalidFound = true;
+	        }
+
+	        // Verify Created At
+	        Object createdObj = row.get("Created At");
+
+	        if (createdObj == null) {
+	            System.out.println("Available Columns : " + row.keySet());
+	            throw new RuntimeException("Column 'Created At' not found in Excel.");
+	        }
+
+	        String created = createdObj.toString().trim();
+
+	        Date createdDate = excelFormat.parse(created);
+
+	        if (createdDate.before(startDate) ||
+	                createdDate.after(inclusiveEndDate)) {
+
+	            System.out.println("❌ Created At Out of Range : " + created);
+	            invalidFound = true;
+	        }
+	    }
+
+	    if (invalidFound) {
+
+	        Assert.fail("❌ Export contains dates outside selected range : "
+	                + dateRange);
+
+	    } else {
+
+	        System.out.println("✅ All Last Updated dates are within range.");
+	        System.out.println("✅ All Created At dates are within range.");
+	    }
+	}
+	
+	
 //TC-01	
 	public void validateRawMaterialCreation() throws InterruptedException {
 		
@@ -699,10 +1458,32 @@ public class Raw_Material_Page extends Raw_Material_ObjRepo {
 		
 	}
 	
+//TC-05
+	public void validateImportFunctionalty() throws Exception {
+		
+		adminLogin();
+		
+		verifyRawmaterialImportFlow();
+		
+		verifyImportPreviewAndStartImport();
+		
+		validateImportedRawMaterialData();
+		
+	}
 	
 	
+//TC-06
 	
-	
+	public void validateExportFunctionalty() throws Exception {
+		
+		adminLogin();
+
+		exportRawMaterialLast7Days();
+		
+		downloadExportHistory();
+		
+		verifyExportedRawMaterialDates();
+	}
 	
 	
 	

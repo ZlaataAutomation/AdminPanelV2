@@ -1,12 +1,7 @@
 package pages;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 
@@ -20,12 +15,26 @@ import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import objectRepo.Vendor_ObjRepo;
+import utils.Common;
 
-import objectRepo.Supplier_ObjRepo;
+public class Vendor_Page extends Vendor_ObjRepo {
+	
+	public Vendor_Page(WebDriver driver) 
+	{
+		this.driver = driver;
+		this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+		PageFactory.initElements(this.driver, this);
+	}
+	
+	public void adminLogin() {
+	
+	AdminLogin_Page login= new AdminLogin_Page(driver);
+	login.adminLoginApp();
+	
+	}
 
-public class Supplier_Page extends Supplier_ObjRepo {
-
-    // --- ANSI Color Constants for Console Output ---
+	// --- ANSI Color Constants for Console Output ---
     public static final String RESET = "\u001B[0m";
     public static final String RED = "\u001B[31m";
     public static final String GREEN = "\u001B[32m";
@@ -48,16 +57,6 @@ public class Supplier_Page extends Supplier_ObjRepo {
     public String selectedSupplierTypeText;
     public String selectedTagText;
 
-    public Supplier_Page(WebDriver driver) {
-        this.driver = driver;
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-        PageFactory.initElements(this.driver, this);
-    }
-
-    public void adminLogin() {
-        AdminLogin_Page login = new AdminLogin_Page(driver);
-        login.adminLoginApp();
-    }
 
     private void pause(long millis) {
         try {
@@ -89,26 +88,34 @@ public class Supplier_Page extends Supplier_ObjRepo {
         System.out.println("\n" + YELLOW + BOLD + "============ " + message + " ============" + RESET);
     }
 
-    public void navigatetoSupplierPage() {
-        wait.until(ExpectedConditions.visibilityOf(inventory));
-        new Actions(driver).moveToElement(inventory).perform();
 
-        wait.until(ExpectedConditions.visibilityOf(Supplier));
-        click(Supplier);
-    }
+    public void verifyCreatedNewVendor() {
+    	
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+        Actions actions = new Actions(driver);
+       	    
+       	    // Hover on Inventory
+       	    WebElement inventory = wait.until(ExpectedConditions.visibilityOfElementLocated(
+       	            By.xpath("//button[contains(@class,'sidebar_menu_btn')]//span[normalize-space()='Inventory']")));
+       	    actions.moveToElement(inventory).perform();
 
-    public void createNewSupplier() {
+       	    // Click supplier 
+       	    WebElement supplier = wait.until(ExpectedConditions.elementToBeClickable(
+       	            By.xpath("(//li[normalize-space()='Vendor'])[1]")));
+       	 supplier.click();
+
+       	    Common.waitForElement(2);
         Random random = new Random();
 
         // Generate Random Data
-        generatedCompanyName = "Supplier_" + UUID.randomUUID().toString().substring(0, 8);
+        generatedCompanyName = "Vendor_" + UUID.randomUUID().toString().substring(0, 8);
         generatedCompanyEmail = "company" + random.nextInt(100000) + "@gmail.com";
         generatedcompanyNumber = "9" + (100000000 + random.nextInt(900000000));
         generatedContactName = "Contact_" + random.nextInt(10000);
         generatedContactEmail = "contact" + random.nextInt(100000) + "@gmail.com";
         generatedPhoneNumber = "9" + (100000000 + random.nextInt(900000000));
 
-        logHeader("Generated Supplier Test Data");
+        logHeader("Generated Vendor Test Data");
         logAction("Company Name  : " + BLUE + generatedCompanyName + RESET);
         logAction("Company Email : " + BLUE + generatedCompanyEmail + RESET);
         logAction("Company Phone Number  : " + BLUE + generatedcompanyNumber + RESET);
@@ -116,10 +123,10 @@ public class Supplier_Page extends Supplier_ObjRepo {
         logAction("Contact Email : " + BLUE + generatedContactEmail + RESET);
         logAction("Phone Number  : " + BLUE + generatedPhoneNumber + RESET);
 
-        // Click Create Supplier
-        wait.until(ExpectedConditions.elementToBeClickable(createSupplierbtn));
-        click(createSupplierbtn);
-        logAction("Clicked on Create Supplier button");
+        // Click Create Vendor
+        wait.until(ExpectedConditions.elementToBeClickable(createvendorbtn));
+        click(createvendorbtn);
+        logAction("Clicked on Create Vendor button");
         actionPause();
 
         // Company Name
@@ -129,12 +136,12 @@ public class Supplier_Page extends Supplier_ObjRepo {
         actionPause();
         
 
-        // Supplier Type
+        // Vendor Type
         wait.until(ExpectedConditions.elementToBeClickable(supplierTypeDropdwon));
         Select supplierType = new Select(supplierTypeDropdwon);
         supplierType.selectByIndex(1);
         selectedSupplierTypeText = supplierType.getFirstSelectedOption().getText().trim();
-        logAction("Selected Supplier Type : " + selectedSupplierTypeText);
+        logAction("Selected Vendor Type : " + selectedSupplierTypeText);
         actionPause();
 
         // Company Email
@@ -174,7 +181,7 @@ public class Supplier_Page extends Supplier_ObjRepo {
         logAction("Clicked Save & Next button");
     }
 
-    public void addSupplierAddressDetails() {
+    public void addVendorAddressDetails() {
         type(AddressLine1, "Riverview Street");
         logAction("Entered Address Line 1 : Riverview Street");
         actionPause();
@@ -277,8 +284,8 @@ public class Supplier_Page extends Supplier_ObjRepo {
     }
 
     
-    public boolean verifySupplierDetailsInListingTable() {
-        logHeader("STARTING SUPPLIER LISTING TABLE VERIFICATION");
+    public boolean verifyVendorDetailsInListingTable() {
+        logHeader("STARTING Vendor LISTING TABLE VERIFICATION");
 
         // Wait explicitly for table row to render
         By firstRowXPath = By.xpath("//tbody/tr[1]");
@@ -327,12 +334,10 @@ public class Supplier_Page extends Supplier_ObjRepo {
         }
 
         if (isSupplierTypeMatching) {
-            logSuccess("Supplier Type Matched --> Expected: [" + expectedTypeToCompare + "] | Actual: [" + actualSupplierType + "]");
+            logSuccess("Vendor Type Matched --> Expected: [" + expectedTypeToCompare + "] | Actual: [" + actualSupplierType + "]");
         } else {
-            logFailure("Supplier Type Mismatch --> Expected: [" + expectedTypeToCompare + "] | Actual: [" + actualSupplierType + "]");
+            logFailure("Vendor Type Mismatch --> Expected: [" + expectedTypeToCompare + "] | Actual: [" + actualSupplierType + "]");
             allMatched = false;
-            
-            
         }
 
         // 3. Verify Email (Column 4)
@@ -382,16 +387,16 @@ public class Supplier_Page extends Supplier_ObjRepo {
         pause(1500);
 
         if (allMatched) {
-            logSuccess("ALL SUPPLIER DETAILS VERIFIED SUCCESSFULLY ON THE LISTING PAGE!");
+            logSuccess("ALL Vendor DETAILS VERIFIED SUCCESSFULLY ON THE LISTING PAGE!");
         } else {
-            logFailure("❌ ONE OR MORE SUPPLIER DETAILS DID NOT MATCH THE LISTING PAGE!");
+            logFailure("❌ ONE OR MORE Vendor DETAILS DID NOT MATCH THE LISTING PAGE!");
         }
 
         return allMatched;
     }
     
     
-    public boolean verifySupplierDetailsInPreviewPage() {
+    public boolean verifyVendorDetailsInPreviewPage() {
         logHeader("NAVIGATING TO PREVIEW PAGE");
 
         wait.until(ExpectedConditions.elementToBeClickable(threeBotbtn));
@@ -492,16 +497,13 @@ public class Supplier_Page extends Supplier_ObjRepo {
         pause(1500);
 
         if (allMatched) {
-            logSuccess("🎉 ALL SUPPLIER DETAILS VERIFIED SUCCESSFULLY ON PREVIEW PAGE!");
+            logSuccess("🎉 ALL VENDOR DETAILS VERIFIED SUCCESSFULLY ON PREVIEW PAGE!");
         } else {
-            logFailure("❌ ONE OR MORE SUPPLIER DETAILS DID NOT MATCH ON PREVIEW PAGE!");
+            logFailure("❌ ONE OR MORE VENDOR DETAILS DID NOT MATCH ON PREVIEW PAGE!");
         }
 		return allMatched;
     }  
-      
-    
- 
-    
+
     private String listingCompanyName;
     private String listingSupplierType;
     private String listingCompanyEmail;
@@ -543,7 +545,23 @@ public class Supplier_Page extends Supplier_ObjRepo {
         }
     }
     public void captureListingDetailsAndGoToPreview() {
-        logHeader("CAPTURING SUPPLIER DETAILS FROM LISTING TABLE BEFORE PREVIEW");
+    	
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+        Actions actions = new Actions(driver);
+       	    
+       	    // Hover on Inventory
+       	    WebElement inventory = wait.until(ExpectedConditions.visibilityOfElementLocated(
+       	            By.xpath("//button[contains(@class,'sidebar_menu_btn')]//span[normalize-space()='Inventory']")));
+       	    actions.moveToElement(inventory).perform();
+
+       	    // Click supplier 
+       	    WebElement supplier = wait.until(ExpectedConditions.elementToBeClickable(
+       	            By.xpath("(//li[normalize-space()='Vendor'])[1]")));
+       	 supplier.click();
+
+       	    Common.waitForElement(2);
+    	
+        logHeader("CAPTURING Vendor DETAILS FROM LISTING TABLE BEFORE PREVIEW");
 
         By firstRowXPath = By.xpath("//tbody/tr[1]");
         wait.until(ExpectedConditions.visibilityOfElementLocated(firstRowXPath));
@@ -560,7 +578,7 @@ public class Supplier_Page extends Supplier_ObjRepo {
         selectedSupplierTypeText = listingSupplierType;
 
         logAction("Captured Listing Company Name  : " + BLUE + listingCompanyName + RESET);
-        logAction("Captured Listing Supplier Type : " + BLUE + listingSupplierType + RESET);
+        logAction("Captured Listing Vendor Type : " + BLUE + listingSupplierType + RESET);
         logAction("Captured Listing Company Email : " + BLUE + listingCompanyEmail + RESET);
         logAction("Captured Listing Tag           : " + BLUE + listingTag + RESET);
         logAction("Captured Listing Phone Number  : " + BLUE + listingPhoneNumber + RESET);
@@ -580,7 +598,7 @@ public class Supplier_Page extends Supplier_ObjRepo {
     }
 
     public void fetchExistingSupplierDetailsFromPreview() {
-        logHeader("READING EXISTING SUPPLIER DETAILS FROM PREVIEW");
+        logHeader("READING EXISTING VENDOR DETAILS FROM PREVIEW");
 
         wait.until(ExpectedConditions.visibilityOf(previewContactName));
 
@@ -624,7 +642,7 @@ public class Supplier_Page extends Supplier_ObjRepo {
         actionPause();
     }
 
-    public void openEditSupplierForm() {
+    public void openEditVendorForm() {
         wait.until(ExpectedConditions.elementToBeClickable(threeBotbtn));
         click(threeBotbtn);
         logAction("Clicked 3-Dots Action Button for Edit");
@@ -636,11 +654,11 @@ public class Supplier_Page extends Supplier_ObjRepo {
         actionPause();
     }
 
-    public void updateBasicSupplierDetails() {
+    public void updateBasicVendorDetails() {
         Random random = new Random();
 
         // Generate data values
-        updatedCompanyName   = "Supplier_Edit_" + UUID.randomUUID().toString().substring(0, 8);
+        updatedCompanyName   = "Vendor_Edit_" + UUID.randomUUID().toString().substring(0, 8);
         updatedCompanyEmail  = "company_edit" + random.nextInt(100000) + "@gmail.com";
         generatedcompanyNumber = "9" + (100000000 + random.nextInt(900000000));
         updatedContactName   = "Contact_Edit_" + random.nextInt(10000);
@@ -654,7 +672,7 @@ public class Supplier_Page extends Supplier_ObjRepo {
         generatedContactEmail = updatedContactEmail;
         generatedPhoneNumber  = updatedPhoneNumber;
 
-        logHeader("GENERATING & ENTERING UPDATED BASIC SUPPLIER DETAILS");
+        logHeader("GENERATING & ENTERING UPDATED BASIC VENDOR DETAILS");
 
         // Edit Company Name
         wait.until(ExpectedConditions.visibilityOf(companyName));
@@ -805,11 +823,6 @@ public class Supplier_Page extends Supplier_ObjRepo {
         actionPause();
     }
    
-
-    
-    //
-    
-    
  // Instance Variables to Store Generated Preview Pop-up Values
     private String popupGenContactName;
     private String popupGenContactEmail;
@@ -824,8 +837,24 @@ public class Supplier_Page extends Supplier_ObjRepo {
     // TC-03 BUSINESS LOGIC METHODS
     // ==========================================
 
-    public void navigateToSupplierPreviewPage() {
-        logHeader("NAVIGATING TO SUPPLIER PREVIEW PAGE");
+    public void navigateToVendorPreviewPage() {
+    	
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+        Actions actions = new Actions(driver);
+       	    
+       	    // Hover on Inventory
+       	    WebElement inventory = wait.until(ExpectedConditions.visibilityOfElementLocated(
+       	            By.xpath("//button[contains(@class,'sidebar_menu_btn')]//span[normalize-space()='Inventory']")));
+       	    actions.moveToElement(inventory).perform();
+
+       	    // Click supplier 
+       	    WebElement supplier = wait.until(ExpectedConditions.elementToBeClickable(
+       	            By.xpath("(//li[normalize-space()='Vendor'])[1]")));
+       	 supplier.click();
+
+       	    Common.waitForElement(2);
+       	    
+        logHeader("NAVIGATING TO VENDOR PREVIEW PAGE");
 
         // 1. Ensure table row is present and visible
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//tbody/tr[1]")));
@@ -1025,23 +1054,19 @@ public class Supplier_Page extends Supplier_ObjRepo {
             return driver.findElement(fallback).getText().trim();
         }
     }
-    
-    
-    
- // Stores status strings for comparison and logging
+	
+    // TC-04
+    // Stores status strings for comparison and logging
     private String statusAfterFirstToggle;
     private String statusAfterSecondToggle;
-
-
-    // TC-04
     public void toggleSupplierStatusFromPreview() {
         // 1. Navigate to Preview Page
-        navigateToSupplierPreviewPage();
-
+        navigateToVendorPreviewPage();
+        
         // 2. Click Preview 3-Dots Menu & Click "Mark as Inactive"
         clickPreviewThreeDotsAndOption();
         actionPause();
-
+        Common.waitForElement(2);
         // 3. Capture Status after 1st toggle
         wait.until(ExpectedConditions.visibilityOf(supplierStatusText));
         statusAfterFirstToggle = supplierStatusText.getText().trim();
@@ -1064,14 +1089,15 @@ public class Supplier_Page extends Supplier_ObjRepo {
         wait.until(ExpectedConditions.elementToBeClickable(previewThreedot));
         js.executeScript("arguments[0].click();", previewThreedot);
         logAction("Clicked Preview 3-Dots Action Button");
-
+        Common.waitForElement(2);
         wait.until(ExpectedConditions.elementToBeClickable(markAsInactivebtn));
         js.executeScript("arguments[0].click();", markAsInactivebtn);
         logAction("Clicked Status Action Button ('Mark as Inactive / Active')");
+        Common.waitForElement(2);
     }
 
     public boolean verifySupplierStatusToggle() {
-        logHeader("VERIFYING SUPPLIER STATUS TOGGLE ON PREVIEW PAGE");
+        logHeader("VERIFYING VENDOR STATUS TOGGLE ON PREVIEW PAGE");
 
         boolean isFirstToggleSuccess = statusAfterFirstToggle.equalsIgnoreCase("Inactive");
         
@@ -1088,10 +1114,6 @@ public class Supplier_Page extends Supplier_ObjRepo {
 
         return isFirstToggleSuccess;
     }
-
-    
-    
-    
     private String deletedSupplierId;
     private String deletedSupplierName;
     private boolean isSupplierPresentAfterCancel;
@@ -1100,7 +1122,22 @@ public class Supplier_Page extends Supplier_ObjRepo {
     // TC-05 BUSINESS LOGIC METHODS
     // ==========================================
     public void deleteSupplierWithCancelAndConfirm() {
-        logHeader("DELETING EXISTING SUPPLIER (WITH CANCEL VERIFICATION)");
+    	
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+        Actions actions = new Actions(driver);
+       	    
+       	    // Hover on Inventory
+       	    WebElement inventory = wait.until(ExpectedConditions.visibilityOfElementLocated(
+       	            By.xpath("//button[contains(@class,'sidebar_menu_btn')]//span[normalize-space()='Inventory']")));
+       	    actions.moveToElement(inventory).perform();
+
+       	    // Click supplier 
+       	    WebElement supplier = wait.until(ExpectedConditions.elementToBeClickable(
+       	            By.xpath("(//li[normalize-space()='Vendor'])[1]")));
+       	 supplier.click();
+
+       	    Common.waitForElement(2);
+        logHeader("DELETING EXISTING VENDOR (WITH CANCEL VERIFICATION)");
 
         JavascriptExecutor js = (JavascriptExecutor) driver;
 
@@ -1160,24 +1197,25 @@ public class Supplier_Page extends Supplier_ObjRepo {
         wait.until(ExpectedConditions.elementToBeClickable(deletePopUpconfirmbtn));
         js.executeScript("arguments[0].click();", deletePopUpconfirmbtn);
         logAction("Clicked 'Confirm Delete' Button in Popup");
+        Common.waitForElement(3);
         pause(2000); // Wait for DOM table to refresh post-deletion
     }
 
     public boolean verifySupplierDeletion() {
-        logHeader("VERIFYING SUPPLIER DELETION ON LISTING PAGE");
+        logHeader("VERIFYING VENDOR DELETION ON LISTING PAGE");
 
         if (!isSupplierPresentAfterCancel) {
-            logFailure("Cancel check failed previously: Supplier was unexpectedly removed when clicking Cancel!");
+            logFailure("Cancel check failed previously: Vendor was unexpectedly removed when clicking Cancel!");
         }
 
         boolean isSupplierStillPresent = isTextPresentOnPage(deletedSupplierId);
 
         if (!isSupplierStillPresent) {
-            logSuccess(String.format("%-28s Matched --> Supplier ID: [%s] | Found on Page: [NO LONGER DISPLAYED]", 
+            logSuccess(String.format("%-28s Matched --> Vendor ID: [%s] | Found on Page: [NO LONGER DISPLAYED]", 
                     "Verify Deletion", deletedSupplierId));
             return true;
         } else {
-            logFailure(String.format("%-28s Mismatch --> Supplier ID: [%s] | Found on Page: [STILL DISPLAYED]", 
+            logFailure(String.format("%-28s Mismatch --> Vendor ID: [%s] | Found on Page: [STILL DISPLAYED]", 
                     "Verify Deletion", deletedSupplierId));
             return false;
         }
@@ -1193,711 +1231,89 @@ public class Supplier_Page extends Supplier_ObjRepo {
     }
     
     
-    
-    
-    
-    
-    
-    
-    
-    //TC-06
-    
-    public void clickSaveAndNextWithoutMandatoryFields() {
+    //TC-01
+    public void validateVendorCreationPage() {
     	
-    	wait.until(ExpectedConditions.elementToBeClickable(createSupplierbtn));
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-        js.executeScript("arguments[0].click();", createSupplierbtn);
-        logAction("Clicked 'Create Supplier' Button");
-        actionPause();
-        
-        
-        logHeader("TRIGGERING MANDATORY FIELD VALIDATION");
-        wait.until(ExpectedConditions.elementToBeClickable(saveandNextbtn));
-        js.executeScript("arguments[0].click();", saveandNextbtn);
-        logAction("Clicked 'Save & Next' Button with blank fields");
-        actionPause();
+    	adminLogin();
+    	
+    	verifyCreatedNewVendor();
+    	
+    	addVendorAddressDetails();
+    	
+    	addBankDetails();
+    	
+    	addotherdetails();
+    	    	
     }
-
-    public boolean verifyMandatoryFieldValidationMessages() {
-        logHeader("VERIFYING MANDATORY FIELD VALIDATION MESSAGES");
-
-        // Define mandatory field labels along with their target text & dynamic XPaths directly in the method
-        Map<String, String> mandatoryValidations = new LinkedHashMap<>();
-        mandatoryValidations.put("Company Name Validation", "(//span[normalize-space()='Company name is required'])[1]");
-        mandatoryValidations.put("Supplier Type Validation", "(//span[normalize-space()='Please select a supplier type'])[1]");
-        mandatoryValidations.put("Tags Validation", "(//span[normalize-space()='Please select at least one tag'])[1]");
-        mandatoryValidations.put("Contact Name Validation", "(//span[normalize-space()='Contact name is required'])[1]");
-
-        boolean allPassed = true;
-
-        for (Map.Entry<String, String> entry : mandatoryValidations.entrySet()) {
-            String fieldLabel = entry.getKey();
-            String xpath = entry.getValue();
-
-            boolean isFound = checkValidationMessageInline(fieldLabel, xpath);
-            if (!isFound) {
-                allPassed = false;
-            }
-        }
-
-        return allPassed;
-    }
-
-
-    private boolean checkValidationMessageInline(String fieldLabel, String xpath) {
-        try {
-            WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(5));
-            
-            WebElement validationElement = shortWait.until(
-                ExpectedConditions.visibilityOfElementLocated(By.xpath(xpath))
-            );
-
-            if (validationElement != null && validationElement.isDisplayed()) {
-                String actualText = validationElement.getText().trim();
-                logSuccess(String.format("%-28s Matched --> Expected: [%s] | Found on Page: [%s]", 
-                        fieldLabel, actualText, actualText));
-                return true;
-            }
-        } catch (Exception e) {
-            // Exception caught if element is missing/not displayed
-        }
-
-        logFailure(String.format("%-28s Mismatch --> Expected validation message NOT DISPLAYED on page", fieldLabel));
-        return false;
-    }
+	
+//TC-02
     
-    
-	 // ==========================================
-	 // STEP 1: FILL RANDOM MANDATORY VALUES & PROCEED
-	 // ==========================================
-	 public void fillStep1MandatoryFieldsAndSave() {
-	     logHeader("FILLING STEP 1 MANDATORY FIELDS WITH RANDOM DATA");
-	
-	     JavascriptExecutor js = (JavascriptExecutor) driver;
-	     Random random = new Random();
-	
-	     // 1. Enter Random Company Name
-	     String randomCompany = "Company_" + System.currentTimeMillis();
-	     wait.until(ExpectedConditions.visibilityOf(companyName));
-	     companyName.clear();
-	     companyName.sendKeys(randomCompany);
-	     logAction("Entered Company Name: " + BLUE + randomCompany + RESET);
-	
-	     // 2. Select Random Supplier Type (values 1 to 5)
-	     int randomTypeVal = random.nextInt(5) + 1; // Generates 1 to 5
-	     Select selectType = new Select(supplierTypeDropdwon);
-	     selectType.selectByValue(String.valueOf(randomTypeVal));
-	     logAction("Selected Supplier Type Value: " + BLUE + randomTypeVal + RESET);
-	
-	     // 3. Select Random Tag Checkbox
-	     wait.until(ExpectedConditions.elementToBeClickable(tagDropdwon));
-	     js.executeScript("arguments[0].click();", tagDropdwon);
-	     actionPause();
-	
-	     int randomTagIndex = random.nextInt(5) + 1; // Selects checkbox 1 to 5
-	     String tagXpath = String.format("(//input[@type='checkbox'])[%d]", randomTagIndex);
-	     try {
-	         WebElement tagCheckbox = driver.findElement(By.xpath(tagXpath));
-	         if (!tagCheckbox.isSelected()) {
-	             js.executeScript("arguments[0].click();", tagCheckbox);
-	         }
-	         logAction("Selected Tag Checkbox Index: " + BLUE + randomTagIndex + RESET);
-	     } catch (Exception e) {
-	         logAction("Tag index " + randomTagIndex + " not clickable, picking first available tag");
-	         WebElement defaultTag = driver.findElement(By.xpath("(//input[@type='checkbox'])[1]"));
-	         js.executeScript("arguments[0].click();", defaultTag);
-	     }
-	
-	     // Close tag dropdown if needed
-	     js.executeScript("arguments[0].click();", tagDropdwon);
-	
-	     // 4. Enter Random Contact Name
-	     String randomContact = "Contact_" + (random.nextInt(9000) + 1000);
-	     wait.until(ExpectedConditions.visibilityOf(contactName));
-	     contactName.clear();
-	     contactName.sendKeys(randomContact);
-	     logAction("Entered Contact Name: " + BLUE + randomContact + RESET);
-	
-	     // 5. Click Save & Next
-	     wait.until(ExpectedConditions.elementToBeClickable(saveandNextbtn));
-	     js.executeScript("arguments[0].click();", saveandNextbtn);
-	     logAction("Clicked 'Save & Next' Button on Step 1");
-	     actionPause();
-	 }
-	
-	 // ==========================================
-	 // STEP 2: ADDRESS VALIDATIONS & SUBMISSION
-	 // ==========================================
-
-	 public boolean verifyAndFillStep2AddressDetails() {
-	     logHeader("VERIFYING STEP 2 ADDRESS MANDATORY ERRORS & FILLING DETAILS");
-	
-	     JavascriptExecutor js = (JavascriptExecutor) driver;
-	
-	     // --- PHASE 1: Click Save & Next with completely blank address fields ---
-	     wait.until(ExpectedConditions.elementToBeClickable(saveandNextbtn));
-	     js.executeScript("arguments[0].click();", saveandNextbtn);
-	     logAction("Clicked 'Save & Next' with blank address fields");
-	     actionPause();
-	
-	     // Verify initial mandatory address error messages
-	     String initialAddrErrXpath = "(//span[contains(@class,'ajax-error')][normalize-space()='Address is required'])[1]";
-	     boolean initialErrorDisplayed = checkInlineValidationError("Initial Address Validation", initialAddrErrXpath);
-	
-	     if (!initialErrorDisplayed) {
-	         logFailure("Initial address validation messages were not displayed on Step 2!");
-	         return false;
-	     }
-	
-	     // --- PHASE 2: Enter Registered Address 1 & 2 without checking sameAddressCheckbox ---
-	     wait.until(ExpectedConditions.visibilityOf(AddressLine1));
-	     AddressLine1.clear();
-	     AddressLine1.sendKeys("123 Business Avenue, Suite 100");
-	
-	     wait.until(ExpectedConditions.visibilityOf(AddressLine2));
-	     AddressLine2.clear();
-	     AddressLine2.sendKeys("Tech Park, Sector 5");
-	     logAction("Entered Registered Address Line 1 and Line 2 (Same Address Checkbox NOT clicked)");
-	
-	     // Click Save & Next again (Billing address should throw validation errors)
-	     js.executeScript("arguments[0].click();", saveandNextbtn);
-	     logAction("Clicked 'Save & Next' without checking 'Same Address'");
-	     actionPause();
-	
-	     // Verify billing address mandatory validation error messages
-	     String billingAddrErrXpath = "(//span[contains(@class,'ajax-error')][normalize-space()='Address is required'])[1]";
-	     boolean billingErrorDisplayed = checkInlineValidationError("Unchecked Same Address Validation", billingAddrErrXpath);
-	
-	     if (!billingErrorDisplayed) {
-	         logFailure("Billing address validation messages were not displayed when 'Same Address' was unchecked!");
-	         return false;
-	     }
-	
-	     // --- PHASE 3: Check sameAddressCheckbox and click Save & Next ---
-	     wait.until(ExpectedConditions.elementToBeClickable(sameAddressCheckbox));
-	     if (!sameAddressCheckbox.isSelected()) {
-	         js.executeScript("arguments[0].click();", sameAddressCheckbox);
-	         logAction("Clicked 'Same Address' Checkbox");
-	     }
-	
-	     js.executeScript("arguments[0].click();", saveandNextbtn);
-	     logAction("Clicked 'Save & Next' Button to complete Step 2");
-	     actionPause();
-	
-	     return true;
-	 }
-	
-
-	 private boolean checkInlineValidationError(String label, String xpath) {
-	     try {
-	         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(5));
-	         WebElement errElement = shortWait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(xpath)));
-	         if (errElement != null && errElement.isDisplayed()) {
-	             String actualText = errElement.getText().trim();
-	             logSuccess(String.format("%-28s Matched --> Expected: [%s] | Found on Page: [%s]", 
-	                     label, "Address is required", actualText));
-	             return true;
-	         }
-	     } catch (Exception e) {
-	         // Element not found/visible
-	     }
-	
-	     logFailure(String.format("%-28s Mismatch --> Expected: [Address is required] | NOT DISPLAYED", label));
-	     return false;
-	 }
-	 
-	 
-	 	// ==========================================
-	    // STEP 3: BANK DETAILS VALIDATIONS & SUBMISSION
-	    // ==========================================
-
-	    public boolean verifyAndFillStep3BankDetails() {
-	        logHeader("VERIFYING STEP 3 BANK DETAILS MANDATORY ERRORS & FILLING DETAILS");
-
-	        JavascriptExecutor js = (JavascriptExecutor) driver;
-
-	        // --- PHASE 1: Click Save & Next with completely blank bank fields ---
-	        wait.until(ExpectedConditions.elementToBeClickable(saveandNextbtn));
-	        js.executeScript("arguments[0].click();", saveandNextbtn);
-	        logAction("Clicked 'Save & Next' with blank bank details fields");
-	        actionPause();
-
-	        // --- PHASE 2: Verify Bank Validation Error Messages ---
-	        logHeader("VERIFYING BANK MANDATORY FIELD VALIDATION MESSAGES");
-
-	        Map<String, String> bankValidations = new LinkedHashMap<>();
-	        bankValidations.put("Account Holder Name Validation", "(//span[normalize-space()='Account holder name is required'])[1]");
-	        bankValidations.put("Bank Selection Validation", "(//span[normalize-space()='Please select a bank'])[1]");
-	        bankValidations.put("Account Number Validation", "(//span[normalize-space()='Account number is required'])[1]");
-	        bankValidations.put("IFSC Code Validation", "(//span[normalize-space()='IFSC code is required'])[1]");
-
-	        boolean allValidationsPassed = true;
-
-	        for (Map.Entry<String, String> entry : bankValidations.entrySet()) {
-	            String label = entry.getKey();
-	            String xpath = entry.getValue();
-
-	            boolean isFound = checkValidationMessageInline(label, xpath);
-	            if (!isFound) {
-	                allValidationsPassed = false;
-	            }
-	        }
-
-	        if (!allValidationsPassed) {
-	            logFailure("One or more Bank validation error messages were missing!");
-	            return false;
-	        }
-
-	        // --- PHASE 3: Generate and Fill Bank Details ---
-	        Random random = new Random();
-
-	        generatedAccountHolderName = "AccountHolder_" + UUID.randomUUID().toString().substring(0, 6);
-	        generatedAccountNumber = String.valueOf(1000000000000000L + (long)(random.nextDouble() * 9000000000000000L));
-	        generatedBankName = "State Bank of India";
-	        generatedIfscCode = "SBIN0008888";
-
-	        logHeader("Generated Bank Details");
-	        logAction("Account Holder : " + BLUE + generatedAccountHolderName + RESET);
-	        logAction("Account Number : " + BLUE + generatedAccountNumber + RESET);
-	        logAction("Bank Name      : " + BLUE + generatedBankName + RESET);
-	        logAction("IFSC Code      : " + BLUE + generatedIfscCode + RESET);
-
-	        // 1. Account Holder
-	        type(accountHolderName, generatedAccountHolderName);
-	        logAction("Entered Account Holder Name");
-	        actionPause();
-
-	        // 2. Click Dropdown trigger
-	        wait.until(ExpectedConditions.elementToBeClickable(bankNamedropdown)).click();
-	        logAction("Clicked Bank Dropdown");
-	        actionPause();
-
-	        // 3. Type into search field
-	        type(bankNamedropdown, generatedBankName);
-	        actionPause();
-
-	        // 4. Select Option with fallbacks
-	        try {
-	            wait.until(ExpectedConditions.elementToBeClickable(stateBankOfIndiaOption)).click();
-	        } catch (Exception e) {
-	            try {
-	                js.executeScript("arguments[0].click();", stateBankOfIndiaOption);
-	            } catch (Exception ex) {
-	                bankNamedropdown.sendKeys(Keys.ENTER);
-	            }
-	        }
-	        logAction("Selected Bank from Dropdown");
-	        actionPause();
-
-	        // 5. Account Number & IFSC details
-	        type(accountNumber, generatedAccountNumber);
-	        logAction("Entered Account Number");
-	        actionPause();
-
-	        type(reEnterAccNumber, generatedAccountNumber);
-	        logAction("Re-entered Account Number");
-	        actionPause();
-
-	        type(ifscCode, generatedIfscCode);
-	        logAction("Entered IFSC Code");
-	        actionPause();
-
-	        // --- PHASE 4: Navigation button with scroll & JS click fallback ---
-	        try {
-	            js.executeScript("arguments[0].scrollIntoView({block: 'center'});", saveandNextbtn);
-	            actionPause();
-	            wait.until(ExpectedConditions.elementToBeClickable(saveandNextbtn)).click();
-	        } catch (Exception e) {
-	            js.executeScript("arguments[0].click();", saveandNextbtn);
-	        }
-	        logAction("Clicked Save & Next button from Bank Page");
-	        actionPause();
-
-	        return true;
-	    }
-
-
-
-	 //TC-07
-	public List<Map<String, String>> addedContactsList = new ArrayList<>();
-	public List<Map<String, String>> addedBankAccountsList = new ArrayList<>();
-	    
-	public void createNewSupplierWithMultipleContacts() {
-	    JavascriptExecutor js = (JavascriptExecutor) driver;
-	    Random random = new Random();
-	
-	    // Reset list before running
-	    addedContactsList.clear();
-	
-	    // 1. Generate Main Supplier Data
-	    generatedCompanyName = "Supplier_" + UUID.randomUUID().toString().substring(0, 8);
-	    generatedCompanyEmail = "company" + random.nextInt(100000) + "@gmail.com";
-	    generatedcompanyNumber = "9" + (100000000 + random.nextInt(900000000));
-	
-	    logHeader("Generated Supplier Basic Data");
-	    logAction("Company Name  : " + BLUE + generatedCompanyName + RESET);
-	    logAction("Company Email : " + BLUE + generatedCompanyEmail + RESET);
-	    logAction("Company Phone : " + BLUE + generatedcompanyNumber + RESET);
-	
-	    // 2. Open Create Supplier Modal/Page
-	    wait.until(ExpectedConditions.elementToBeClickable(createSupplierbtn));
-	    js.executeScript("arguments[0].click();", createSupplierbtn);
-	    logAction("Clicked 'Create Supplier' button");
-	    actionPause();
-	
-	    // 3. Fill Basic Company Details
-	    wait.until(ExpectedConditions.visibilityOf(companyName));
-	    type(companyName, generatedCompanyName);
-	    logAction("Entered Company Name");
-	
-	    Select supplierType = new Select(supplierTypeDropdwon);
-	    supplierType.selectByIndex(1);
-	    selectedSupplierTypeText = supplierType.getFirstSelectedOption().getText().trim();
-	    logAction("Selected Supplier Type: " + selectedSupplierTypeText);
-	
-	    type(emailId, generatedCompanyEmail);
-	    type(companyNumber, generatedcompanyNumber);
-	    logAction("Entered Company Email & Phone");
-	
-	    // Select Tag
-	    click(tagDropdwon);
-	    actionPause();
-	    click(tagOption);
-	    logAction("Selected Tag");
-	    actionPause();
-	
-	    // 4. Fill Multiple Contacts (Loop for 2 to 3 Contacts)
-	    int totalContactsToAdd = random.nextInt(2) + 2; // Randomly adds 2 or 3 contacts
-	    logHeader("ADDING " + totalContactsToAdd + " CONTACT DETAILS");
-	
-	    for (int i = 1; i <= totalContactsToAdd; i++) {
-	        String contactNameVal = "Contact_" + i + "_" + (random.nextInt(8999) + 1000);
-	        String contactEmailVal = "contact" + i + "_" + random.nextInt(100000) + "@gmail.com";
-	        String contactPhoneVal = "9" + (100000000 + random.nextInt(900000000));
-	
-	        // Save into Class Level List for Preview Page Assertions
-	        Map<String, String> contactMap = new HashMap<>();
-	        contactMap.put("name", contactNameVal);
-	        contactMap.put("email", contactEmailVal);
-	        contactMap.put("phone", contactPhoneVal);
-	        addedContactsList.add(contactMap);
-	
-	        // Dynamic XPaths for Contact Inputs
-	        By nameXpath = By.xpath(String.format("(//input[@placeholder='Enter Name'])[%d]", i));
-	        By emailXpath = By.xpath(String.format("(//input[@name='email[]'])[%d]", i));
-	        By phoneXpath = By.xpath(String.format("(//input[@name='phone[]'])[%d]", i));
-	
-	        // If index > 1, click 'Add Contact' button first
-	        if (i > 1) {
-	            WebElement addContactBtn = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//button[normalize-space()='Add Contact']")));
-	            js.executeScript("arguments[0].click();", addContactBtn);
-	            logAction("Clicked 'Add Contact' button for Contact #" + i);
-	            actionPause();
-	        }
-	
-	        // Locate and scroll to current contact form before filling
-	        WebElement nameElem = wait.until(ExpectedConditions.visibilityOfElementLocated(nameXpath));
-	        js.executeScript("arguments[0].scrollIntoView({block: 'center', behavior: 'smooth'});", nameElem);
-	        actionPause();
-	
-	        type(nameElem, contactNameVal);
-	
-	        WebElement emailElem = driver.findElement(emailXpath);
-	        type(emailElem, contactEmailVal);
-	
-	        WebElement phoneElem = driver.findElement(phoneXpath);
-	        type(phoneElem, contactPhoneVal);
-	
-	        logAction("Filled Contact #" + i + " -> Name: " + BLUE + contactNameVal + RESET + " | Email: " + BLUE + contactEmailVal + RESET + " | Phone: " + BLUE + contactPhoneVal + RESET);
-	        actionPause();
-	    }
-	
-	    // 5. Save & Next to proceed to Step 2
-	    try {
-	        js.executeScript("arguments[0].scrollIntoView({block: 'center', behavior: 'smooth'});", saveandNextbtn);
-	        actionPause();
-	        wait.until(ExpectedConditions.elementToBeClickable(saveandNextbtn)).click();
-	    } catch (Exception e) {
-	        js.executeScript("arguments[0].click();", saveandNextbtn);
-	    }
-	    logAction("Clicked 'Save & Next' on Step 1");
-	    actionPause();
-	}
-
-	
-	public void addMultipleBankDetails() {
-	    JavascriptExecutor js = (JavascriptExecutor) driver;
-	    Random random = new Random();
-	
-	    // Reset list before running
-	    addedBankAccountsList.clear();
-	
-	    logHeader("ADDING MULTIPLE (2) BANK ACCOUNTS");
-	
-	    // ==========================================
-	    // ACCOUNT 1: State Bank of India
-	    // ==========================================
-	    String acc1Holder = "AccountHolder_1_" + UUID.randomUUID().toString().substring(0, 4);
-	    String acc1Num = String.valueOf(1000000000000000L + (long)(random.nextDouble() * 9000000000000000L));
-	    String acc1Bank = "State Bank of India";
-	    String acc1Ifsc = "SBIN0008888";
-	
-	    Map<String, String> bank1Map = new HashMap<>();
-	    bank1Map.put("holder", acc1Holder);
-	    bank1Map.put("accountNumber", acc1Num);
-	    bank1Map.put("bankName", acc1Bank);
-	    bank1Map.put("ifsc", acc1Ifsc);
-	    addedBankAccountsList.add(bank1Map);
-	
-	    logAction("--- Account 1 Details ---");
-	    logAction("Holder: " + BLUE + acc1Holder + RESET + " | Acc #: " + BLUE + acc1Num + RESET + " | Bank: " + BLUE + acc1Bank + RESET);
-	
-	    WebElement acc1HolderElem = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//input[@placeholder='Enter Account Holder Name'])[1]")));
-	    js.executeScript("arguments[0].scrollIntoView({block: 'center', behavior: 'smooth'});", acc1HolderElem);
-	    actionPause();
-	
-	    type(acc1HolderElem, acc1Holder);
-	
-	    WebElement bank1Dropdown = driver.findElement(By.xpath("(//input[@placeholder='Search bank name...'])[1]"));
-	    wait.until(ExpectedConditions.elementToBeClickable(bank1Dropdown)).click();
-	    actionPause();
-	    type(bank1Dropdown, acc1Bank);
-	    actionPause();
-	
-	    By bank1OptionXpath = By.xpath("//li[contains(text(),'State Bank of India')]");
-	    try {
-	        wait.until(ExpectedConditions.elementToBeClickable(bank1OptionXpath)).click();
-	    } catch (Exception e) {
-	        js.executeScript("arguments[0].click();", driver.findElement(bank1OptionXpath));
-	    }
-	    actionPause();
-	
-	    type(driver.findElement(By.xpath("(//input[@name='account_number[]'])[1]")), acc1Num);
-	    type(driver.findElement(By.xpath("(//input[@name='re_account_number[]'])[1]")), acc1Num);
-	    type(driver.findElement(By.xpath("(//input[@placeholder='Enter your IFSC Code'])[1]")), acc1Ifsc);
-	    logAction("Completed filling Bank Account 1");
-	    actionPause();
-	
-	    // Click 'Add bank account' button for Account 2
-	    WebElement addBankBtn = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("(//button[normalize-space()='Add bank account'])[1]")));
-	    js.executeScript("arguments[0].click();", addBankBtn);
-	    logAction("Clicked 'Add bank account' button");
-	    actionPause();
-
-	    String acc2Holder = "AccountHolder_2_" + UUID.randomUUID().toString().substring(0, 4);
-	    String acc2Num = String.valueOf(1000000000000000L + (long)(random.nextDouble() * 9000000000000000L));
-	    String acc2Bank = "ICICI Bank Ltd";
-	    String acc2Ifsc = "ICIC0001234";
-	
-	    Map<String, String> bank2Map = new HashMap<>();
-	    bank2Map.put("holder", acc2Holder);
-	    bank2Map.put("accountNumber", acc2Num);
-	    bank2Map.put("bankName", acc2Bank);
-	    bank2Map.put("ifsc", acc2Ifsc);
-	    addedBankAccountsList.add(bank2Map);
-	
-	    logAction("--- Account 2 Details ---");
-	    logAction("Holder: " + BLUE + acc2Holder + RESET + " | Acc #: " + BLUE + acc2Num + RESET + " | Bank: " + BLUE + acc2Bank + RESET);
-	
-	    WebElement acc2HolderElem = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//input[@placeholder='Enter Account Holder Name'])[2]")));
-	    js.executeScript("arguments[0].scrollIntoView({block: 'center', behavior: 'smooth'});", acc2HolderElem);
-	    actionPause();
-	
-	    type(acc2HolderElem, acc2Holder);
-	
-	    WebElement bank2Dropdown = driver.findElement(By.xpath("(//input[@placeholder='Search bank name...'])[2]"));
-	    wait.until(ExpectedConditions.elementToBeClickable(bank2Dropdown)).click();
-	    actionPause();
-	    type(bank2Dropdown, acc2Bank);
-	    actionPause();
-	
-	    By bank2OptionXpath = By.xpath("//li[contains(text(),'ICICI Bank Ltd')]");
-	    try {
-	        wait.until(ExpectedConditions.elementToBeClickable(bank2OptionXpath)).click();
-	    } catch (Exception e) {
-	        try {
-	            js.executeScript("arguments[0].click();", driver.findElement(bank2OptionXpath));
-	        } catch (Exception ex) {
-	            bank2Dropdown.sendKeys(Keys.ENTER);
-	        }
-	    }
-	    logAction("Selected ICICI Bank Ltd option from dropdown");
-	    actionPause();
-	
-	    type(driver.findElement(By.xpath("(//input[@name='account_number[]'])[2]")), acc2Num);
-	    type(driver.findElement(By.xpath("(//input[@name='re_account_number[]'])[2]")), acc2Num);
-	    type(driver.findElement(By.xpath("(//input[@placeholder='Enter your IFSC Code'])[2]")), acc2Ifsc);
-	    logAction("Completed filling Bank Account 2");
-	    actionPause();
-	
-	    // Save & Next on Bank Page
-		    try {
-		        js.executeScript("arguments[0].scrollIntoView({block: 'center', behavior: 'smooth'});", saveandNextbtn);
-		        actionPause();
-		        wait.until(ExpectedConditions.elementToBeClickable(saveandNextbtn)).click();
-		    } catch (Exception e) {
-		        js.executeScript("arguments[0].click();", saveandNextbtn);
-		    }
-		    logAction("Clicked 'Save & Next' button from Bank Details page");
-		    actionPause();
-		    
-		    
-		    
-		}
-	
-    public boolean verifyAddedMultipleContactAndBankDetailsInPreview() {
-        logHeader("VERIFYING ADDED CONTACT AND BANK DETAILS ON PREVIEW PAGE");
-
-        boolean allMatched = true;
-        pause(1500); // Allow DOM to fully settle after navigating to Preview page
-
-        // =========================================================================
-        // 1. DYNAMIC MULTIPLE CONTACT DETAILS VERIFICATION
-        // =========================================================================
-        if (addedContactsList == null || addedContactsList.isEmpty()) {
-            logFailure("❌ No dynamic contact details found in addedContactsList to verify!");
-            allMatched = false;
-        } else {
-            logAction("Found " + addedContactsList.size() + " contact(s) to verify on Preview Page.");
-            for (int i = 0; i < addedContactsList.size(); i++) {
-                Map<String, String> contact = addedContactsList.get(i);
-                int contactIndex = i + 1;
-
-                logAction("--- Verifying Contact #" + contactIndex + " ---");
-                allMatched &= verifyDynamicValue("Contact #" + contactIndex + " Name",  contact.get("name"));
-                allMatched &= verifyDynamicValue("Contact #" + contactIndex + " Email", contact.get("email"));
-                allMatched &= verifyDynamicValue("Contact #" + contactIndex + " Phone", contact.get("phone"));
-            }
-        }
-
-        // =========================================================================
-        // 2. DYNAMIC MULTIPLE BANK DETAILS VERIFICATION
-        // =========================================================================
-        if (addedBankAccountsList == null || addedBankAccountsList.isEmpty()) {
-            logFailure("❌ No dynamic bank details found in addedBankAccountsList to verify!");
-            allMatched = false;
-        } else {
-            logAction("Found " + addedBankAccountsList.size() + " bank account(s) to verify on Preview Page.");
-            for (int i = 0; i < addedBankAccountsList.size(); i++) {
-                Map<String, String> bank = addedBankAccountsList.get(i);
-                int bankIndex = i + 1;
-
-                logAction("--- Verifying Bank Account #" + bankIndex + " ---");
-                allMatched &= verifyDynamicValue("Bank #" + bankIndex + " Holder",   bank.get("holder"));
-                allMatched &= verifyDynamicValue("Bank #" + bankIndex + " Acc Num",  bank.get("accountNumber"));
-                allMatched &= verifyDynamicValue("Bank #" + bankIndex + " Name",     bank.get("bankName"));
-                allMatched &= verifyDynamicValue("Bank #" + bankIndex + " IFSC",     bank.get("ifsc"));
-            }
-        }
-
-        // Final summary status log
-        if (!allMatched) {
-            logFailure("❌ ONE OR MORE CONTACT/BANK DETAILS DID NOT MATCH ON PREVIEW PAGE!");
-        } else {
-            logSuccess("✅ ALL CONTACT AND BANK DETAILS MATCHED SUCCESSFULLY ON PREVIEW PAGE!");
-        }
-
-        return allMatched;
-    }
-    
-
-    
-    
-    
-    
-    
-    
-    
-
-    // TC-01 Full Flow Execution
-    public void validateCreatenewsupplier() {
-        createNewSupplier();
-        addSupplierAddressDetails();
-        addBankDetails();
-        addotherdetails();
-    }
-    
-    
-    //TC-02 Edit flow
-    public void validateeditSupplier() {
-    	captureListingDetailsAndGoToPreview();
-    	clickPreviewBack();
-    	openEditSupplierForm();
-    	updateBasicSupplierDetails();
-    	updateAddressDetails();
+	public void validateEditVendorDetails() {
+		
+		adminLogin();
+		
+		captureListingDetailsAndGoToPreview();
+		
+		clickPreviewBack();
+		
+		openEditVendorForm();
+		
+		updateBasicVendorDetails();
+		
+		updateAddressDetails();
+		
         updateBankDetails();
+        
         updatePanAndSave();
-    }
-    
-    
-    //TC-03 AddContact - Bank in Preview Page
+		
+	}
+	
+	  //TC-03 AddContact - Bank in Preview Page
     public void validateAddContactAndBank() {
     	adminLogin();
-        navigatetoSupplierPage();
-        navigateToSupplierPreviewPage();
+    	
+    	navigateToVendorPreviewPage();
+        
         addContactDetailsFromPreview();
+        
         addBankDetailsFromPreview();
-    }
-    
-    
-    //TC-SM-04
+    }	
+	
+    //TC-04
     public void validateactiveandInactivestatus() {
     	adminLogin();
-        navigatetoSupplierPage();
+    	        
     	toggleSupplierStatusFromPreview();
-    }
-    
-    
-    //TC-SM-05
-    public void validateDeleteSupplier() {
+    }	
+	
+	
+    //TC-05
+    public void validateDeleteVendor() {
     	adminLogin();
-        navigatetoSupplierPage();
+    	
         deleteSupplierWithCancelAndConfirm();
     }
-    
-    
-    
-    //TC-SM-06
-    public void validateMandatoryFieldsValidation() {
-    	adminLogin();
-        navigatetoSupplierPage();
-        clickSaveAndNextWithoutMandatoryFields();
-    }
-    
-    
-    public void validateMultipleContactAndBankAccount() {
-    	adminLogin();
-        navigatetoSupplierPage();
-        createNewSupplierWithMultipleContacts();
-        addSupplierAddressDetails();
-        addMultipleBankDetails();
-        addotherdetails();
-        navigateToSupplierPreviewPage();
-        System.out.println("Commit");
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+	
+	
+	
+	
+	
+	
+	@Override
+	public boolean verifyExactText(WebElement ele, String expectedText) {
+		// TODO Auto-generated method stub
+		return false;
+	}
 
-    @Override
-    public boolean verifyExactText(WebElement ele, String expectedText) {
-        return false;
-    }
+	@Override
+	public WebDriver gmail(String browserName) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
-    @Override
-    public WebDriver gmail(String browserName) {
-        return null;
-    }
-
-    @Override
-    protected boolean isAt() {
-        return false;
-    }
+	@Override
+	protected boolean isAt() {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }

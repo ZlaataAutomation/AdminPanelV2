@@ -24,7 +24,7 @@ public class Raw_Material_StepDef {
 		public void the_raw_material_should_be_added_successfully_and_displayed_correctly_in_the_raw_material_list_page() {
 		    
 		}
-
+		//TC-02
 			@Given("the admin navigates to the Raw Material module for stock adjust")
 			public void the_admin_navigates_to_the_raw_material_module_for_stock_adjust() {
 				raw.validateRawMaterialStockAdjust();
@@ -38,7 +38,7 @@ public class Raw_Material_StepDef {
 			    
 			}
 
-//TC-02
+//TC-03
 
 				@Given("the admin navigates to the Raw Material module for stock add.")
 				public void the_admin_navigates_to_the_raw_material_module_for_stock_add() {
@@ -53,7 +53,7 @@ public class Raw_Material_StepDef {
 				   
 				}
 
-//TC-03
+//TC-04
 		
 					@Given("the admin navigates to the Raw Material module and click for set low stock")
 					public void the_admin_navigates_to_the_raw_material_module_and_click_for_set_low_stock() {
@@ -68,6 +68,30 @@ public class Raw_Material_StepDef {
 					
 					}
 
+
+//TC-5
+
+						@Given("the admin imports the Raw Material file successfully")
+						public void the_admin_imports_the_raw_material_file_successfully() throws Exception {
+							raw.validateImportFunctionalty();
+						}
+						@Then("the imported Raw Material should be displayed in the list")
+						public void the_imported_raw_material_should_be_displayed_in_the_list() {
+		
+						}
+
+
+
+//TC-06
+
+							@Given("the admin exports the Raw Material for the last {int} days successfully")
+							public void the_admin_exports_the_raw_material_for_the_last_days_successfully(Integer int1) throws Exception {
+								raw.validateExportFunctionalty();
+							}
+							@Then("the exported Raw Material data should be validated")
+							public void the_exported_raw_material_data_should_be_validated() {
+							 
+							}
 
 
 

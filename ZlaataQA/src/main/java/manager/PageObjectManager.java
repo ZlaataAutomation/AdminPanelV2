@@ -21,6 +21,7 @@ public class PageObjectManager {
    private ProductStock_Page productstock;
    private AttributesPage atbs;
    private Supplier_Page supplier;
+   private Vendor_Page vendor;
 
     public PageObjectManager(WebDriver driver) {
         this.driver = driver;
@@ -74,5 +75,7 @@ public class PageObjectManager {
 		return (supplier == null) ? supplier = new Supplier_Page(driver) : supplier;
 	}
 	
-	
+	public Vendor_Page getVendor_Page() {
+		return (vendor == null) ? vendor = new Vendor_Page(driver) : vendor;
+	}
 }
