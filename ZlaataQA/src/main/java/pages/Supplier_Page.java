@@ -1873,7 +1873,6 @@ public class Supplier_Page extends Supplier_ObjRepo {
         addMultipleBankDetails();
         addotherdetails();
         navigateToSupplierPreviewPage();
-        System.out.println("Commit");
     }
     
     
