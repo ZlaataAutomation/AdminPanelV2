@@ -1382,8 +1382,7 @@ public int getNewTotalQuantity() {
     public void validateProductAddStockPage() throws InterruptedException {
         adminLogin();
         selectRandomProductCaptureDetailsClickEditAndPreview();
-        verifyDetailsPageAndClickUpdateStock();
-        
+        verifyDetailsPageAndClickUpdateStock(); 
         addRandomStockInPopup();
         verifyOverallQuantityAfterAdd();
         navigateToStockHistoryAndVerify();
