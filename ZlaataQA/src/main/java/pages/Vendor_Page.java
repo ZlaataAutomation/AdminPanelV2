@@ -111,7 +111,10 @@ public class Vendor_Page extends Vendor_ObjRepo {
         generatedCompanyName = "Vendor_" + UUID.randomUUID().toString().substring(0, 8);
         generatedCompanyEmail = "company" + random.nextInt(100000) + "@gmail.com";
         generatedcompanyNumber = "9" + (100000000 + random.nextInt(900000000));
-        generatedContactName = "Contact_" + random.nextInt(10000);
+        String[] firstNames = {"Alice", "Bob", "Charlie", "Diana", "Ethan", "Fiona", "George", "Hannah"};
+        String[] lastNames = {"Smith", "Johnson", "Brown", "Taylor", "Miller", "Davis", "Wilson"};
+        generatedContactName = firstNames[random.nextInt(firstNames.length)] + 
+                lastNames[random.nextInt(lastNames.length)];
         generatedContactEmail = "contact" + random.nextInt(100000) + "@gmail.com";
         generatedPhoneNumber = "9" + (100000000 + random.nextInt(900000000));
 
@@ -153,15 +156,24 @@ public class Vendor_Page extends Vendor_ObjRepo {
         logAction("Entered Company Phone Number");
         actionPause();
 
-        // Tag
+     // Tag
         click(tagDropdwon);
         logAction("Clicked Tag Dropdown");
         actionPause();
 
-        click(tagOption);
-        selectedTagText = tagOption.getText().trim();
-        logAction("Selected Tag : " + selectedTagText);
-        actionPause();
+        if (!tagOptions.isEmpty()) {
+            Random random1 = new Random();
+            int randomIndex = random1.nextInt(tagOptions.size());
+            
+            WebElement randomTagOption = tagOptions.get(randomIndex);
+            
+            click(randomTagOption);
+            selectedTagText = randomTagOption.getText().trim();
+            logAction("Selected Random Tag: " + selectedTagText);
+            actionPause();
+        } else {
+            logAction("No tag options found in the dropdown!");
+        }
 
         // Contact Details
         type(contactName, generatedContactName);
@@ -661,7 +673,11 @@ public class Vendor_Page extends Vendor_ObjRepo {
         updatedCompanyName   = "Vendor_Edit_" + UUID.randomUUID().toString().substring(0, 8);
         updatedCompanyEmail  = "company_edit" + random.nextInt(100000) + "@gmail.com";
         generatedcompanyNumber = "9" + (100000000 + random.nextInt(900000000));
-        updatedContactName   = "Contact_Edit_" + random.nextInt(10000);
+        String[] firstNames = {"Alice", "Bob", "Charlie", "Diana", "Ethan", "Fiona", "George", "Hannah"};
+        String[] lastNames = {"Smith", "Johnson", "Brown", "Taylor", "Miller", "Davis", "Wilson"};
+        // Pick a random index for both arrays
+        updatedContactName = firstNames[random.nextInt(firstNames.length)] + 
+                                      lastNames[random.nextInt(lastNames.length)];
         updatedContactEmail  = "contact_edit" + random.nextInt(100000) + "@gmail.com";
         updatedPhoneNumber   = "9" + (100000000 + random.nextInt(900000000));
 
@@ -691,17 +707,26 @@ public class Vendor_Page extends Vendor_ObjRepo {
 
         // Edit Tag Selection
         if (isElementPresent(tagDropdwon)) {
-            click(tagDropdwon);
-            logAction("Clicked Tag Dropdown");
-            actionPause();
-
-            if (isElementPresent(tagOption)) {
-                click(tagOption);
-                selectedTagText = tagOption.getText().trim();
-                logAction("Selected Updated Tag        : " + BLUE + selectedTagText + RESET);
+        	if (isElementPresent(tagDropdwon)) {
+                click(tagDropdwon);
+                logAction("Clicked Tag Dropdown");
                 actionPause();
+
+                // Check if the list of options is loaded and not empty
+                if (tagOptions != null && !tagOptions.isEmpty()) {
+                    Random random2 = new Random();
+                    int randomIndex = random2.nextInt(tagOptions.size());
+                    
+                    WebElement randomTagOption = tagOptions.get(randomIndex);
+                    
+                    click(randomTagOption);
+                    selectedTagText = randomTagOption.getText().trim();
+                    logAction("Selected Updated Tag        : " + BLUE + selectedTagText + RESET);
+                    actionPause();
+                } else {
+                    logAction("No tag options found in the dropdown!");
+                }
             }
-        }
 
         // Edit Contact Name
         clearAndSendKeys(contactName, updatedContactName);
@@ -722,6 +747,7 @@ public class Vendor_Page extends Vendor_ObjRepo {
         click(updateAndNext);
         logAction("Clicked Update & Next button from Basic Details Page");
         actionPause();
+        }
     }
 
     public void updateAddressDetails() {
@@ -836,46 +862,67 @@ public class Vendor_Page extends Vendor_ObjRepo {
     // ==========================================
     // TC-03 BUSINESS LOGIC METHODS
     // ==========================================
+    
+    
+    public void navigatetoVendorPage() {
+        wait.until(ExpectedConditions.visibilityOf(inventory));
+        new Actions(driver).moveToElement(inventory).perform();
+
+        wait.until(ExpectedConditions.visibilityOf(Vendors));
+        click(Vendors);
+    	
+        logHeader("NAVIGATING TO VENDOR PREVIEW PAGE");
+    }
 
     public void navigateToVendorPreviewPage() {
-    	
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
-        Actions actions = new Actions(driver);
-       	    
-       	    // Hover on Inventory
-       	    WebElement inventory = wait.until(ExpectedConditions.visibilityOfElementLocated(
-       	            By.xpath("//button[contains(@class,'sidebar_menu_btn')]//span[normalize-space()='Inventory']")));
-       	    actions.moveToElement(inventory).perform();
-
-       	    // Click supplier 
-       	    WebElement supplier = wait.until(ExpectedConditions.elementToBeClickable(
-       	            By.xpath("(//li[normalize-space()='Vendor'])[1]")));
-       	 supplier.click();
-
-       	    Common.waitForElement(2);
-       	    
-        logHeader("NAVIGATING TO VENDOR PREVIEW PAGE");
+//    	
+//        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+//        Actions actions = new Actions(driver);
+//       	    
+//       	    // Hover on Inventory
+//       	    WebElement inventory = wait.until(ExpectedConditions.visibilityOfElementLocated(
+//       	            By.xpath("//button[contains(@class,'sidebar_menu_btn')]//span[normalize-space()='Inventory']")));
+//       	    actions.moveToElement(inventory).perform();
+//
+//       	    // Click supplier 
+//       	    WebElement supplier = wait.until(ExpectedConditions.elementToBeClickable(
+//       	            By.xpath("(//li[normalize-space()='Vendor'])[1]")));
+//       	 supplier.click();
+//
+//       	    Common.waitForElement(2);
+//       	    
+//        logHeader("NAVIGATING TO VENDOR PREVIEW PAGE");
 
         // 1. Ensure table row is present and visible
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//tbody/tr[1]")));
         pause(1000);
 
-        JavascriptExecutor js = (JavascriptExecutor) driver;
+        //JavascriptExecutor js = (JavascriptExecutor) driver;
 
         // 2. Force click the 3-dots action button using JS to prevent click interception
+//        wait.until(ExpectedConditions.elementToBeClickable(threeBotbtn));
+//        js.executeScript("arguments[0].click();", threeBotbtn);
+//        logAction("Clicked 3-Dots Action Button");
+//
+//        // 3. Wait specifically for the Preview link using your exact XPath
+//        By previewOptionXpath = By.xpath("//a[@class='dropdown-item'])[46]");
+//        WebElement previewElement = wait.until(ExpectedConditions.visibilityOfElementLocated(previewOptionXpath));
+//        actionPause();
+        
         wait.until(ExpectedConditions.elementToBeClickable(threeBotbtn));
-        js.executeScript("arguments[0].click();", threeBotbtn);
+        click(threeBotbtn);
         logAction("Clicked 3-Dots Action Button");
-
-        // 3. Wait specifically for the Preview link using your exact XPath
-        By previewOptionXpath = By.xpath("(//a[@class='dropdown-item'])[1]");
-        WebElement previewElement = wait.until(ExpectedConditions.visibilityOfElementLocated(previewOptionXpath));
         actionPause();
 
-        // 4. Force click the Preview option via JavaScript
-        js.executeScript("arguments[0].click();", previewElement);
+        wait.until(ExpectedConditions.elementToBeClickable(previewbtn));
+        click(previewbtn);
         logAction("Clicked Preview Option");
-        actionPause();
+        pause(2000);
+        
+//        // 4. Force click the Preview option via JavaScript
+//        js.executeScript("arguments[0].click();", previewElement);
+//        logAction("Clicked Preview Option");
+//        actionPause();
     }
     
     private String generateRandomAlphabetic(int length) {
@@ -1090,6 +1137,7 @@ public class Vendor_Page extends Vendor_ObjRepo {
         js.executeScript("arguments[0].click();", previewThreedot);
         logAction("Clicked Preview 3-Dots Action Button");
         Common.waitForElement(2);
+        
         wait.until(ExpectedConditions.elementToBeClickable(markAsInactivebtn));
         js.executeScript("arguments[0].click();", markAsInactivebtn);
         logAction("Clicked Status Action Button ('Mark as Inactive / Active')");
@@ -1114,6 +1162,8 @@ public class Vendor_Page extends Vendor_ObjRepo {
 
         return isFirstToggleSuccess;
     }
+    
+    
     private String deletedSupplierId;
     private String deletedSupplierName;
     private boolean isSupplierPresentAfterCancel;
@@ -1126,18 +1176,6 @@ public class Vendor_Page extends Vendor_ObjRepo {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
         Actions actions = new Actions(driver);
        	    
-       	    // Hover on Inventory
-       	    WebElement inventory = wait.until(ExpectedConditions.visibilityOfElementLocated(
-       	            By.xpath("//button[contains(@class,'sidebar_menu_btn')]//span[normalize-space()='Inventory']")));
-       	    actions.moveToElement(inventory).perform();
-
-       	    // Click supplier 
-       	    WebElement supplier = wait.until(ExpectedConditions.elementToBeClickable(
-       	            By.xpath("(//li[normalize-space()='Vendor'])[1]")));
-       	 supplier.click();
-
-       	    Common.waitForElement(2);
-        logHeader("DELETING EXISTING VENDOR (WITH CANCEL VERIFICATION)");
 
         JavascriptExecutor js = (JavascriptExecutor) driver;
 
@@ -1153,9 +1191,9 @@ public class Vendor_Page extends Vendor_ObjRepo {
         // STEP 1: CANCEL DELETION VERIFICATION
         // =========================================================================
         // Open 3-dots action menu
-        wait.until(ExpectedConditions.elementToBeClickable(threeBotbtn));
-        js.executeScript("arguments[0].click();", threeBotbtn);
+        click(threeBotbtn);
         logAction("Clicked 3-Dots Action Button");
+        actionPause();
 
         // Click 'Delete' option
         wait.until(ExpectedConditions.elementToBeClickable(deletebtn));
@@ -1163,7 +1201,7 @@ public class Vendor_Page extends Vendor_ObjRepo {
         logAction("Clicked 'Delete' Option from Dropdown");
         actionPause();
 
-        // Click 'Cancel' button in popup
+     // Click 'Cancel' button in popup
         wait.until(ExpectedConditions.elementToBeClickable(deletePopupCancelBtn));
         js.executeScript("arguments[0].click();", deletePopupCancelBtn);
         logAction("Clicked 'Cancel' Button in Delete Confirmation Popup");
@@ -1184,8 +1222,9 @@ public class Vendor_Page extends Vendor_ObjRepo {
         // =========================================================================
         // Open 3-dots action menu again
         wait.until(ExpectedConditions.elementToBeClickable(threeBotbtn));
-        js.executeScript("arguments[0].click();", threeBotbtn);
-        logAction("Clicked 3-Dots Action Button Again");
+        click(threeBotbtn);
+        logAction("Clicked 3-Dots Action Button");
+        actionPause();
 
         // Click 'Delete' option again
         wait.until(ExpectedConditions.elementToBeClickable(deletebtn));
@@ -1272,6 +1311,8 @@ public class Vendor_Page extends Vendor_ObjRepo {
     public void validateAddContactAndBank() {
     	adminLogin();
     	
+    	navigatetoVendorPage();
+    	
     	navigateToVendorPreviewPage();
         
         addContactDetailsFromPreview();
@@ -1282,6 +1323,8 @@ public class Vendor_Page extends Vendor_ObjRepo {
     //TC-04
     public void validateactiveandInactivestatus() {
     	adminLogin();
+    	
+    	navigatetoVendorPage();
     	        
     	toggleSupplierStatusFromPreview();
     }	
@@ -1290,6 +1333,8 @@ public class Vendor_Page extends Vendor_ObjRepo {
     //TC-05
     public void validateDeleteVendor() {
     	adminLogin();
+    	
+    	navigatetoVendorPage();
     	
         deleteSupplierWithCancelAndConfirm();
     }

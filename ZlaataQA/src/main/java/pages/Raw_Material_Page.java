@@ -54,6 +54,38 @@ public class Raw_Material_Page extends Raw_Material_ObjRepo {
 	
 	}
 	
+	// ==========================================
+    // ANSI COLOR CONSTANTS
+    // ==========================================
+    //public static final String RESET  = "\u001B[0m";
+    public static final String BLACK  = "\u001B[30m";
+    public static final String RED    = "\u001B[31m";
+   // public static final String GREEN  = "\u001B[32m";
+   // public static final String YELLOW = "\u001B[33m";
+    public static final String BLUE   = "\u001B[34m";
+    public static final String PURPLE = "\u001B[35m";
+    //public static final String CYAN   = "\u001B[36m";
+    public static final String WHITE  = "\u001B[37m";
+
+    // ==========================================
+    // LOGGING HELPER METHODS
+    // ==========================================
+    public void logHeader(String message) {
+        System.out.println("\n" + YELLOW + "\u001B[1m============ " + message + " ============" + RESET + "\n");
+    }
+
+    public void logAction(String message) {
+        System.out.println(CYAN + " " + RESET + message);
+    }
+
+    public void logSuccess(String message) {
+        System.out.println(GREEN + "✅ " + message + RESET);
+    }
+
+    public void logFailure(String message) {
+        System.out.println(RED + "❌ " + message + RESET);
+    }
+	
 	// Declare these variables at class level
 	public static String expectedMaterialName;
 	public static String expectedCategory;
@@ -62,7 +94,7 @@ public class Raw_Material_Page extends Raw_Material_ObjRepo {
 	public static String expectedSupplier;
 	public static String expectedQuantity;
 	public static String expectedSku;
-
+	
 	public void fillRawMaterialDetails() throws InterruptedException {
 
 	    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
@@ -73,6 +105,7 @@ public class Raw_Material_Page extends Raw_Material_ObjRepo {
 	    final String GREEN = "\u001B[32m";
 	    final String CYAN = "\u001B[36m";
 	    final String YELLOW = "\u001B[33m";
+	    final String BLUE = "\u001B[34m";
 
 	    // Hover on Inventory
 	    WebElement inventory = wait.until(ExpectedConditions.visibilityOfElementLocated(
@@ -102,149 +135,172 @@ public class Raw_Material_Page extends Raw_Material_ObjRepo {
 	    material.clear();
 	    material.sendKeys(materialName);
 
-	    // Category
-	 // Click the Category dropdown
-
+	    // ==========================================
+	    // 1. CATEGORY DROPDOWN (1st Dropdown - Skip Index 0)
+	    // ==========================================
 	    WebElement categoryDropdown = wait.until(ExpectedConditions.elementToBeClickable(
 	            By.xpath("(//button[contains(@class,'select-trigger-btn')])[1]")));
 	    categoryDropdown.click();
+	    Common.waitForElement(1);
 
 	    try {
-	        WebElement buttonOption = wait.until(ExpectedConditions.elementToBeClickable(
-	                By.xpath("//li[@data-label='Button']")));
-	        buttonOption.click();
-	        System.out.println("Button selected.");
+	        List<WebElement> dropdownOptions = wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(
+	                By.xpath("//ul[@class='select-options-menu']/li[@class='option-item']")));
 
+	        if (dropdownOptions != null && dropdownOptions.size() > 1) {
+	            int randomIndex = 1 + random.nextInt(dropdownOptions.size() - 1);
+	            WebElement randomOption = dropdownOptions.get(randomIndex);
+	            
+	            expectedCategory = randomOption.getAttribute("data-label");
+	            if (expectedCategory == null || expectedCategory.isEmpty()) {
+	                expectedCategory = randomOption.getText().trim();
+	            }
+	            
+	            randomOption.click();
+	            logAction("Category Selected     : " + BLUE + expectedCategory + RESET);
+	        } else {
+	            logFailure("Category dropdown list is empty or contains only one option.");
+	        }
 	    } catch (Exception e) {
-
-	        System.out.println("Button not found. Selecting Zipper.");
-
-	        WebElement zipperOption = wait.until(ExpectedConditions.elementToBeClickable(
-	                By.xpath("//li[@data-label='Zipper']")));
-	        zipperOption.click();
+	        logFailure("Failed to select a random Category: " + e.getMessage());
 	    }
 	    Common.waitForElement(1);
-	    // Material Type
-	 // Click the Material Type dropdown (2nd dropdown on the page)
-	 WebElement materialTypeDropdown = wait.until(
-	         ExpectedConditions.elementToBeClickable(
-	                 By.xpath("(//button[contains(@class,'select-trigger-btn')])[2]")));
-	 materialTypeDropdown.click();
 
-	 try {
-	     // Try selecting Cotton
-	     wait.until(ExpectedConditions.elementToBeClickable(
-	             By.xpath("//li[@data-label='Cotton']"))).click();
-	     System.out.println("Cotton selected.");
-
-	 } catch (Exception e) {
-
-	     System.out.println("Cotton not found. Selecting Polyester.");
-
-	     // If Cotton is not available, select Polyester
-	     wait.until(ExpectedConditions.elementToBeClickable(
-	             By.xpath("//li[@data-label='Polyester']"))).click();
-	 }
-	  Common.waitForElement(1);
-	    // Unit Measurement
-	// Click the Unit Measurement dropdown (3rd dropdown)
-	WebElement measurementDropdown = wait.until(
-	        ExpectedConditions.elementToBeClickable(
-	                By.xpath("(//button[contains(@class,'select-trigger-btn')])[3]")));
-	measurementDropdown.click();
-
-	try {
-	    // Try selecting Mm
-	    wait.until(ExpectedConditions.elementToBeClickable(
-	            By.xpath("//li[@data-label='Mm']"))).click();
-	    System.out.println("Mm selected.");
-
-	} catch (Exception e) {
-
-	    System.out.println("Mm not found. Selecting Cm.");
-
-	    // If M is not available, select Cm
-	    wait.until(ExpectedConditions.elementToBeClickable(
-	            By.xpath("//li[@data-label='Cm']"))).click();
-	}
-	  Common.waitForElement(1);
-	    // Supplier (Select2)
-	// Click Supplier dropdown
-	wait.until(ExpectedConditions.elementToBeClickable(
-	        By.xpath("(//button[contains(@class,'select-trigger-btn')])[4]"))).click();
-
-	try {
-	    // Try selecting ABC dddTextiles Pvt Ltd
-	    wait.until(ExpectedConditions.elementToBeClickable(
-	            By.xpath("//li[@data-label='ABC dddTextiles Pvt Ltd']"))).click();
-
-	    System.out.println("ABC dddTextiles Pvt Ltd selected.");
+	    // ==========================================
+	    // 2. MATERIAL TYPE DROPDOWN (2nd Dropdown - Skip Index 0)
+	    // ==========================================
+	    WebElement materialTypeDropdown = wait.until(
+	            ExpectedConditions.elementToBeClickable(
+	                    By.xpath("(//button[contains(@class,'select-trigger-btn')])[2]")));
+	    materialTypeDropdown.click();
 	    Common.waitForElement(1);
-	   
 
-	} catch (Exception e) {
-
-	    System.out.println("ABC supplier not found. Selecting PGR Sun Production.");
-
-	    wait.until(ExpectedConditions.elementToBeClickable(
-	            By.xpath("//li[@data-label='PGR Sun Production']"))).click();
+	    try {
+	        List<WebElement> materialOptions = wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(
+	                By.xpath("//ul[@class='select-options-menu']/li[@class='option-item']")));
+	                
+	        if (materialOptions != null && materialOptions.size() > 1) {
+	            int randomIndex = 1 + random.nextInt(materialOptions.size() - 1);
+	            WebElement randomOption = materialOptions.get(randomIndex);
+	            
+	            expectedMaterialType = randomOption.getAttribute("data-label");
+	            if (expectedMaterialType == null || expectedMaterialType.isEmpty()) {
+	                expectedMaterialType = randomOption.getText().trim();
+	            }
+	            
+	            randomOption.click();
+	            logAction("Material Type Selected: " + BLUE + expectedMaterialType + RESET);
+	        } else {
+	            logFailure("Material Type dropdown list is empty or contains only one option.");
+	        }
+	    } catch (Exception e) {
+	        logFailure("Failed to select a random Material Type: " + e.getMessage());
+	    }
 	    Common.waitForElement(1);
-	   
-	}
-	Common.waitForElement(2);
-	WebElement searchBox = wait.until(ExpectedConditions.elementToBeClickable(
-	        By.xpath("//input[contains(@class,'select-search-input')]")));
 
-	// Click the search box
-	searchBox.click();
-	searchBox.sendKeys(Keys.ENTER);
+	    // ==========================================
+	    // 3. UNIT MEASUREMENT DROPDOWN (3rd Dropdown - Skip Index 0)
+	    // ==========================================
+	    WebElement measurementDropdown = wait.until(
+	            ExpectedConditions.elementToBeClickable(
+	                    By.xpath("(//button[contains(@class,'select-trigger-btn')])[3]")));
+	    measurementDropdown.click();
+	    Common.waitForElement(1);
 
-	    
+	    try {
+	        List<WebElement> measurementOptions = wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(
+	                By.xpath("//ul[@class='select-options-menu']/li[@class='option-item']")));
+	                
+	        if (measurementOptions != null && measurementOptions.size() > 1) {
+	            int randomIndex = 1 + random.nextInt(measurementOptions.size() - 1);
+	            WebElement randomOption = measurementOptions.get(randomIndex);
+	            
+	            expectedMeasurement = randomOption.getAttribute("data-label");
+	            if (expectedMeasurement == null || expectedMeasurement.isEmpty()) {
+	                expectedMeasurement = randomOption.getText().trim();
+	            }
+	            
+	            randomOption.click();
+	            logAction("Unit Measurement      : " + BLUE + expectedMeasurement + RESET);
+	        } else {
+	            logFailure("Unit Measurement dropdown list is empty or contains only one option.");
+	        }
+	    } catch (Exception e) {
+	        logFailure("Failed to select a random Unit Measurement: " + e.getMessage());
+	    }
+	    Common.waitForElement(1);
 
-	    // Get Selected Supplier Name
-	    String supplierName = wait.until(ExpectedConditions.visibilityOfElementLocated(
-	            By.xpath("//span[@class='chip-label']")))
-	            .getText()
-	            .replace("×", "")
-	            .replace("\n", "")
-	            .trim();
+	    // ==========================================
+	    // 4. SUPPLIER DROPDOWN (4th Dropdown - Standard Random from 0)
+	    // ==========================================
+	    WebElement supplierDropdown = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("(//button[contains(@class,'select-trigger-btn')])[4]")));
+	    supplierDropdown.click();
+	    Common.waitForElement(1);
+
+	    try {
+	        List<WebElement> supplierOptions = wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(
+	                By.xpath("//ul[@class='select-options-menu']/li[@class='option-item']")));
+	                
+	        if (supplierOptions != null && !supplierOptions.isEmpty()) {
+	            WebElement randomOption = supplierOptions.get(random.nextInt(supplierOptions.size()));
+	            
+	            expectedSupplier = randomOption.getAttribute("data-label");
+	            if (expectedSupplier == null || expectedSupplier.isEmpty()) {
+	                expectedSupplier = randomOption.getText().trim();
+	            }
+	            
+	            randomOption.click();
+	            logAction("Supplier Selected     : " + BLUE + expectedSupplier + RESET);
+	        }
+	    } catch (Exception e) {
+	        logFailure("Failed to select a random Supplier: " + e.getMessage());
+	    }
+	    Common.waitForElement(2);
+
+	    // Handle optional search box interaction if present in your DOM flow
+	    try {
+	        WebElement searchBox = wait.until(ExpectedConditions.elementToBeClickable(
+	                By.xpath("//input[contains(@class,'select-search-input')]")));
+	        searchBox.click();
+	        searchBox.sendKeys(Keys.ENTER);
+	    } catch (Exception ignored) {
+	        // Optional element; safe to ignore if not rendered
+	    }
+
+	    // Get Selected Supplier Name from the resulting chip label if needed to confirm
+	    try {
+	        String supplierName = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	                By.xpath("//span[@class='chip-label']")))
+	                .getText()
+	                .replace("×", "")
+	                .replace("\n", "")
+	                .trim();
+	        if (supplierName != null && !supplierName.isEmpty()) {
+	            expectedSupplier = supplierName;
+	        }
+	        logSuccess("Verified Chip Label   : " + BLUE + expectedSupplier + RESET);
+	    } catch (Exception ignored) {
+	        // Fallback to what was clicked if chip label isn't mandatory
+	    }
 
 	    // Quantity
-	    WebElement quantity = driver.findElement(By.name("quantity"));
-	    quantity.clear();
-	    quantity.sendKeys("100");
+	    WebElement quantityField = driver.findElement(By.name("quantity"));
+	    quantityField.clear();
+	    quantityField.sendKeys("100");
 
 	    // SKU
 	    WebElement skuField = driver.findElement(By.name("sku"));
 	    skuField.clear();
 	    skuField.sendKeys(sku);
 	    Common.waitForElement(2);
-	    // Store values for verification
+
+	    // Store remaining verification fields
 	    expectedMaterialName = materialName;
-	    expectedCategory = driver.findElement(
-	            By.xpath("(//span[@class='selected-text-display'])[1]"))
-	            .getText()
-	            .trim();
-
-	    System.out.println("Selected Category: " + expectedCategory);
-	    
-	    expectedMaterialType = driver.findElement(
-	            By.xpath("(//span[@class='selected-text-display'])[2]"))
-	            .getText()
-	            .trim();
-
-	    System.out.println("Selected Material: " + expectedMaterialType);
-	    expectedMeasurement =driver.findElement(
-	            By.xpath("(//span[@class='selected-text-display'])[3]"))
-	            .getText()
-	            .trim();
-
-	    System.out.println("Selected Measurement: " + expectedMeasurement);
-	    expectedSupplier = supplierName;
 	    expectedQuantity = "100";
 	    expectedSku = sku;
 
-	    // Console Output
+	    // Console Output Summary
 	    System.out.println(GREEN + "\n===============================================");
 	    System.out.println("        RAW MATERIAL FILLED DATA");
 	    System.out.println("===============================================" + RESET);

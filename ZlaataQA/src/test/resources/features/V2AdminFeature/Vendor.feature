@@ -1,5 +1,6 @@
 Feature: Vendor  Management
 
+@VM
  @Regression
   @TC_UI_Zlaata_VM_01
   Scenario Outline: TC_UI_Zlaata_VM_01 |Verify that a newly created vendor is displayed on the vendor Listing page.|"<TD_ID>"
@@ -12,6 +13,7 @@ Feature: Vendor  Management
       | TD_ID                  |
       | TD_UI_Zlaata_VM_01 |
       
+      @VM
       @Regression
   @TC_UI_Zlaata_VM_02
   Scenario Outline: TC_UI_Zlaata_VM_02 |Verify that changes made after editing a vendor are updated correctly and displayed on the vendor Listing page.|"<TD_ID>"
@@ -25,6 +27,7 @@ Feature: Vendor  Management
       | TD_ID                  |
       | TD_UI_Zlaata_VM_02 |
       
+      @VM
        @Regression
   @TC_UI_Zlaata_VM_03
   Scenario Outline: TC_UI_Zlaata_VM_03 |Verify that vendor contact details and bank details added from the Preview page are saved successfully.|"<TD_ID>"
@@ -37,6 +40,7 @@ Feature: Vendor  Management
       | TD_ID                  |
       | TD_UI_Zlaata_VM_03 |
       
+      @VM
            @Regression
   @TC_UI_Zlaata_VM_04
   Scenario Outline: TC_UI_Zlaata_VM_04 |Verify that the vendor status changes to Inactive when the vendor is marked as inactive.|"<TD_ID>"
@@ -49,6 +53,7 @@ Feature: Vendor  Management
       | TD_ID                  |
       | TD_UI_Zlaata_VM_04 |
       
+      @VM
        @Regression
   @TC_UI_Zlaata_VM_05
   Scenario Outline: TC_UI_Zlaata_VM_05 |Verify that a deleted vendor is no longer displayed on the vendor Listing page.|"<TD_ID>"
