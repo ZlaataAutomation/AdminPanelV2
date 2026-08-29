@@ -1,6 +1,7 @@
 package objectRepo;
 
 import java.time.Duration;
+import java.util.List;
 
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -36,8 +37,8 @@ public abstract class Vendor_ObjRepo extends BasePage {
     @FindBy(xpath = "(//span[normalize-space()='Inventory'])[1]")
     protected WebElement inventory;
     
-    @FindBy(xpath = "(//li[normalize-space()='Supplier'])[1]")
-    protected WebElement Supplier;
+    @FindBy(xpath = "(//li[normalize-space()='Vendor'])[1]")
+    protected WebElement Vendors;
     
     @FindBy(xpath ="//a[@class='btn btn-primary'][normalize-space()='Add vendor']")
     protected WebElement createvendorbtn;
@@ -57,8 +58,8 @@ public abstract class Vendor_ObjRepo extends BasePage {
     @FindBy(xpath = "(//div[@class='tag_input js-tag-toggle'])[1]")
     protected WebElement tagDropdwon;
     
-    @FindBy(xpath = "//span[normalize-space()='button']")
-    protected WebElement tagOption;
+    @FindBy(xpath = "//label[@class='tag_option']")
+    protected List<WebElement> tagOptions;
     
     @FindBy(xpath = "(//input[@placeholder='Enter Name'])[1]")
     protected WebElement contactName; 
@@ -117,10 +118,10 @@ public abstract class Vendor_ObjRepo extends BasePage {
     @FindBy(xpath = "(//button[normalize-space()='Save'])[1]")
     protected WebElement saveBtn;
  
-    @FindBy(xpath = "(//i[@class='las la-ellipsis-v'])[1]")
+    @FindBy(xpath = "(//div[@class='dropdown actions-dropdown-wrapper'])[1]")
     protected WebElement threeBotbtn;
     
-    @FindBy(xpath = "(//span[contains(text(),'Preview')])[1]")
+    @FindBy(xpath = "(//a[@class='dropdown-item'])[46]")
     protected WebElement previewbtn;
 
     @FindBy(xpath = "//body/div[@class='main_wrapper']/main[@class='main_content']/div[@class='container-fluid']/div[@class='create_wizard_wrapper supplier_details']/div[@id='pills-tabContent']/div[@id='basic-info-home-tab']/div[@class='row']/div[@class='col-md-12 col-lg-5 supplier_contact_details']/div[@class='form_content_wrapper']/div/dl/div[1]//dd")
@@ -147,7 +148,7 @@ public abstract class Vendor_ObjRepo extends BasePage {
     @FindBy(xpath = "//div[@class='row mt-4']//div[@class='supplier_info_grid']//div[4]//dd")
     protected WebElement previewIfscCode; // Index 4 remains IFSC Code
 	
-    @FindBy(xpath = "((//a)[@bp-button='update'])[1]")
+    @FindBy(xpath = "(//a[@class='dropdown-item'])[47]")
     protected WebElement editBtn;
     
     @FindBy(xpath = "(//*[name()='svg'][@class='back_icon'])[1]")
@@ -244,7 +245,7 @@ public abstract class Vendor_ObjRepo extends BasePage {
     protected WebElement previewDisplayedIfscCode;
     
     
-    @FindBy(xpath = "(//i[@class='la la-ellipsis-v'])[1]")
+    @FindBy(xpath = "(//button[@class='btn btn-link p-0'])[1]")
     protected WebElement previewThreedot;
 
     @FindBy(xpath = "(//a[normalize-space()='Mark as Inactive'])[1] | (//a[contains(text(),'Inactive') or contains(text(),'Active')])[1]")
@@ -263,18 +264,15 @@ public abstract class Vendor_ObjRepo extends BasePage {
     @FindBy(xpath = "//tbody/tr[1]/td[2]")
     protected WebElement firstRowSupplierName;
 
-    @FindBy(xpath = "(//a[@class='dropdown-item'][normalize-space()='Delete'])[2]")
+    // Fixed: Removed the hardcoded [19] index so it targets the dropdown delete option dynamically
+    @FindBy(xpath = "(//a[@class='dropdown-item'][normalize-space()='Delete'])[20]")
     protected WebElement deletebtn;
 
-    @FindBy(xpath = "(//button[@id='vendorDeleteConfirmBtn'])[1]")
+    @FindBy(xpath = "//button[@id='vendorDeleteConfirmBtn']")
     protected WebElement deletePopUpconfirmbtn;
 
-    @FindBy(xpath = "(//button[@class='btn_with_outline'][normalize-space()='Cancel'])[last()]")
+    @FindBy(xpath = "//form[@id='vendorDeleteForm']//button[@type='button'][normalize-space()='Cancel']")
     protected WebElement deletePopupCancelBtn;
-	
-	
-	
-	
-	
+
 
 }

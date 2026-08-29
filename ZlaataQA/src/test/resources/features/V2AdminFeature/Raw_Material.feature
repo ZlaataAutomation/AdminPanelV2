@@ -1,6 +1,6 @@
 Feature: Raw Material Management
 
-  
+  @Raw
   @Regression
   @TC_UI_Zlaata_Raw_01
   Scenario Outline: TC_UI_Zlaata_Raw_01 |Verify admin can add a new raw material successfully.|"<TD_ID>"
@@ -13,7 +13,8 @@ Feature: Raw Material Management
       | TD_ID                  |
       | TD_UI_Zlaata_Raw_01 |
     
-      @Regression
+  @Raw
+  @Regression
   @TC_UI_Zlaata_Raw_02
   Scenario Outline: TC_UI_Zlaata_Raw_02 |Verify that stock changes are reflected and saved successfully after adjusting stock on Raw Material Section.|"<TD_ID>"
      
@@ -25,7 +26,7 @@ Feature: Raw Material Management
     Examples: 
       | TD_ID                  |
       | TD_UI_Zlaata_Raw_02 |
-      
+  @Raw   
   @Regression
   @TC_UI_Zlaata_Raw_03
   Scenario Outline: TC_UI_Zlaata_Raw_03 |Verify that stock changes are reflected and saved successfully after adding stock on Raw Material Section.| "<TD_ID>"
@@ -36,8 +37,10 @@ Feature: Raw Material Management
 
     Examples:
       | TD_ID              |
-      | TD_UI_Zlaata_Raw_03 |     
+      | TD_UI_Zlaata_Raw_03 | 
       
+          
+  @Raw  
   @Regression
   @TC_UI_Zlaata_Raw_04
   Scenario Outline: TC_UI_Zlaata_Raw_04 |Verify that the low stock alert is saved and reflected successfully on Raw Material Section.| "<TD_ID>"
@@ -48,9 +51,9 @@ Feature: Raw Material Management
 
     Examples:
       | TD_ID              |
-      | TD_UI_Zlaata_Raw_04 |    
+      | TD_UI_Zlaata_Raw_04 |        
       
-       @Regression
+  @Regression
   @TC_UI_Zlaata_Raw_05
   Scenario Outline: TC_UI_Zlaata_Raw_05 |Verify admin can import Raw Material successfully.| "<TD_ID>"
 
@@ -59,9 +62,9 @@ Feature: Raw Material Management
 
     Examples:
       | TD_ID              |
-      | TD_UI_Zlaata_Raw_05 |  
-      
-            @Regression
+      | TD_UI_Zlaata_Raw_05 |       
+   
+  @Regression
   @TC_UI_Zlaata_Raw_06
   Scenario Outline: TC_UI_Zlaata_Raw_06 |Verify admin can Export Last 7 Days Raw Material.| "<TD_ID>"
 

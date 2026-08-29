@@ -1,6 +1,7 @@
 package objectRepo;
 
 import java.time.Duration;
+import java.util.List;
 
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -47,8 +48,8 @@ public abstract class Supplier_ObjRepo extends BasePage{
     @FindBy(xpath = "(//div[@class='tag_input js-tag-toggle'])[1]")
     protected WebElement tagDropdwon;
     
-    @FindBy(xpath = "//span[normalize-space()='button']")
-    protected WebElement tagOption;
+    @FindBy(xpath = "//label[@class='tag_option']")
+    protected List<WebElement> tagOptions;
     
     @FindBy(xpath = "(//input[@placeholder='Enter Name'])[1]")
     protected WebElement contactName; 
@@ -107,10 +108,10 @@ public abstract class Supplier_ObjRepo extends BasePage{
     @FindBy(xpath = "(//button[normalize-space()='Save'])[1]")
     protected WebElement saveBtn;
  
-    @FindBy(xpath = "(//i[@class='las la-ellipsis-v'])[1]")
+    @FindBy(xpath = "(//div[@class='dropdown actions-dropdown-wrapper'])[1]")
     protected WebElement threeBotbtn;
     
-    @FindBy(xpath = "(//span[contains(text(),'Preview')])[1]")
+    @FindBy(xpath = "(//a[@class='dropdown-item'])[46]")
     protected WebElement previewbtn;
 
     @FindBy(xpath = "//body/div[@class='main_wrapper']/main[@class='main_content']/div[@class='container-fluid']/div[@class='create_wizard_wrapper supplier_details']/div[@id='pills-tabContent']/div[@id='basic-info-home-tab']/div[@class='row']/div[@class='col-md-12 col-lg-5 supplier_contact_details']/div[@class='form_content_wrapper']/div/dl/div[1]//dd")
@@ -137,7 +138,7 @@ public abstract class Supplier_ObjRepo extends BasePage{
     @FindBy(xpath = "//div[@class='row mt-4']//div[@class='supplier_info_grid']//div[4]//dd")
     protected WebElement previewIfscCode; // Index 4 remains IFSC Code
     
-    @FindBy(xpath = "((//a)[@bp-button='update'])[1]")
+    @FindBy(xpath = "(//a[@class='dropdown-item'])[47]")
     protected WebElement editBtn;
     
     @FindBy(xpath = "(//*[name()='svg'][@class='back_icon'])[1]")
@@ -234,7 +235,7 @@ public abstract class Supplier_ObjRepo extends BasePage{
     protected WebElement previewDisplayedIfscCode;
     
     
-    @FindBy(xpath = "(//i[@class='la la-ellipsis-v'])[1]")
+    @FindBy(xpath = "(//button[@class='btn btn-link p-0'])[1]")
     protected WebElement previewThreedot;
 
     @FindBy(xpath = "(//a[normalize-space()='Mark as Inactive'])[1] | (//a[contains(text(),'Inactive') or contains(text(),'Active')])[1]")
@@ -253,13 +254,13 @@ public abstract class Supplier_ObjRepo extends BasePage{
     @FindBy(xpath = "//tbody/tr[1]/td[2]")
     protected WebElement firstRowSupplierName;
 
-    @FindBy(xpath = "(//a[@class='dropdown-item'][normalize-space()='Delete'])[1]")
+    @FindBy(xpath = "(//a[@class='dropdown-item'][normalize-space()='Delete'])[19]")
     protected WebElement deletebtn;
 
     @FindBy(xpath = "(//button[@id='supplierDeleteConfirmBtn'])[1]")
     protected WebElement deletePopUpconfirmbtn;
 
-    @FindBy(xpath = "(//button[@type='button'][normalize-space()='Cancel'])[19]")
+    @FindBy(xpath = "(//form[@id='supplierDeleteForm']//button[@type='button'][normalize-space()='Cancel'])[1]")
     protected WebElement deletePopupCancelBtn;
     
     

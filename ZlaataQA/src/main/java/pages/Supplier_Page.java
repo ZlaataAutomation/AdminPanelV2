@@ -1,6 +1,7 @@
 package pages;
 
 import java.time.Duration;
+import java.util.Random;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -104,7 +105,12 @@ public class Supplier_Page extends Supplier_ObjRepo {
         generatedCompanyName = "Supplier_" + UUID.randomUUID().toString().substring(0, 8);
         generatedCompanyEmail = "company" + random.nextInt(100000) + "@gmail.com";
         generatedcompanyNumber = "9" + (100000000 + random.nextInt(900000000));
-        generatedContactName = "Contact_" + random.nextInt(10000);
+     
+        String[] firstNames = {"Alice", "Bob", "Charlie", "Diana", "Ethan", "Fiona", "George", "Hannah"};
+        String[] lastNames = {"Smith", "Johnson", "Brown", "Taylor", "Miller", "Davis", "Wilson"};
+        // Pick a random index for both arrays
+        generatedContactName = firstNames[random.nextInt(firstNames.length)] + 
+                                      lastNames[random.nextInt(lastNames.length)];
         generatedContactEmail = "contact" + random.nextInt(100000) + "@gmail.com";
         generatedPhoneNumber = "9" + (100000000 + random.nextInt(900000000));
 
@@ -151,10 +157,19 @@ public class Supplier_Page extends Supplier_ObjRepo {
         logAction("Clicked Tag Dropdown");
         actionPause();
 
-        click(tagOption);
-        selectedTagText = tagOption.getText().trim();
-        logAction("Selected Tag : " + selectedTagText);
-        actionPause();
+        if (!tagOptions.isEmpty()) {
+            Random random1 = new Random();
+            int randomIndex = random1.nextInt(tagOptions.size());
+            
+            WebElement randomTagOption = tagOptions.get(randomIndex);
+            
+            click(randomTagOption);
+            selectedTagText = randomTagOption.getText().trim();
+            logAction("Selected Random Tag: " + selectedTagText);
+            actionPause();
+        } else {
+            logAction("No tag options found in the dropdown!");
+        }
 
         // Contact Details
         type(contactName, generatedContactName);
@@ -643,7 +658,11 @@ public class Supplier_Page extends Supplier_ObjRepo {
         updatedCompanyName   = "Supplier_Edit_" + UUID.randomUUID().toString().substring(0, 8);
         updatedCompanyEmail  = "company_edit" + random.nextInt(100000) + "@gmail.com";
         generatedcompanyNumber = "9" + (100000000 + random.nextInt(900000000));
-        updatedContactName   = "Contact_Edit_" + random.nextInt(10000);
+        String[] firstNames = {"Alice", "Bob", "Charlie", "Diana", "Ethan", "Fiona", "George", "Hannah"};
+        String[] lastNames = {"Smith", "Johnson", "Brown", "Taylor", "Miller", "Davis", "Wilson"};
+        // Pick a random index for both arrays
+        updatedContactName = firstNames[random.nextInt(firstNames.length)] + 
+                                      lastNames[random.nextInt(lastNames.length)];
         updatedContactEmail  = "contact_edit" + random.nextInt(100000) + "@gmail.com";
         updatedPhoneNumber   = "9" + (100000000 + random.nextInt(900000000));
 
@@ -677,11 +696,19 @@ public class Supplier_Page extends Supplier_ObjRepo {
             logAction("Clicked Tag Dropdown");
             actionPause();
 
-            if (isElementPresent(tagOption)) {
-                click(tagOption);
-                selectedTagText = tagOption.getText().trim();
+            // Check if the list of options is loaded and not empty
+            if (tagOptions != null && !tagOptions.isEmpty()) {
+                Random random2 = new Random();
+                int randomIndex = random2.nextInt(tagOptions.size());
+                
+                WebElement randomTagOption = tagOptions.get(randomIndex);
+                
+                click(randomTagOption);
+                selectedTagText = randomTagOption.getText().trim();
                 logAction("Selected Updated Tag        : " + BLUE + selectedTagText + RESET);
                 actionPause();
+            } else {
+                logAction("No tag options found in the dropdown!");
             }
         }
 
@@ -835,11 +862,12 @@ public class Supplier_Page extends Supplier_ObjRepo {
 
         // 2. Force click the 3-dots action button using JS to prevent click interception
         wait.until(ExpectedConditions.elementToBeClickable(threeBotbtn));
-        js.executeScript("arguments[0].click();", threeBotbtn);
+        click(threeBotbtn);
         logAction("Clicked 3-Dots Action Button");
+        actionPause();
 
         // 3. Wait specifically for the Preview link using your exact XPath
-        By previewOptionXpath = By.xpath("(//a[@class='dropdown-item'])[1]");
+        By previewOptionXpath = By.xpath("(//a[@class='dropdown-item'])[46]");
         WebElement previewElement = wait.until(ExpectedConditions.visibilityOfElementLocated(previewOptionXpath));
         actionPause();
 
@@ -1117,8 +1145,9 @@ public class Supplier_Page extends Supplier_ObjRepo {
         // =========================================================================
         // Open 3-dots action menu
         wait.until(ExpectedConditions.elementToBeClickable(threeBotbtn));
-        js.executeScript("arguments[0].click();", threeBotbtn);
+        click(threeBotbtn);
         logAction("Clicked 3-Dots Action Button");
+        actionPause();
 
         // Click 'Delete' option
         wait.until(ExpectedConditions.elementToBeClickable(deletebtn));
@@ -1147,8 +1176,9 @@ public class Supplier_Page extends Supplier_ObjRepo {
         // =========================================================================
         // Open 3-dots action menu again
         wait.until(ExpectedConditions.elementToBeClickable(threeBotbtn));
-        js.executeScript("arguments[0].click();", threeBotbtn);
-        logAction("Clicked 3-Dots Action Button Again");
+        click(threeBotbtn);
+        logAction("Clicked 3-Dots Action Button");
+        actionPause();
 
         // Click 'Delete' option again
         wait.until(ExpectedConditions.elementToBeClickable(deletebtn));
@@ -1168,6 +1198,14 @@ public class Supplier_Page extends Supplier_ObjRepo {
 
         if (!isSupplierPresentAfterCancel) {
             logFailure("Cancel check failed previously: Supplier was unexpectedly removed when clicking Cancel!");
+        }
+
+        // Wait 5 seconds to allow UI/backend processing to complete
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logFailure("Wait interrupted during deletion verification: " + e.getMessage());
         }
 
         boolean isSupplierStillPresent = isTextPresentOnPage(deletedSupplierId);
@@ -1283,34 +1321,53 @@ public class Supplier_Page extends Supplier_ObjRepo {
 	     companyName.sendKeys(randomCompany);
 	     logAction("Entered Company Name: " + BLUE + randomCompany + RESET);
 	
-	     // 2. Select Random Supplier Type (values 1 to 5)
-	     int randomTypeVal = random.nextInt(5) + 1; // Generates 1 to 5
+	     
+	     
+	  // 2. Select Random Supplier Type (dynamically, filtering out disabled or empty options)
 	     Select selectType = new Select(supplierTypeDropdwon);
-	     selectType.selectByValue(String.valueOf(randomTypeVal));
-	     logAction("Selected Supplier Type Value: " + BLUE + randomTypeVal + RESET);
-	
-	     // 3. Select Random Tag Checkbox
+	     List<WebElement> typeOptions = selectType.getOptions();
+
+	     // Filter out options that are disabled or have empty values (like placeholders)
+	     List<WebElement> validOptions = new ArrayList<>();
+	     for (WebElement option : typeOptions) {
+	         if (option.isEnabled() && !option.getAttribute("value").isEmpty() && !option.getText().trim().isEmpty()) {
+	             validOptions.add(option);
+	         }
+	     }
+
+	     if (!validOptions.isEmpty()) {
+	         int randomIndex = random.nextInt(validOptions.size()); 
+	         WebElement selectedOption = validOptions.get(randomIndex);
+	         String optionValue = selectedOption.getAttribute("value");
+	         
+	         selectType.selectByValue(optionValue);
+	         logAction("Selected Supplier Type Value: " + BLUE + optionValue + RESET);
+	     } else {
+	         logAction("No valid supplier type options found!");
+	     }
+
+	     // 3. Select Random Tag Checkbox (dynamically based on actual available checkboxes)
 	     wait.until(ExpectedConditions.elementToBeClickable(tagDropdwon));
 	     js.executeScript("arguments[0].click();", tagDropdwon);
 	     actionPause();
-	
-	     int randomTagIndex = random.nextInt(5) + 1; // Selects checkbox 1 to 5
-	     String tagXpath = String.format("(//input[@type='checkbox'])[%d]", randomTagIndex);
-	     try {
-	         WebElement tagCheckbox = driver.findElement(By.xpath(tagXpath));
+
+	     // Fetch all matching checkboxes dynamically instead of using hardcoded index XPaths
+	     List<WebElement> tagCheckboxes = driver.findElements(By.xpath("//input[@type='checkbox']"));
+
+	     if (tagCheckboxes != null && !tagCheckboxes.isEmpty()) {
+	         int randomIndex = random.nextInt(tagCheckboxes.size());
+	         WebElement tagCheckbox = tagCheckboxes.get(randomIndex);
+	         
 	         if (!tagCheckbox.isSelected()) {
 	             js.executeScript("arguments[0].click();", tagCheckbox);
 	         }
-	         logAction("Selected Tag Checkbox Index: " + BLUE + randomTagIndex + RESET);
-	     } catch (Exception e) {
-	         logAction("Tag index " + randomTagIndex + " not clickable, picking first available tag");
-	         WebElement defaultTag = driver.findElement(By.xpath("(//input[@type='checkbox'])[1]"));
-	         js.executeScript("arguments[0].click();", defaultTag);
+	         logAction("Selected Tag Checkbox Index: " + BLUE + (randomIndex + 1) + RESET);
+	     } else {
+	         logAction("No tag checkboxes found in the dropdown!");
 	     }
-	
+
 	     // Close tag dropdown if needed
 	     js.executeScript("arguments[0].click();", tagDropdwon);
-	
 	     // 4. Enter Random Contact Name
 	     String randomContact = "Contact_" + (random.nextInt(9000) + 1000);
 	     wait.until(ExpectedConditions.visibilityOf(contactName));
@@ -1559,19 +1616,33 @@ public class Supplier_Page extends Supplier_ObjRepo {
 	    type(companyNumber, generatedcompanyNumber);
 	    logAction("Entered Company Email & Phone");
 	
-	    // Select Tag
+	 // Select Tag
 	    click(tagDropdwon);
 	    actionPause();
-	    click(tagOption);
-	    logAction("Selected Tag");
-	    actionPause();
+
+	    // Check if tagOptions list is available and pick a random one
+	    if (tagOptions != null && !tagOptions.isEmpty()) {
+	        int randomIndex = random.nextInt(tagOptions.size());
+	        WebElement randomTagOption = tagOptions.get(randomIndex);
+	        
+	        click(randomTagOption);
+	        selectedTagText = randomTagOption.getText().trim();
+	        logAction("Selected Tag: " + BLUE + selectedTagText + RESET);
+	        actionPause();
+	    } else {
+	        logAction("No tag options found in the dropdown!");
+	    }
 	
 	    // 4. Fill Multiple Contacts (Loop for 2 to 3 Contacts)
 	    int totalContactsToAdd = random.nextInt(2) + 2; // Randomly adds 2 or 3 contacts
 	    logHeader("ADDING " + totalContactsToAdd + " CONTACT DETAILS");
 	
 	    for (int i = 1; i <= totalContactsToAdd; i++) {
-	        String contactNameVal = "Contact_" + i + "_" + (random.nextInt(8999) + 1000);
+	        String[] firstNames = {"Alice", "Bob", "Charlie", "Diana", "Ethan", "Fiona", "George", "Hannah"};
+	        String[] lastNames = {"Smith", "Johnson", "Brown", "Taylor", "Miller", "Davis", "Wilson"};
+	        // Pick a random index for both arrays
+	        String contactNameVal = firstNames[random.nextInt(firstNames.length)] + 
+	                                      lastNames[random.nextInt(lastNames.length)];
 	        String contactEmailVal = "contact" + i + "_" + random.nextInt(100000) + "@gmail.com";
 	        String contactPhoneVal = "9" + (100000000 + random.nextInt(900000000));
 	

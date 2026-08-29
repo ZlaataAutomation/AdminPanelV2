@@ -7,6 +7,7 @@ import java.util.Random;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
@@ -56,26 +57,33 @@ public class ProductStock_Page extends ProductStock_ObjRepo {
         }
     }
     public void selectRandomProductCaptureDetailsClickEditAndPreview() {
+        WebDriverWait customWait = new WebDriverWait(driver, Duration.ofSeconds(15));
+
+        // 1. Navigate to Inventory -> Product Stocks
         wait.until(ExpectedConditions.visibilityOf(inventory));
         new Actions(driver).moveToElement(inventory).perform();
 
         wait.until(ExpectedConditions.visibilityOf(productStockModule));
         click(productStockModule);
 
+        // 2. Wait for table rows to load dynamically in DOM
+        customWait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.xpath("//table/tbody/tr")));
         wait.until(ExpectedConditions.visibilityOfAllElements(productDataRows));
+
         int totalRows = productDataRows.size();
         if (totalRows == 0) {
-            throw new RuntimeException("No product rows found in the table!");
+            throw new RuntimeException("❌ No product rows found in the table!");
         }
+
         int selectedIndex = new Random().nextInt(totalRows);
         WebElement selectedRow = productDataRows.get(selectedIndex);
 
+        // 3. Capture Details
         WebElement nameCell = selectedRow.findElement(By.xpath(".//td[1]"));
         wait.until(ExpectedConditions.visibilityOf(nameCell));
         capturedProductName = nameCell.getText().trim();
         System.out.println("ℹ️ Selected Product Name: " + capturedProductName);
-        
-     // ===== CAPTURE QUANTITY (3rd column) =====
+
         WebElement qtyCell = selectedRow.findElement(By.xpath(".//td[3]"));
         wait.until(ExpectedConditions.visibilityOf(qtyCell));
         String qtyText = qtyCell.getText().trim();
@@ -97,24 +105,26 @@ public class ProductStock_Page extends ProductStock_ObjRepo {
         }
         System.out.println("ℹ️ Captured Stock Status: " + capturedStockStatus);
 
-        wait.until(ExpectedConditions.visibilityOfAllElements(editButtons));
-        if (selectedIndex >= editButtons.size()) {
-            throw new RuntimeException("Edit button not found for index: " + selectedIndex);
-        }
-        WebElement editBtn = editButtons.get(selectedIndex);
-        ((JavascriptExecutor) driver).executeScript(
-            "arguments[0].scrollIntoView({block: 'center'});", editBtn);
-        wait.until(ExpectedConditions.elementToBeClickable(editBtn));
-        click(editBtn);
-        System.out.println("🖱️ Clicked Edit button for: " + capturedProductName);
+     // 4. Locate 3-dots action button strictly INSIDE the selected row
+        WebElement actionBtn = selectedRow.findElement(By.xpath(".//i[contains(@class,'bi-three-dots-vertical')]"));
 
-        WebElement previewIcon = wait.until(ExpectedConditions.elementToBeClickable(
-            By.xpath("(//div[@class='nav-item dropdown'])[" + (selectedIndex + 1) + "]")));
+        // Scroll into view first
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'center'});", actionBtn);
 
-        ((JavascriptExecutor) driver).executeScript(
-            "arguments[0].scrollIntoView({block: 'center'});", previewIcon);
-        click(previewIcon);
-        System.out.println("🖱️ Clicked Preview button for: " + capturedProductName + " — navigating to details page");
+        // Wait for visibility, NOT clickability
+        customWait.until(ExpectedConditions.visibilityOf(actionBtn));
+
+        // Force click using JS to bypass Selenium's strict interactability checks
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", actionBtn);
+        System.out.println("🖱️ Clicked 3-dots action button for: " + capturedProductName);
+
+        // 5. Wait for the Preview button in the dynamically opened dropdown
+        By previewMenuOption = By.xpath("//div[contains(@class,'show')]//span[contains(text(),'Preview')] | .//span[contains(text(),'Preview')]");
+        WebElement previewBtn = customWait.until(ExpectedConditions.presenceOfNestedElementLocatedBy(selectedRow, previewMenuOption));
+
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center'});", previewBtn);
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", previewBtn);
+        System.out.println("🖱️ Clicked Preview button for: " + capturedProductName);
     }
 
     public void completeStockAdjustmentFlow() {
@@ -319,17 +329,32 @@ public class ProductStock_Page extends ProductStock_ObjRepo {
         System.out.println("✅ Out of Stock status verified at top of details page");
         pause(1200);
 
-        WebElement editIcon = wait.until(ExpectedConditions.elementToBeClickable(
-            By.xpath("(//*[name()='svg'])[6]")));
+        // --- CHANGE 1: Use specific dropdown class XPath instead of brittle svg[6] index ---
+        By editIconBy = By.xpath("(//div[@class='material_action_dropdown js-tag-toggle'])[1]");
+        WebElement editIcon = wait.until(ExpectedConditions.presenceOfElementLocated(editIconBy));
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center'});", editIcon);
         pause(500);
-        click(editIcon);
-        System.out.println("🖱️ Clicked Edit icon");
+        
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(editIcon)).click();
+        } catch (Exception e) {
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", editIcon);
+        }
+        System.out.println("🖱️ Clicked 3-dot action menu");
         pause(1000);
 
-        WebElement stockHistoryOption = wait.until(ExpectedConditions.elementToBeClickable(
-            By.xpath("(//li[normalize-space()='Stock History'])[1]")));
-        click(stockHistoryOption);
+        // --- CHANGE 2: Flexible Stock History option locator with JS fallback ---
+        By stockHistoryBy = By.xpath(
+            "//li[normalize-space()='Stock History'] " +
+            "| //a[contains(normalize-space(),'Stock History')] " +
+            "| //button[contains(normalize-space(),'Stock History')]"
+        );
+        WebElement stockHistoryOption = wait.until(ExpectedConditions.presenceOfElementLocated(stockHistoryBy));
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(stockHistoryOption)).click();
+        } catch (Exception e) {
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", stockHistoryOption);
+        }
         System.out.println("🖱️ Clicked Stock History");
         pause(1200);
 
@@ -374,30 +399,46 @@ public class ProductStock_Page extends ProductStock_ObjRepo {
         pause(1000);
 
         // ---- Navigate back: Stock History page -> Product Details page ----
-        WebElement backButtonFromHistory = wait.until(ExpectedConditions.elementToBeClickable(
+        WebElement backButtonFromHistory = wait.until(ExpectedConditions.presenceOfElementLocated(
             By.xpath("(//*[name()='svg'][@class='back_icon'])[1]")));
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center'});", backButtonFromHistory);
-        click(backButtonFromHistory);
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(backButtonFromHistory)).click();
+        } catch (Exception e) {
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", backButtonFromHistory);
+        }
         System.out.println("🖱️ Clicked Back button — returning to Product Details page");
         pause(1200);
 
         // ---- Navigate back: Product Details page -> Product List page ----
-        WebElement backButtonFromDetails = wait.until(ExpectedConditions.elementToBeClickable(
+        WebElement backButtonFromDetails = wait.until(ExpectedConditions.presenceOfElementLocated(
             By.xpath("(//*[name()='svg'][@class='back_icon'])[1]")));
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center'});", backButtonFromDetails);
-        click(backButtonFromDetails);
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(backButtonFromDetails)).click();
+        } catch (Exception e) {
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", backButtonFromDetails);
+        }
         System.out.println("🖱️ Clicked Back button — returning to Product List page");
         pause(1200);
 
         // ---- Verify Out of Stock status is reflected in the product list for the captured product ----
         wait.until(ExpectedConditions.visibilityOfAllElements(productDataRows));
 
+     // ---- Verify Out of Stock status is reflected in the product list for the captured product ----
+        // --- FIX: Re-query productDataRows dynamically from DOM to prevent stale element exceptions or stale list state ---
+        List<WebElement> refreshedRows = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.xpath("//table/tbody/tr")));
+
         WebElement updatedRow = null;
-        for (WebElement row : productDataRows) {
-            WebElement nameCell = row.findElement(By.xpath(".//td[1]"));
-            if (nameCell.getText().trim().equalsIgnoreCase(capturedProductName)) {
-                updatedRow = row;
-                break;
+        for (WebElement row : refreshedRows) {
+            try {
+                WebElement nameCell = row.findElement(By.xpath(".//td[1]"));
+                if (nameCell.getText().trim().equalsIgnoreCase(capturedProductName)) {
+                    updatedRow = row;
+                    break;
+                }
+            } catch (Exception e) {
+                // Ignore stale row elements during dynamic rendering
             }
         }
 
@@ -408,7 +449,10 @@ public class ProductStock_Page extends ProductStock_ObjRepo {
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center'});", updatedRow);
         pause(800);
 
-        boolean isOutOfStockInList = updatedRow.findElements(By.xpath(".//span[@class='stock_inactive_para']")).size() > 0;
+        // --- FIX: Expand status check to handle badge buttons as well as span classes ---
+        boolean isOutOfStockInList = updatedRow.findElements(By.xpath(
+            ".//span[@class='stock_inactive_para'] | .//button[contains(@class,'out_of_stock_badge')] | .//span[contains(normalize-space(),'Out of Stock')]"
+        )).size() > 0;
 
         if (!isOutOfStockInList) {
             throw new RuntimeException("❌ Out of Stock status change not reflected in product list for: " + capturedProductName);
@@ -743,60 +787,79 @@ public class ProductStock_Page extends ProductStock_ObjRepo {
  }
 
 
- // ==================== METHOD 3: Navigate to Stock History & Verify ====================
  public void navigateToStockHistoryAndVerify() {
-     System.out.println("⏳ Clicking 3-dot menu...");
-     pause(500);
-     
-     // Click 3-dot/ellipsis menu
-     WebElement threeDotMenu = wait.until(ExpectedConditions.elementToBeClickable(
-         By.xpath("(//*[name()='svg'])[6]")));
-     click(threeDotMenu);
-     System.out.println("🖱️ Clicked 3-dot menu");
-     pause(800);
-     
-     // Click Stock History
-     WebElement stockHistoryBtn = wait.until(ExpectedConditions.elementToBeClickable(
-         By.xpath("(//li[normalize-space()='Stock History'])[1]")));
-     click(stockHistoryBtn);
-     System.out.println("🖱️ Clicked Stock History — navigating to history page");
-     pause(1500);
-     
-     // Wait for Stock History page to load
-     wait.until(ExpectedConditions.visibilityOfElementLocated(
-         By.xpath("(//p[@class='count_para m-0 text-success'])[1]")));
-     System.out.println("✅ Stock History page loaded");
-     pause(800);
-     
-     // Verify added quantity in history
-     WebElement historyQtyElement = wait.until(ExpectedConditions.visibilityOfElementLocated(
-         By.xpath("(//p[@class='count_para m-0 text-success'])[1]")));
-     String historyQtyText = historyQtyElement.getText().trim().replace(",", "").replace("+", "");
-     
-     int historyQty = 0;
-     try {
-         historyQty = Integer.parseInt(historyQtyText);
-     } catch (NumberFormatException e) {
-         throw new RuntimeException("Could not parse history quantity: '" + historyQtyText + "'");
-     }
-     
-     if (historyQty != addedStockQuantity) {
-         throw new RuntimeException("History quantity mismatch! Expected: " + addedStockQuantity + ", Found: " + historyQty);
-     }
-     System.out.println("✅ History quantity verified: " + historyQty + " (matches added: " + addedStockQuantity + ")");
-     pause(500);
-     
-     // Verify status is "Stock Added"
-     WebElement statusElement = wait.until(ExpectedConditions.visibilityOfElementLocated(
-         By.xpath("(//p[@class='stock_active_para m-0 text-success'])[1][normalize-space()='Stock Added']")));
-     String statusText = statusElement.getText().trim();
-     
-     if (!"Stock Added".equals(statusText)) {
-         throw new RuntimeException("Status mismatch! Expected: 'Stock Added', Found: '" + statusText + "'");
-     }
-     System.out.println("✅ Status verified: '" + statusText + "'");
-     pause(800);
- }
+	    System.out.println("⏳ Clicking 3-dot menu...");
+	    pause(500);
+	    
+	    // --- UPDATED: Targeted XPath for the 3-dot menu dropdown container ---
+	    By threeDotBy = By.xpath("(//div[@class='material_action_dropdown js-tag-toggle'])[1]");
+	    WebElement threeDotMenu = wait.until(ExpectedConditions.presenceOfElementLocated(threeDotBy));
+	    
+	    ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'center'});", threeDotMenu);
+	    
+	    try {
+	        wait.until(ExpectedConditions.elementToBeClickable(threeDotMenu)).click();
+	    } catch (Exception e) {
+	        // Fallback to JS click if blocked by overlay/animation
+	        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", threeDotMenu);
+	    }
+	    System.out.println("🖱️ Clicked 3-dot menu");
+	    pause(800);
+	    
+	    // Click Stock History
+	    By stockHistoryBy = By.xpath(
+	        "//li[normalize-space()='Stock History'] " +
+	        "| //a[contains(normalize-space(),'Stock History')] " +
+	        "| //button[contains(normalize-space(),'Stock History')] " +
+	        "| //*[contains(@class,'nav-link') and contains(text(),'Stock History')]"
+	    );
+	    
+	    WebElement stockHistoryBtn = wait.until(ExpectedConditions.presenceOfElementLocated(stockHistoryBy));
+	    ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'center'});", stockHistoryBtn);
+	    
+	    try {
+	        wait.until(ExpectedConditions.elementToBeClickable(stockHistoryBtn)).click();
+	    } catch (Exception e) {
+	        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", stockHistoryBtn);
+	    }
+	    System.out.println("🖱️ Clicked Stock History — navigating to history page");
+	    pause(1500);
+	    
+	    // Wait for Stock History page to load
+	    wait.until(ExpectedConditions.visibilityOfElementLocated(
+	        By.xpath("(//p[@class='count_para m-0 text-success'])[1]")));
+	    System.out.println("✅ Stock History page loaded");
+	    pause(800);
+	    
+	    // Verify added quantity in history
+	    WebElement historyQtyElement = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	        By.xpath("(//p[@class='count_para m-0 text-success'])[1]")));
+	    String historyQtyText = historyQtyElement.getText().trim().replace(",", "").replace("+", "");
+	    
+	    int historyQty = 0;
+	    try {
+	        historyQty = Integer.parseInt(historyQtyText);
+	    } catch (NumberFormatException e) {
+	        throw new RuntimeException("Could not parse history quantity: '" + historyQtyText + "'");
+	    }
+	    
+	    if (historyQty != addedStockQuantity) {
+	        throw new RuntimeException("History quantity mismatch! Expected: " + addedStockQuantity + ", Found: " + historyQty);
+	    }
+	    System.out.println("✅ History quantity verified: " + historyQty + " (matches added: " + addedStockQuantity + ")");
+	    pause(500);
+	    
+	    // Verify status is "Stock Added"
+	    By statusBy = By.xpath("(//p[contains(@class,'stock_active_para') and contains(normalize-space(),'Stock Added')])[1] | (//*[contains(text(),'Stock Added')])[1]");
+	    WebElement statusElement = wait.until(ExpectedConditions.visibilityOfElementLocated(statusBy));
+	    String statusText = statusElement.getText().trim();
+	    
+	    if (!statusText.equalsIgnoreCase("Stock Added")) {
+	        throw new RuntimeException("Status mismatch! Expected: 'Stock Added', Found: '" + statusText + "'");
+	    }
+	    System.out.println("✅ Status verified: '" + statusText + "'");
+	    pause(800);
+	}
 
 
  // ==================== METHOD 4: Go Back to Listing & Verify ====================
@@ -914,427 +977,431 @@ private boolean isElementPresent(By by) {
 
 //==================== METHOD: Handle Top + Bottom Flow ====================
 private void handleTopBottomAlertFlow(boolean hasTop, boolean hasBottom) {
-  
-  // --- STEP 1: Capture TOP alert level and ALL item quantities ---
-  if (hasTop) {
-      System.out.println("⏳ Clicking Top tab...");
-      WebElement topTab = driver.findElement(By.xpath("(//button[normalize-space()='Top'])[1]"));
-      if (!topTab.getAttribute("class").contains("active")) {
-          click(topTab);
-          System.out.println("🖱️ Clicked Top tab");
-      }
-      pause(1200);
-      
-      wait.until(ExpectedConditions.visibilityOfElementLocated(
-          By.xpath("//button[normalize-space()='Top'][contains(@class,'active')]")));
-      
-      // Capture TOP alert level from td[2] of first row
-      WebElement topAlertCell = wait.until(ExpectedConditions.visibilityOfElementLocated(
-          By.xpath("//body[1]/div[1]/main[1]/div[1]/div[3]/div[2]/div[1]/div[1]/table[1]/tbody[1]/tr[1]/td[2]")));
-      String topAlertText = topAlertCell.getText().trim();
-      try {
-          topAlertLevel = Integer.parseInt(topAlertText);
-      } catch (NumberFormatException e) {
-          topAlertLevel = 0;
-      }
-      System.out.println("📊 Top Alert Level captured: " + topAlertLevel);
-      pause(500);
-      
-      // Capture ALL TOP item quantities dynamically from td[3] of each row
-      topQuantities.clear();
-      int rowIndex = 1;
-      while (true) {
-          try {
-              WebElement qtyCell = driver.findElement(By.xpath(
-                  "//body[1]/div[1]/main[1]/div[1]/div[3]/div[2]/div[1]/div[1]/table[1]/tbody[1]/tr[" + rowIndex + "]/td[3]"));
-              String qtyText = qtyCell.getText().trim().replace(",", "");
-              int qty = Integer.parseInt(qtyText);
-              topQuantities.add(qty);
-              System.out.println("  Top item " + rowIndex + " quantity: " + qty);
-              rowIndex++;
-          } catch (Exception e) {
-              break; // No more rows
-          }
-      }
-      System.out.println("📊 Top quantities (" + topQuantities.size() + " items): " + topQuantities);
-      pause(500);
-  }
+	  
+	  // --- STEP 1: Capture TOP alert level and ALL item quantities ---
+	  if (hasTop) {
+	      System.out.println("⏳ Clicking Top tab...");
+	      WebElement topTab = driver.findElement(By.xpath("(//button[normalize-space()='Top'])[1]"));
+	      if (!topTab.getAttribute("class").contains("active")) {
+	          click(topTab);
+	          System.out.println("🖱️ Clicked Top tab");
+	      }
+	      pause(1200);
+	      
+	      wait.until(ExpectedConditions.visibilityOfElementLocated(
+	          By.xpath("//button[normalize-space()='Top'][contains(@class,'active')]")));
+	      
+	      WebElement topAlertCell = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	          By.xpath("//body[1]/div[1]/main[1]/div[1]/div[3]/div[2]/div[1]/div[1]/table[1]/tbody[1]/tr[1]/td[2]")));
+	      String topAlertText = topAlertCell.getText().trim();
+	      try {
+	          topAlertLevel = Integer.parseInt(topAlertText);
+	      } catch (NumberFormatException e) {
+	          topAlertLevel = 0;
+	      }
+	      System.out.println("📊 Top Alert Level captured: " + topAlertLevel);
+	      pause(500);
+	      
+	      topQuantities.clear();
+	      int rowIndex = 1;
+	      while (true) {
+	          try {
+	              WebElement qtyCell = driver.findElement(By.xpath(
+	                  "//body[1]/div[1]/main[1]/div[1]/div[3]/div[2]/div[1]/div[1]/table[1]/tbody[1]/tr[" + rowIndex + "]/td[3]"));
+	              String qtyText = qtyCell.getText().trim().replace(",", "");
+	              int qty = Integer.parseInt(qtyText);
+	              topQuantities.add(qty);
+	              System.out.println("  Top item " + rowIndex + " quantity: " + qty);
+	              rowIndex++;
+	          } catch (Exception e) {
+	              break; 
+	          }
+	      }
+	      System.out.println("📊 Top quantities (" + topQuantities.size() + " items): " + topQuantities);
+	      pause(500);
+	  }
 
-  // --- STEP 2: Capture BOTTOM alert level and ALL item quantities ---
-  if (hasBottom) {
-      System.out.println("⏳ Clicking Bottom tab...");
-      WebElement bottomTab = wait.until(ExpectedConditions.elementToBeClickable(
-          By.xpath("(//button[normalize-space()='Bottom'])[1]")));
-      click(bottomTab);
-      System.out.println("🖱️ Clicked Bottom tab");
-      pause(1200);
-      
-      wait.until(ExpectedConditions.visibilityOfElementLocated(
-          By.xpath("//button[normalize-space()='Bottom'][contains(@class,'active')]")));
-      
-      // Capture BOTTOM alert level from td[2] of first row
-      WebElement bottomAlertCell = wait.until(ExpectedConditions.visibilityOfElementLocated(
-          By.xpath("//body[1]/div[1]/main[1]/div[1]/div[3]/div[2]/div[1]/div[2]/table[1]/tbody[1]/tr[1]/td[2]")));
-      String bottomAlertText = bottomAlertCell.getText().trim();
-      try {
-          bottomAlertLevel = Integer.parseInt(bottomAlertText);
-      } catch (NumberFormatException e) {
-          bottomAlertLevel = 0;
-      }
-      System.out.println("📊 Bottom Alert Level captured: " + bottomAlertLevel);
-      pause(500);
-      
-      // Capture ALL BOTTOM item quantities dynamically from td[3] of each row
-      bottomQuantities.clear();
-      int rowIndex = 1;
-      while (true) {
-          try {
-              WebElement qtyCell = driver.findElement(By.xpath(
-                  "//body[1]/div[1]/main[1]/div[1]/div[3]/div[2]/div[1]/div[2]/table[1]/tbody[1]/tr[" + rowIndex + "]/td[3]"));
-              String qtyText = qtyCell.getText().trim().replace(",", "");
-              int qty = Integer.parseInt(qtyText);
-              bottomQuantities.add(qty);
-              System.out.println("  Bottom item " + rowIndex + " quantity: " + qty);
-              rowIndex++;
-          } catch (Exception e) {
-              break; // No more rows
-          }
-      }
-      System.out.println("📊 Bottom quantities (" + bottomQuantities.size() + " items): " + bottomQuantities);
-      pause(500);
-  }
+	  // --- STEP 2: Capture BOTTOM alert level and ALL item quantities ---
+	  if (hasBottom) {
+	      System.out.println("⏳ Clicking Bottom tab...");
+	      WebElement bottomTab = wait.until(ExpectedConditions.elementToBeClickable(
+	          By.xpath("(//button[normalize-space()='Bottom'])[1]")));
+	      click(bottomTab);
+	      System.out.println("🖱️ Clicked Bottom tab");
+	      pause(1200);
+	      
+	      wait.until(ExpectedConditions.visibilityOfElementLocated(
+	          By.xpath("//button[normalize-space()='Bottom'][contains(@class,'active')]")));
+	      
+	      WebElement bottomAlertCell = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	          By.xpath("//body[1]/div[1]/main[1]/div[1]/div[3]/div[2]/div[1]/div[2]/table[1]/tbody[1]/tr[1]/td[2]")));
+	      String bottomAlertText = bottomAlertCell.getText().trim();
+	      try {
+	          bottomAlertLevel = Integer.parseInt(bottomAlertText);
+	      } catch (NumberFormatException e) {
+	          bottomAlertLevel = 0;
+	      }
+	      System.out.println("📊 Bottom Alert Level captured: " + bottomAlertLevel);
+	      pause(500);
+	      
+	      bottomQuantities.clear();
+	      int rowIndex = 1;
+	      while (true) {
+	          try {
+	              WebElement qtyCell = driver.findElement(By.xpath(
+	                  "//body[1]/div[1]/main[1]/div[1]/div[3]/div[2]/div[1]/div[2]/table[1]/tbody[1]/tr[" + rowIndex + "]/td[3]"));
+	              String qtyText = qtyCell.getText().trim().replace(",", "");
+	              int qty = Integer.parseInt(qtyText);
+	              bottomQuantities.add(qty);
+	              System.out.println("  Bottom item " + rowIndex + " quantity: " + qty);
+	              rowIndex++;
+	          } catch (Exception e) {
+	              break;
+	          }
+	      }
+	      System.out.println("📊 Bottom quantities (" + bottomQuantities.size() + " items): " + bottomQuantities);
+	      pause(500);
+	  }
 
-  // --- STEP 3: Compare alert level with quantities ---
-  System.out.println("=== Alert Level vs Quantity Comparison ===");
-  if (hasTop) {
-      for (int i = 0; i < topQuantities.size(); i++) {
-          boolean isLow = topQuantities.get(i) <= topAlertLevel;
-          System.out.println("  Top item " + (i+1) + ": Qty=" + topQuantities.get(i) + ", Alert=" + topAlertLevel 
-              + " → " + (isLow ? "LOW STOCK" : "OK"));
-      }
-  }
-  if (hasBottom) {
-      for (int i = 0; i < bottomQuantities.size(); i++) {
-          boolean isLow = bottomQuantities.get(i) <= bottomAlertLevel;
-          System.out.println("  Bottom item " + (i+1) + ": Qty=" + bottomQuantities.get(i) + ", Alert=" + bottomAlertLevel 
-              + " → " + (isLow ? "LOW STOCK" : "OK"));
-      }
-  }
-  pause(800);
+	  // --- STEP 3: Compare alert level with quantities ---
+	  System.out.println("=== Alert Level vs Quantity Comparison ===");
+	  if (hasTop) {
+	      for (int i = 0; i < topQuantities.size(); i++) {
+	          boolean isLow = topQuantities.get(i) <= topAlertLevel;
+	          System.out.println("  Top item " + (i+1) + ": Qty=" + topQuantities.get(i) + ", Alert=" + topAlertLevel 
+	              + " → " + (isLow ? "LOW STOCK" : "OK"));
+	      }
+	  }
+	  if (hasBottom) {
+	      for (int i = 0; i < bottomQuantities.size(); i++) {
+	          boolean isLow = bottomQuantities.get(i) <= bottomAlertLevel;
+	          System.out.println("  Bottom item " + (i+1) + ": Qty=" + bottomQuantities.get(i) + ", Alert=" + bottomAlertLevel 
+	              + " → " + (isLow ? "LOW STOCK" : "OK"));
+	      }
+	  }
+	  pause(800);
 
-  // --- STEP 4: Set TOP Low Stock Alert ---
-  if (hasTop) {
-      System.out.println("⏳ Setting TOP Low Stock Alert...");
-      
-      // Click 3-dot menu
-      WebElement threeDotTop = wait.until(ExpectedConditions.elementToBeClickable(
-          By.xpath("(//*[name()='svg'])[6]")));
-      click(threeDotTop);
-      System.out.println("🖱️ Clicked 3-dot menu (Top)");
-      pause(800);
-      
-      // Click Set Low Stock Alert (Top)
-      WebElement setTopAlert = wait.until(ExpectedConditions.elementToBeClickable(
-          By.xpath("(//li[normalize-space()='Set Low Stock Alert (Top)'])[1]")));
-      click(setTopAlert);
-      System.out.println("🖱️ Clicked 'Set Low Stock Alert (Top)'");
-      pause(1000);
-      
-      // Check if single item or multiple items
-      if (topQuantities.size() == 1) {
-          // SINGLE ITEM: Enter quantity directly in global_alert_level
-          WebElement topAlertInput = wait.until(ExpectedConditions.visibilityOfElementLocated(
-              By.xpath("(//input[@name='global_alert_level'])[1]")));
-          topAlertInput.clear();
-          topAlertInput.sendKeys(String.valueOf(topQuantities.get(0)));
-          System.out.println("⌨️ Single item — Entered Top alert level: " + topQuantities.get(0));
-      } else {
-          // MULTIPLE ITEMS: Click threshold slider, then enter each quantity
-          System.out.println("⏳ Multiple items detected — clicking threshold slider...");
-          
-          // Click the threshold slider button (enable per-item alerts)
-          WebElement thresholdSlider = wait.until(ExpectedConditions.elementToBeClickable(
-              By.xpath("//label[contains(@class,'switch')] | //input[@type='checkbox'][following-sibling::span] | //span[contains(@class,'slider')]")));
-          click(thresholdSlider);
-          System.out.println("🖱️ Clicked threshold slider for per-item alerts");
-          pause(800);
-          
-          // Enter each top quantity in corresponding alert_level inputs
-          for (int i = 0; i < topQuantities.size(); i++) {
-              int inputIndex = i + 1; // size_alerts[1], size_alerts[2], etc.
-              WebElement alertInput = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                  By.xpath("(//input[@name='size_alerts[" + inputIndex + "][alert_level]'])[1]")));
-              alertInput.clear();
-              alertInput.sendKeys(String.valueOf(topQuantities.get(i)));
-              System.out.println("⌨️ Entered Top item " + inputIndex + " alert level: " + topQuantities.get(i));
-              pause(300);
-          }
-      }
-      pause(500);
-      
-      // Click Save Alert
-      WebElement saveTopAlert = wait.until(ExpectedConditions.elementToBeClickable(
-          By.xpath("(//button[normalize-space()='Save Alert'])[1]")));
-      click(saveTopAlert);
-      System.out.println("💾 Saved Top Low Stock Alert");
-      pause(300);
-      
-      // Wait for popup to close
-      wait.until(ExpectedConditions.invisibilityOfElementLocated(
-          By.xpath("//div[contains(@class,'modal') and contains(@style,'display: block')]")));
-      System.out.println("✅ Top alert popup closed");
-      pause(800);
-  }
+	  // --- STEP 4: Set TOP Low Stock Alert ---
+	  if (hasTop) {
+	      System.out.println("⏳ Setting TOP Low Stock Alert...");
+	      
+	      By threeDotBy = By.xpath("(//div[@class='material_action_dropdown js-tag-toggle'])[1]");
+	      WebElement threeDotMenu = wait.until(ExpectedConditions.presenceOfElementLocated(threeDotBy));
+	      ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'center'});", threeDotMenu);
+	      
+	      try {
+	          wait.until(ExpectedConditions.elementToBeClickable(threeDotMenu)).click();
+	      } catch (Exception e) {
+	          ((JavascriptExecutor) driver).executeScript("arguments[0].click();", threeDotMenu);
+	      }
+	      System.out.println("🖱️ Clicked 3-dot menu");
+	      pause(800);
+	      
+	      WebElement setTopAlert = wait.until(ExpectedConditions.elementToBeClickable(
+	          By.xpath("(//li[normalize-space()='Set Low Stock Alert (Top)'])[1]")));
+	      click(setTopAlert);
+	      System.out.println("🖱️ Clicked 'Set Low Stock Alert (Top)'");
+	      pause(1000);
+	      
+	      if (topQuantities.size() == 1) {
+	          WebElement topAlertInput = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	              By.xpath("(//input[@name='global_alert_level'])[1]")));
+	          topAlertInput.clear();
+	          topAlertInput.sendKeys(String.valueOf(topQuantities.get(0)));
+	          System.out.println("⌨️ Single item — Entered Top alert level: " + topQuantities.get(0));
+	      } else {
+	          System.out.println("⏳ Multiple items detected — clicking threshold slider...");
+	          WebElement thresholdSlider = wait.until(ExpectedConditions.elementToBeClickable(
+	              By.xpath("//label[contains(@class,'switch')] | //input[@type='checkbox'][following-sibling::span] | //span[contains(@class,'slider')]")));
+	          
+	          if (!thresholdSlider.isSelected()) {
+	              ((JavascriptExecutor) driver).executeScript("arguments[0].click();", thresholdSlider);
+	              System.out.println("🖱️ Clicked threshold slider for per-item alerts");
+	              pause(1000);
+	          }
+	          
+	          // Robust collection and population of individual inputs
+	          List<WebElement> alertInputs = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(
+	              By.xpath("//input[contains(@name, 'alert_level') and not(@name='global_alert_level')]")));
+	          
+	          for (int i = 0; i < topQuantities.size() && i < alertInputs.size(); i++) {
+	              WebElement alertInput = alertInputs.get(i);
+	              wait.until(ExpectedConditions.visibilityOf(alertInput));
+	              
+	              // Clear field via JS & Keys to prevent React/Vue binding issues
+	              ((JavascriptExecutor) driver).executeScript("arguments[0].value ='';", alertInput);
+	              alertInput.sendKeys(Keys.CONTROL + "a", Keys.BACK_SPACE);
+	              alertInput.sendKeys(String.valueOf(topQuantities.get(i)));
+	              
+	              System.out.println("⌨️ Entered Top item " + (i + 1) + " alert level: " + topQuantities.get(i));
+	              pause(300);
+	          }
+	      }
+	      pause(500);
+	      
+	      WebElement saveTopAlert = wait.until(ExpectedConditions.elementToBeClickable(
+	          By.xpath("(//button[normalize-space()='Save Alert'])[1]")));
+	      click(saveTopAlert);
+	      System.out.println("💾 Saved Top Low Stock Alert");
+	      pause(500);
+	      
+	      wait.until(ExpectedConditions.invisibilityOfElementLocated(
+	          By.xpath("//div[contains(@class,'modal') and contains(@style,'display: block')]")));
+	      System.out.println("✅ Top alert popup closed");
+	      pause(800);
+	  }
 
-  // --- STEP 5: Set BOTTOM Low Stock Alert ---
-  if (hasBottom) {
-      System.out.println("⏳ Setting BOTTOM Low Stock Alert...");
-      
-      // Click 3-dot menu
-      WebElement threeDotBottom = wait.until(ExpectedConditions.elementToBeClickable(
-          By.xpath("(//*[name()='svg'])[6]")));
-      click(threeDotBottom);
-      System.out.println("🖱️ Clicked 3-dot menu (Bottom)");
-      pause(800);
-      
-      // Click Set Low Stock Alert (Bottom)
-      WebElement setBottomAlert = wait.until(ExpectedConditions.elementToBeClickable(
-          By.xpath("(//li[normalize-space()='Set Low Stock Alert (Bottom)'])[1]")));
-      click(setBottomAlert);
-      System.out.println("🖱️ Clicked 'Set Low Stock Alert (Bottom)'");
-      pause(1000);
-      
-      // Check if single item or multiple items
-      if (bottomQuantities.size() == 1) {
-          // SINGLE ITEM: Enter quantity directly in global_alert_level
-          WebElement bottomAlertInput = wait.until(ExpectedConditions.visibilityOfElementLocated(
-              By.xpath("(//input[@name='global_alert_level'])[1]")));
-          bottomAlertInput.clear();
-          bottomAlertInput.sendKeys(String.valueOf(bottomQuantities.get(0)));
-          System.out.println("⌨️ Single item — Entered Bottom alert level: " + bottomQuantities.get(0));
-      } else {
-          // MULTIPLE ITEMS: Click threshold slider, then enter each quantity
-          System.out.println("⏳ Multiple items detected — clicking threshold slider...");
-          
-          WebElement thresholdSlider = wait.until(ExpectedConditions.elementToBeClickable(
-              By.xpath("//label[contains(@class,'switch')] | //input[@type='checkbox'][following-sibling::span] | //span[contains(@class,'slider')]")));
-          click(thresholdSlider);
-          System.out.println("🖱️ Clicked threshold slider for per-item alerts");
-          pause(800);
-          
-          // Enter each bottom quantity in corresponding alert_level inputs
-          for (int i = 0; i < bottomQuantities.size(); i++) {
-              int inputIndex = i + 1;
-              WebElement alertInput = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                  By.xpath("(//input[@name='size_alerts[" + inputIndex + "][alert_level]'])[1]")));
-              alertInput.clear();
-              alertInput.sendKeys(String.valueOf(bottomQuantities.get(i)));
-              System.out.println("⌨️ Entered Bottom item " + inputIndex + " alert level: " + bottomQuantities.get(i));
-              pause(300);
-          }
-      }
-      pause(500);
-      
-      // Click Save Alert
-      WebElement saveBottomAlert = wait.until(ExpectedConditions.elementToBeClickable(
-          By.xpath("(//button[normalize-space()='Save Alert'])[1]")));
-      click(saveBottomAlert);
-      System.out.println("💾 Saved Bottom Low Stock Alert");
-      pause(1500);
-      
-      // Wait for popup to close
-      wait.until(ExpectedConditions.invisibilityOfElementLocated(
-          By.xpath("//div[contains(@class,'modal') and contains(@style,'display: block')]")));
-      System.out.println("✅ Bottom alert popup closed");
-      pause(800);
-  }
+	  // --- STEP 5: Set BOTTOM Low Stock Alert ---
+	  if (hasBottom) {
+	      System.out.println("⏳ Setting BOTTOM Low Stock Alert...");
+	      
+	      By threeDotBy = By.xpath("(//div[@class='material_action_dropdown js-tag-toggle'])[1]");
+	      WebElement threeDotMenu = wait.until(ExpectedConditions.presenceOfElementLocated(threeDotBy));
+	      ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'center'});", threeDotMenu);
+	      
+	      try {
+	          wait.until(ExpectedConditions.elementToBeClickable(threeDotMenu)).click();
+	      } catch (Exception e) {
+	          ((JavascriptExecutor) driver).executeScript("arguments[0].click();", threeDotMenu);
+	      }
+	      System.out.println("🖱️ Clicked 3-dot menu");
+	      pause(800);
+	      
+	      WebElement setBottomAlert = wait.until(ExpectedConditions.elementToBeClickable(
+	          By.xpath("(//li[normalize-space()='Set Low Stock Alert (Bottom)'])[1]")));
+	      click(setBottomAlert);
+	      System.out.println("🖱️ Clicked 'Set Low Stock Alert (Bottom)'");
+	      pause(1000);
+	      
+	      if (bottomQuantities.size() == 1) {
+	          WebElement bottomAlertInput = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	              By.xpath("(//input[@name='global_alert_level'])[1]")));
+	          bottomAlertInput.clear();
+	          bottomAlertInput.sendKeys(String.valueOf(bottomQuantities.get(0)));
+	          System.out.println("⌨️ Single item — Entered Bottom alert level: " + bottomQuantities.get(0));
+	      } else {
+	          System.out.println("⏳ Multiple items detected — clicking threshold slider...");
+	          WebElement thresholdSlider = wait.until(ExpectedConditions.elementToBeClickable(
+	              By.xpath("//label[contains(@class,'switch')] | //input[@type='checkbox'][following-sibling::span] | //span[contains(@class,'slider')]")));
+	          
+	          if (!thresholdSlider.isSelected()) {
+	              ((JavascriptExecutor) driver).executeScript("arguments[0].click();", thresholdSlider);
+	              System.out.println("🖱️ Clicked threshold slider for per-item alerts");
+	              pause(1000);
+	          }
+	          
+	          List<WebElement> alertInputs = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(
+	              By.xpath("//input[contains(@name, 'alert_level') and not(@name='global_alert_level')]")));
+	          
+	          for (int i = 0; i < bottomQuantities.size() && i < alertInputs.size(); i++) {
+	              WebElement alertInput = alertInputs.get(i);
+	              wait.until(ExpectedConditions.visibilityOf(alertInput));
+	              
+	              ((JavascriptExecutor) driver).executeScript("arguments[0].value ='';", alertInput);
+	              alertInput.sendKeys(Keys.CONTROL + "a", Keys.BACK_SPACE);
+	              alertInput.sendKeys(String.valueOf(bottomQuantities.get(i)));
+	              
+	              System.out.println("⌨️ Entered Bottom item " + (i + 1) + " alert level: " + bottomQuantities.get(i));
+	              pause(300);
+	          }
+	      }
+	      pause(500);
+	      
+	      WebElement saveBottomAlert = wait.until(ExpectedConditions.elementToBeClickable(
+	          By.xpath("(//button[normalize-space()='Save Alert'])[1]")));
+	      click(saveBottomAlert);
+	      System.out.println("💾 Saved Bottom Low Stock Alert");
+	      pause(1500);
+	      
+	      wait.until(ExpectedConditions.invisibilityOfElementLocated(
+	          By.xpath("//div[contains(@class,'modal') and contains(@style,'display: block')]")));
+	      System.out.println("✅ Bottom alert popup closed");
+	      pause(800);
+	  }
 
-  // --- STEP 6: Verify Low Stock status reflected for ALL items ---
-  System.out.println("⏳ Verifying Low Stock status for all items...");
-  pause(1000);
-  
-  // Verify TOP Low Stock badges for all items
-  if (hasTop) {
-      for (int i = 0; i < topQuantities.size(); i++) {
-          int xpathIndex = i + 1;
-          try {
-              WebElement topLowStatus = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                  By.xpath("(//button[@onclick=\"openLowStockModal('top')\"][contains(text(),'Low')])[" + xpathIndex + "]")));
-              String statusText = topLowStatus.getText().trim();
-              System.out.println("✅ Top item " + xpathIndex + " Low Stock status: '" + statusText + "'");
-              pause(300);
-          } catch (Exception e) {
-              System.out.println("⚠️ Top item " + xpathIndex + " Low Stock status NOT found");
-          }
-      }
-  }
-  
-  // Verify BOTTOM Low Stock badges for all items
-  if (hasBottom) {
-      for (int i = 0; i < bottomQuantities.size(); i++) {
-          int xpathIndex = i + 1;
-          try {
-        	  WebElement bottomTab = wait.until(ExpectedConditions.elementToBeClickable(
-        	          By.xpath("(//button[normalize-space()='Bottom'])[1]")));
-        	      click(bottomTab);
-        	      System.out.println("🖱️ Clicked Bottom tab");
-        	      pause(1200);
-              WebElement bottomLowStatus = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                  By.xpath("(//button[@onclick=\"openLowStockModal('bottom')\"][contains(text(),'Low')])[" + xpathIndex + "]")));
-              String statusText = bottomLowStatus.getText().trim();
-              System.out.println("✅ Bottom item " + xpathIndex + " Low Stock status: '" + statusText + "'");
-              pause(300);
-          } catch (Exception e) {
-              System.out.println("⚠️ Bottom item " + xpathIndex + " Low Stock status NOT found");
-          }
-      }
-  }
-  
-  // Verify header alert display
-  try {
-      WebElement alertBtn = wait.until(ExpectedConditions.visibilityOfElementLocated(
-          By.xpath("(//p[@class='stock_active_para text-warning'])[1]")));
-      System.out.println("✅ Details page alert header visible: '" + alertBtn.getText().trim() + "'");
-  } catch (Exception e) {
-      System.out.println("⚠️ Details page alert header not found");
-  }
-  pause(800);
-}
+	  // --- STEP 6: Verify Low Stock status reflected for ALL items ---
+	  System.out.println("⏳ Verifying Low Stock status for all items...");
+	  pause(1000);
+	  
+	  if (hasTop) {
+	      for (int i = 0; i < topQuantities.size(); i++) {
+	          int xpathIndex = i + 1;
+	          try {
+	              WebElement topLowStatus = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	                  By.xpath("(//button[@onclick=\"openLowStockModal('top')\"][contains(text(),'Low')])[" + xpathIndex + "]")));
+	              String statusText = topLowStatus.getText().trim();
+	              System.out.println("✅ Top item " + xpathIndex + " Low Stock status: '" + statusText + "'");
+	              pause(300);
+	          } catch (Exception e) {
+	              System.out.println("⚠️ Top item " + xpathIndex + " Low Stock status NOT found");
+	          }
+	      }
+	  }
+	  
+	  if (hasBottom) {
+	      for (int i = 0; i < bottomQuantities.size(); i++) {
+	          int xpathIndex = i + 1;
+	          try {
+	              WebElement bottomTab = wait.until(ExpectedConditions.elementToBeClickable(
+	                  By.xpath("(//button[normalize-space()='Bottom'])[1]")));
+	              click(bottomTab);
+	              System.out.println("🖱️ Clicked Bottom tab");
+	              pause(1200);
+	              WebElement bottomLowStatus = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	                  By.xpath("(//button[@onclick=\"openLowStockModal('bottom')\"][contains(text(),'Low')])[" + xpathIndex + "]")));
+	              String statusText = bottomLowStatus.getText().trim();
+	              System.out.println("✅ Bottom item " + xpathIndex + " Low Stock status: '" + statusText + "'");
+	              pause(300);
+	          } catch (Exception e) {
+	              System.out.println("⚠️ Bottom item " + xpathIndex + " Low Stock status NOT found");
+	          }
+	      }
+	  }
+	  
+	  try {
+	      WebElement alertBtn = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	          By.xpath("(//p[@class='stock_active_para text-warning'])[1]")));
+	      System.out.println("✅ Details page alert header visible: '" + alertBtn.getText().trim() + "'");
+	  } catch (Exception e) {
+	      System.out.println("⚠️ Details page alert header not found");
+	  }
+	  pause(800);
+	}
 
 
 //==================== METHOD: Handle Accessory Flow ====================
 private void handleAccessoryAlertFlow() {
-  System.out.println("ℹ️ Accessory product detected — no Top/Bottom tabs");
-  pause(800);
-  
-  // --- STEP 1: Capture alert level from td[2] of first row ---
-  WebElement alertCell = wait.until(ExpectedConditions.visibilityOfElementLocated(
-      By.xpath("/html[1]/body[1]/div[1]/main[1]/div[1]/div[3]/div[1]/div[1]/div[1]/table[1]/tbody[1]/tr[1]/td[2]")));
-  String alertText = alertCell.getText().trim();
-  try {
-      accessoryAlertLevel = Integer.parseInt(alertText);
-  } catch (NumberFormatException e) {
-      accessoryAlertLevel = 0;
-  }
-  System.out.println("📊 Accessory Alert Level captured: " + accessoryAlertLevel);
-  pause(500);
-  
-  // --- STEP 2: Capture ALL item quantities dynamically from td[3] ---
-  accessoryQuantities.clear();
-  int rowIndex = 1;
-  while (true) {
-      try {
-          WebElement qtyCell = driver.findElement(By.xpath(
-              "//tbody/tr[" + rowIndex + "]/td[3]"));
-          String qtyText = qtyCell.getText().trim().replace(",", "");
-          int qty = Integer.parseInt(qtyText);
-          accessoryQuantities.add(qty);
-          System.out.println("  Accessory item " + rowIndex + " quantity: " + qty);
-          rowIndex++;
-      } catch (Exception e) {
-          break; // No more rows
-      }
-  }
-  System.out.println("📊 Accessory quantities (" + accessoryQuantities.size() + " items): " + accessoryQuantities);
-  pause(500);
-  
-  // --- STEP 3: Compare alert level with quantities ---
-  System.out.println("=== Alert Level vs Quantity Comparison ===");
-  for (int i = 0; i < accessoryQuantities.size(); i++) {
-      boolean isLow = accessoryQuantities.get(i) <= accessoryAlertLevel;
-      System.out.println("  Item " + (i+1) + ": Qty=" + accessoryQuantities.get(i) + ", Alert=" + accessoryAlertLevel 
-          + " → " + (isLow ? "LOW STOCK" : "OK"));
-  }
-  pause(800);
-  
-  // --- STEP 4: Set Low Stock Alert ---
-  System.out.println("⏳ Setting Accessory Low Stock Alert...");
-  
-  // Click 3-dot menu
-  WebElement threeDot = wait.until(ExpectedConditions.elementToBeClickable(
-      By.xpath("(//*[name()='svg'])[6]")));
-  click(threeDot);
-  System.out.println("🖱️ Clicked 3-dot menu");
-  pause(800);
-  
-  // Click Set Low Stock Alert
-  WebElement setAlert = wait.until(ExpectedConditions.elementToBeClickable(
-      By.xpath("(//li[normalize-space()='Set Low Stock Alert'])[1]")));
-  click(setAlert);
-  System.out.println("🖱️ Clicked 'Set Low Stock Alert'");
-  pause(1000);
-  
-  // Check if single item or multiple items
-  if (accessoryQuantities.size() == 1) {
-      // SINGLE ITEM: Enter quantity directly
-      WebElement alertInput = wait.until(ExpectedConditions.visibilityOfElementLocated(
-          By.xpath("(//input[@name='global_alert_level'])[1]")));
-      alertInput.clear();
-      alertInput.sendKeys(String.valueOf(accessoryQuantities.get(0)));
-      System.out.println("⌨️ Single item — Entered alert level: " + accessoryQuantities.get(0));
-  } else {
-      // MULTIPLE ITEMS: Click threshold slider, then enter each quantity
-      System.out.println("⏳ Multiple items detected — clicking threshold slider...");
+	  System.out.println("ℹ️ Accessory product detected — no Top/Bottom tabs");
+	  pause(800);
+	  
+	  WebElement alertCell = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	      By.xpath("/html[1]/body[1]/div[1]/main[1]/div[1]/div[3]/div[1]/div[1]/div[1]/table[1]/tbody[1]/tr[1]/td[2]")));
+	  String alertText = alertCell.getText().trim();
+	  try {
+	      accessoryAlertLevel = Integer.parseInt(alertText);
+	  } catch (NumberFormatException e) {
+	      accessoryAlertLevel = 0;
+	  }
+	  System.out.println("📊 Accessory Alert Level captured: " + accessoryAlertLevel);
+	  pause(500);
+	  
+	  accessoryQuantities.clear();
+	  int rowIndex = 1;
+	  while (true) {
+	      try {
+	          WebElement qtyCell = driver.findElement(By.xpath(
+	              "//tbody/tr[" + rowIndex + "]/td[3]"));
+	          String qtyText = qtyCell.getText().trim().replace(",", "");
+	          int qty = Integer.parseInt(qtyText);
+	          accessoryQuantities.add(qty);
+	          System.out.println("  Accessory item " + rowIndex + " quantity: " + qty);
+	          rowIndex++;
+	      } catch (Exception e) {
+	          break;
+	      }
+	  }
+	  System.out.println("📊 Accessory quantities (" + accessoryQuantities.size() + " items): " + accessoryQuantities);
+	  pause(500);
+	  
+	  System.out.println("=== Alert Level vs Quantity Comparison ===");
+	  for (int i = 0; i < accessoryQuantities.size(); i++) {
+	      boolean isLow = accessoryQuantities.get(i) <= accessoryAlertLevel;
+	      System.out.println("  Item " + (i+1) + ": Qty=" + accessoryQuantities.get(i) + ", Alert=" + accessoryAlertLevel 
+	          + " → " + (isLow ? "LOW STOCK" : "OK"));
+	  }
+	  pause(800);
+	  
+	  System.out.println("⏳ Setting Accessory Low Stock Alert...");
+	  
+	  By threeDotBy = By.xpath("(//div[@class='material_action_dropdown js-tag-toggle'])[1]");
+      WebElement threeDotMenu = wait.until(ExpectedConditions.presenceOfElementLocated(threeDotBy));
+      ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'center'});", threeDotMenu);
       
-      WebElement thresholdSlider = wait.until(ExpectedConditions.elementToBeClickable(
-          By.xpath("//label[contains(@class,'switch')] | //input[@type='checkbox'][following-sibling::span] | //span[contains(@class,'slider')]")));
-      click(thresholdSlider);
-      System.out.println("🖱️ Clicked threshold slider for per-item alerts");
+      try {
+          wait.until(ExpectedConditions.elementToBeClickable(threeDotMenu)).click();
+      } catch (Exception e) {
+          ((JavascriptExecutor) driver).executeScript("arguments[0].click();", threeDotMenu);
+      }
+      System.out.println("🖱️ Clicked 3-dot menu");
       pause(800);
-      
-      // Enter each accessory quantity in corresponding alert_level inputs
-      for (int i = 0; i < accessoryQuantities.size(); i++) {
-          int inputIndex = i + 1;
-          WebElement alertInput = wait.until(ExpectedConditions.visibilityOfElementLocated(
-              By.xpath("(//input[@name='size_alerts[" + inputIndex + "][alert_level]'])[1]")));
-          alertInput.clear();
-          alertInput.sendKeys(String.valueOf(accessoryQuantities.get(i)));
-          System.out.println("⌨️ Entered Accessory item " + inputIndex + " alert level: " + accessoryQuantities.get(i));
-          pause(300);
-      }
-  }
-  pause(500);
-  
-  // Click Save Alert
-  WebElement saveAlert = wait.until(ExpectedConditions.elementToBeClickable(
-      By.xpath("(//button[normalize-space()='Save Alert'])[1]")));
-  click(saveAlert);
-  System.out.println("💾 Saved Low Stock Alert");
-  pause(1500);
-  
-  // Wait for popup to close
-  wait.until(ExpectedConditions.invisibilityOfElementLocated(
-      By.xpath("//div[contains(@class,'modal') and contains(@style,'display: block')]")));
-  System.out.println("✅ Alert popup closed");
-  pause(800);
-  
-  // --- STEP 5: Verify Low Stock status reflected for ALL items ---
-  System.out.println("⏳ Verifying Low Stock status for all accessory items...");
-  pause(1000);
-  
-  for (int i = 0; i < accessoryQuantities.size(); i++) {
-      int xpathIndex = i + 1;
-      try {
-          WebElement lowStatus = wait.until(ExpectedConditions.visibilityOfElementLocated(
-              By.xpath("(//button[@class='m-0 low_stock_badge'][contains(text(),'Low')])[" + xpathIndex + "]")));
-          String statusText = lowStatus.getText().trim();
-          System.out.println("✅ Accessory item " + xpathIndex + " Low Stock status: '" + statusText + "'");
-          pause(300);
-      } catch (Exception e) {
-          System.out.println("⚠️ Accessory item " + xpathIndex + " Low Stock status NOT found");
-      }
-  }
-  
-  // Verify header alert display
-  try {
-      WebElement alertBtn = wait.until(ExpectedConditions.visibilityOfElementLocated(
-          By.xpath("(//p[@class='stock_active_para text-warning'])[1]")));
-      System.out.println("✅ Details page alert header visible: '" + alertBtn.getText().trim() + "'");
-  } catch (Exception e) {
-      System.out.println("⚠️ Details page alert header not found");
-  }
-  pause(800);
-}
+	  
+	  WebElement setAlert = wait.until(ExpectedConditions.elementToBeClickable(
+	      By.xpath("(//li[normalize-space()='Set Low Stock Alert'])[1]")));
+	  click(setAlert);
+	  System.out.println("🖱️ Clicked 'Set Low Stock Alert'");
+	  pause(1000);
+	  
+	  if (accessoryQuantities.size() == 1) {
+	      WebElement alertInput = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	          By.xpath("(//input[@name='global_alert_level'])[1]")));
+	      alertInput.clear();
+	      alertInput.sendKeys(String.valueOf(accessoryQuantities.get(0)));
+	      System.out.println("⌨️ Single item — Entered alert level: " + accessoryQuantities.get(0));
+	  } else {
+	      System.out.println("⏳ Multiple items detected — clicking threshold slider...");
+	      
+	      WebElement thresholdSlider = wait.until(ExpectedConditions.elementToBeClickable(
+	          By.xpath("//label[contains(@class,'switch')] | //input[@type='checkbox'][following-sibling::span] | //span[contains(@class,'slider')]")));
+	      
+	      if (!thresholdSlider.isSelected()) {
+	          ((JavascriptExecutor) driver).executeScript("arguments[0].click();", thresholdSlider);
+	          System.out.println("🖱️ Clicked threshold slider for per-item alerts");
+	          pause(1000);
+	      }
+	      
+	      List<WebElement> alertInputs = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(
+	          By.xpath("//input[contains(@name, 'alert_level') and not(@name='global_alert_level')]")));
+	      
+	      for (int i = 0; i < accessoryQuantities.size() && i < alertInputs.size(); i++) {
+	          WebElement alertInput = alertInputs.get(i);
+	          wait.until(ExpectedConditions.visibilityOf(alertInput));
+	          
+	          ((JavascriptExecutor) driver).executeScript("arguments[0].value ='';", alertInput);
+	          alertInput.sendKeys(Keys.CONTROL + "a", Keys.BACK_SPACE);
+	          alertInput.sendKeys(String.valueOf(accessoryQuantities.get(i)));
+	          
+	          System.out.println("⌨️ Entered Accessory item " + (i + 1) + " alert level: " + accessoryQuantities.get(i));
+	          pause(300);
+	      }
+	  }
+	  pause(500);
+	  
+	  WebElement saveAlert = wait.until(ExpectedConditions.elementToBeClickable(
+	      By.xpath("(//button[normalize-space()='Save Alert'])[1]")));
+	  click(saveAlert);
+	  System.out.println("💾 Saved Low Stock Alert");
+	  pause(1500);
+	  
+	  wait.until(ExpectedConditions.invisibilityOfElementLocated(
+	      By.xpath("//div[contains(@class,'modal') and contains(@style,'display: block')]")));
+	  System.out.println("✅ Alert popup closed");
+	  pause(800);
+	  
+	  System.out.println("⏳ Verifying Low Stock status for all accessory items...");
+	  pause(1000);
+	  
+	  for (int i = 0; i < accessoryQuantities.size(); i++) {
+	      int xpathIndex = i + 1;
+	      try {
+	          WebElement lowStatus = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	              By.xpath("(//button[@class='m-0 low_stock_badge'][contains(text(),'Low')])[" + xpathIndex + "]")));
+	          String statusText = lowStatus.getText().trim();
+	          System.out.println("✅ Accessory item " + xpathIndex + " Low Stock status: '" + statusText + "'");
+	          pause(300);
+	      } catch (Exception e) {
+	          System.out.println("⚠️ Accessory item " + xpathIndex + " Low Stock status NOT found");
+	      }
+	  }
+	  
+	  try {
+	      WebElement alertBtn = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	          By.xpath("(//p[@class='stock_active_para text-warning'])[1]")));
+	      System.out.println("✅ Details page alert header visible: '" + alertBtn.getText().trim() + "'");
+	  } catch (Exception e) {
+	      System.out.println("⚠️ Details page alert header not found");
+	  }
+	  pause(800);
+	}
 public String getCapturedProductName() {
     return capturedProductName;
 }

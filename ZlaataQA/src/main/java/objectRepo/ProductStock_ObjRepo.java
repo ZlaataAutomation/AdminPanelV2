@@ -60,10 +60,10 @@ public abstract class ProductStock_ObjRepo extends BasePage {
      @FindBy(xpath = "//table//tbody//tr[contains(@class,'even') or contains(@class,'odd')]")
      protected List<WebElement> productDataRows;
      
-     @FindBy(xpath = "(//a[@class='btn btn-sm px-2 py-1   actions-buttons-column']//i[@class='las la-ellipsis-v'])")
+     @FindBy(xpath = "//i[contains(@class,'bi-three-dots-vertical')]")
      protected List<WebElement> editButtons;
      
-     @FindBy(xpath = "//div[@class='nav-item dropdown']")
+     @FindBy(xpath = "//span[contains(normalize-space(),'Preview')]")
      protected List<WebElement> previewIcons;
  		
 }
