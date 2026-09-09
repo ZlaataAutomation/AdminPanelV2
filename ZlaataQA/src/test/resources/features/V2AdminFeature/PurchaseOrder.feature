@@ -56,14 +56,27 @@ Examples:
   | TD_UI_Zlaata_PO_04  |
   
   
+  
   @PO
 @TC_UI_Zlaata_PO_05
-Scenario Outline: TC_UI_Zlaata_PO_05 |Verify that the number of due days is displayed correctly on the Listing page| "<TD_ID>"
+Scenario Outline: TC_UI_Zlaata_PO_05 |Verify that validation messages are displayed when mandatory fields are left blank and the user tries to save the Purchase Order| "<TD_ID>"
 
   Given admin navigates to the Purchase Order module
-  When admin views an overdue Purchase Order on the Listing page
-  Then the number of due days should be displayed correctly
+  When admin clicks on Save without filling the mandatory fields
+  Then validation messages should be displayed for all mandatory Purchase Order fields
 
 Examples:
   | TD_ID               |
   | TD_UI_Zlaata_PO_05  |
+  
+  @PO
+@TC_UI_Zlaata_PO_06
+Scenario Outline: TC_UI_Zlaata_PO_06 |Verify that multiple raw materials can be added with available quantities and the calculated amount is displayed correctly| "<TD_ID>"
+
+  Given admin navigates to the Purchase Order module
+  When admin adds multiple raw materials with valid quantities
+  Then the available quantity and calculated amount should be displayed correctly for all added raw materials
+
+Examples:
+  | TD_ID               |
+  | TD_UI_Zlaata_PO_06  |

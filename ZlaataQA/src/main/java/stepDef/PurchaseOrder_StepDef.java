@@ -91,14 +91,23 @@ public class PurchaseOrder_StepDef {
     
     
   //TC-PO-05
-    @When("admin views an overdue Purchase Order on the Listing page")
-    public void admin_views_an_overdue_purchase_order_on_the_listing_page() throws Exception {
-    	
+    @When("admin clicks on Save without filling the mandatory fields")
+    public void admin_clicks_on_save_without_filling_the_mandatory_fields() throws Exception {
+
+    }
+    @Then("validation messages should be displayed for all mandatory Purchase Order fields")
+    public void validation_messages_should_be_displayed_for_all_mandatory_purchase_order_fields() {
+    	purchaseOrder.verifyMandatoryAndFillDetails();
+    }
+    
+  //TC-PO-06
+    @When("admin adds multiple raw materials with valid quantities")
+    public void admin_adds_multiple_raw_materials_with_valid_quantities() throws Exception {
+    	purchaseOrder.addMultipleRawMaterialsAndVerifyCalcualtions();
     }
 
-    @Then("the number of overdue days should be displayed correctly")
-    public void the_number_of_overdue_days_should_be_displayed_correctly() {
-    	purchaseOrder.verifyDueDaysDisplayed();
-    }
+    @Then("the available quantity and calculated amount should be displayed correctly for all added raw materials")
+    public void the_available_quantity_and_calculated_amount_should_be_displayed_correctly_for_all_added_raw_materials() {
 
+    }
 }

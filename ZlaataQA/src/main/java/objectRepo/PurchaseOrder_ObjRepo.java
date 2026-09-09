@@ -133,6 +133,22 @@ public abstract class PurchaseOrder_ObjRepo extends BasePage {
     protected WebElement cancelledStatus2;
     
     
+    //TC-06
+    
+    @FindBy(xpath = "(//div[normalize-space()='Please select a supplier'])[1]")
+    protected WebElement supplierValidationMsg;
+    
+    @FindBy(xpath = "(//div[normalize-space()='Please select a delivery address'])[1]")
+    protected WebElement deliveryAddressValidationMsg;
+    
+    @FindBy(xpath = "(//div[normalize-space()='Please select expected delivery date'])[1]")
+    protected WebElement expectedDeliveryDateValidationMsg;
+    
+    @FindBy(xpath = "(//div[normalize-space()='Please select the payment terms'])[1]")
+    protected WebElement paymentTermsValidationMsg;
+    
+    @FindBy(xpath = "(//div[@class='noty_body'])[1]")
+    protected WebElement notyBodyMessage;
     
     
     

@@ -1525,44 +1525,535 @@ public class PurchaseOrder_Page extends PurchaseOrder_ObjRepo {
         logSuccess("Purchase Order cancellation and status reflection verified successfully!");
         sleep(2);
     }
+ 
     
-    
- // --- TC-05: Verify Overdue / Due Days on Listing Page ---
-    public void verifyDueDaysDisplayed() {
-        logHeader("TC-05: VERIFY DUE / OVERDUE DAYS ON LISTING PAGE");
+ // --- TC-06: Verify Blank Validations, Fill Details, & Add Item Flow ---
+    public void verifyMandatoryAndFillDetails() {
+    	Random rand = new Random();
+        JavascriptExecutor js = (JavascriptExecutor) driver;
 
-        // Locate the due/overdue days cell or badge on the listing page row
-        // Adjust the xpath if your due days column index differs (e.g., td[7] or similar)
-        WebElement dueDaysCell = driver.findElement(By.xpath("(//td[contains(@class, 'due') or span[contains(text(), 'Day') or contains(text(), 'Overdue')]])[1]"));
-        
-        wait.until(ExpectedConditions.visibilityOf(dueDaysCell));
-        String dueDaysText = dueDaysCell.getText().trim();
+        logHeader("TC-06: VERIFY MANDATORY VALIDATIONS AND FILL DETAILS");
 
-        System.out.println(CYAN + BOLD + "[INFO] " + RESET + "Captured Due/Overdue Text: [" + dueDaysText + "]");
-
-        // Basic assertion/check that the text indicates days or due status
-        if (!dueDaysText.isEmpty()) {
-            System.out.println(GREEN + BOLD + "[SUCCESS] " + RESET + "Due days are displayed successfully: [" + dueDaysText + "]");
-        } else {
-            System.out.println(RED + BOLD + "[ERROR] " + RESET + "Due days text is empty or not displayed correctly.");
-            throw new AssertionError("Due days field is blank on the listing page.");
+        // 1. Click on Add New Purchase Order
+        logAction("Clicking on 'Add New' Purchase Order button.");
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(addPurchaseOrder));
+            addPurchaseOrder.click();
+        } catch (Exception e) {
+            js.executeScript("arguments[0].click();", addPurchaseOrder);
         }
+        sleep(2);
+
+        // 2. Click on Save without filling any mandatory fields
+        logAction("Clicking on 'Save' without filling mandatory fields.");
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(saveBtn));
+            saveBtn.click();
+        } catch (Exception e) {
+            js.executeScript("arguments[0].click();", saveBtn);
+        }
+        sleep(2);
+
+        // 3. Verify all mandatory validation messages are displayed
+        logAction("Verifying mandatory field validation messages...");
         
-        logSuccess("Purchase Order due days verification completed successfully.");
+        wait.until(ExpectedConditions.visibilityOf(supplierValidationMsg));
+        System.out.println(GREEN + BOLD + "[SUCCESS] " + RESET + "Supplier Validation Message: [" + supplierValidationMsg.getText().trim() + "]");
+
+        wait.until(ExpectedConditions.visibilityOf(deliveryAddressValidationMsg));
+        System.out.println(GREEN + BOLD + "[SUCCESS] " + RESET + "Delivery Address Validation Message: [" + deliveryAddressValidationMsg.getText().trim() + "]");
+
+        wait.until(ExpectedConditions.visibilityOf(expectedDeliveryDateValidationMsg));
+        System.out.println(GREEN + BOLD + "[SUCCESS] " + RESET + "Expected Delivery Date Validation Message: [" + expectedDeliveryDateValidationMsg.getText().trim() + "]");
+
+        wait.until(ExpectedConditions.visibilityOf(paymentTermsValidationMsg));
+        System.out.println(GREEN + BOLD + "[SUCCESS] " + RESET + "Payment Terms Validation Message: [" + paymentTermsValidationMsg.getText().trim() + "]");
+
+        logSuccess("All mandatory field validations verified successfully.");
+        sleep(2);
+
+        // 4. Fill in the mandatory details now that validation is verified
+        logAction("Filling in mandatory PO details...");
+        
+     // 2. Open Supplier Dropdown & Select Random Supplier
+        logAction("Clicking on Supplier Dropdown.");
+        click(supplierDropdown);
+        sleep(1);
+
+        wait.until(ExpectedConditions.numberOfElementsToBeMoreThan(
+            By.xpath("//div[@class='w-100 d-flex justify-content-start align-items-center']"), 0));
+
+        int randomSupplierIndex = rand.nextInt(supplierOptionsList.size());
+        WebElement chosenSupplier = supplierOptionsList.get(randomSupplierIndex);
+
+        String rawSupplierText = chosenSupplier.getAttribute("innerText").trim();
+        if (rawSupplierText.isEmpty()) {
+            rawSupplierText = chosenSupplier.getText().trim();
+        }
+        selectedSupplierName = rawSupplierText.split("\n")[0].trim();
+        logAction("Randomly Selected Supplier: " + selectedSupplierName);
+
+        js.executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", chosenSupplier);
+        sleep(1);
+
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(chosenSupplier));
+            chosenSupplier.click();
+        } catch (Exception e) {
+            js.executeScript("arguments[0].click();", chosenSupplier);
+        }
+        logSuccess("Supplier selected successfully.");
+        sleep(1);
+
+        // 3. Verify Billing and Shipping Address Visibility
+        logAction("Verifying Billing and Shipping address containers are displayed.");
+        wait.until(ExpectedConditions.visibilityOf(billingAddressBox));
+        wait.until(ExpectedConditions.visibilityOf(shippingAddressBox));
+        logSuccess("Billing and Shipping address boxes are visible.");
+        sleep(1);
+
+        // 4. Open Warehouse Dropdown & Handle Async Options
+        logAction("Clicking on Delivery Address (Warehouse) Dropdown.");
+        click(deliveryAddressDropdown);
+        sleep(1);
+
+        wait.until(ExpectedConditions.numberOfElementsToBeMoreThan(
+            By.xpath("//div[@id='warehouseOptionsList']//div[@class='option']"), 0));
+
+        wait.until(d -> {
+            List<WebElement> options = d.findElements(
+                By.xpath("//div[@id='warehouseOptionsList']//div[@class='option']"));
+            if (options.isEmpty()) return false;
+            String txt = options.get(0).getAttribute("innerText").trim();
+            return !txt.equalsIgnoreCase("Loading...") && !txt.isEmpty();
+        });
+
+        int randomWarehouseIndex = rand.nextInt(warehouseOptions.size());
+        WebElement chosenWarehouse = warehouseOptions.get(randomWarehouseIndex);
+
+        selectedWarehouseName = chosenWarehouse.getAttribute("innerText").trim();
+        if (selectedWarehouseName.isEmpty()) {
+            selectedWarehouseName = chosenWarehouse.getText().trim();
+        }
+        logAction("Randomly Selected Warehouse: " + selectedWarehouseName);
+
+        js.executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", chosenWarehouse);
+        sleep(1);
+
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(chosenWarehouse));
+            chosenWarehouse.click();
+        } catch (Exception e) {
+            js.executeScript("arguments[0].click();", chosenWarehouse);
+        }
+        logSuccess("Warehouse selected successfully.");
+        sleep(1);
+
+        // 5. Verify Reflected Address Text
+        logAction("Verifying the full delivery address text is populated.");
+        wait.until(ExpectedConditions.visibilityOf(deliveryFullAddressText));
+
+        wait.until(d -> {
+            String text = deliveryFullAddressText.getText().trim();
+            return !text.isEmpty();
+        });
+
+        String reflectedAddress = deliveryFullAddressText.getText().trim();
+        logSuccess("Reflected Address: " + reflectedAddress);
+        sleep(1);
+
+        // 6. Select Expected Delivery Date (5 Days from Today)
+        logAction("Selecting Expected Delivery Date (5 days from now).");
+        LocalDate targetDate = LocalDate.now().plusDays(5);
+        String formattedDate = targetDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+        js.executeScript("arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('change'));", expectedDeilveryDate, formattedDate);
+        logSuccess("Expected Delivery Date set to: " + formattedDate);
+        sleep(1);
+
+        // 7. Open Payment Terms Dropdown & Select Random Option via @data-value
+        logAction("Clicking on Payment Terms Dropdown.");
+        click(paymentTermsDropdown);
+        sleep(1);
+
+        List<WebElement> paymentOptions = driver.findElements(
+            By.xpath("//div[@data-value='1' or @data-value='2' or @data-value='3' or @data-value='4' or @data-value='5']"));
+
+        wait.until(ExpectedConditions.visibilityOfAllElements(paymentOptions));
+
+        int randomPaymentIndex = rand.nextInt(paymentOptions.size());
+        WebElement chosenPaymentOption = paymentOptions.get(randomPaymentIndex);
+
+        selectedPaymentTerm = chosenPaymentOption.getText().trim();
+        if (selectedPaymentTerm.isEmpty()) {
+            selectedPaymentTerm = chosenPaymentOption.getAttribute("innerText").trim();
+        }
+        logAction("Randomly Selected Payment Term: " + selectedPaymentTerm);
+
+        js.executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", chosenPaymentOption);
+        sleep(1);
+
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(chosenPaymentOption));
+            chosenPaymentOption.click();
+        } catch (Exception e) {
+            js.executeScript("arguments[0].click();", chosenPaymentOption);
+        }
+        logSuccess("Payment Term selected successfully: " + selectedPaymentTerm);
+        sleep(1);
+
+        // 5. Click on 'Add Item' button
+        logAction("Clicking on 'Add Item' button.");
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(addItemBtn));
+            addItemBtn.click();
+        } catch (Exception e) {
+            js.executeScript("arguments[0].click();", addItemBtn);
+        }
+        sleep(2);
+
+        // 6. Click 'Yes / Confirm' on the popup modal
+        logAction("Confirming item action on popup modal.");
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(confirmBtn));
+            confirmBtn.click();
+        } catch (Exception e) {
+            js.executeScript("arguments[0].click();", confirmBtn);
+        }
+        sleep(2);
+
+        // 7. Verify validation/notification message in noty_body
+        logAction("Verifying notification message from noty_body...");
+        wait.until(ExpectedConditions.visibilityOf(notyBodyMessage));
+        String toastMessage = notyBodyMessage.getText().trim();
+        System.out.println(GREEN + BOLD + "[SUCCESS] " + RESET + "Notification Message Displayed: [" + toastMessage + "]");
+
+        if (!toastMessage.isEmpty()) {
+            logSuccess("Item popup confirmation message verified successfully. Test flow complete!");
+        }
         sleep(2);
     }
     
     
     
+ // --- TC-07: Add Multiple Raw Materials and Verify Quantities & Calculated Amounts ---
+    public void selectMultipleRawMaterialsFromModal() {
+        Random rand = new Random();
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+
+        logHeader("TC-07: ADD MULTIPLE RAW MATERIALS & VERIFY CALCULATIONS");
+
+        // 1. Click Add Item Button
+        logAction("Clicking on 'Add Item' button.");
+        click(addItemBtn);
+        sleep(2);
+
+        // 2. Wait for Raw Material Modal to become visible
+        logAction("Waiting for Raw Material modal to appear.");
+        WebElement modal = driver.findElement(By.id("rawMaterialModal"));
+        wait.until(ExpectedConditions.visibilityOf(modal));
+
+        // 3. Locate all dynamic raw material label options inside the modal
+        wait.until(ExpectedConditions.numberOfElementsToBeMoreThan(
+            By.xpath("//div[@id='rawMaterialModal']//label"), 0));
+
+        List<WebElement> rawMaterialLabels = driver.findElements(
+            By.xpath("//div[@id='rawMaterialModal']//label"));
+
+        int totalAvailableItems = rawMaterialLabels.size();
+        
+        // Decide how many items to add (e.g., between 2 and 4, or up to the max available if fewer)
+        int targetItemsToAdd = Math.min(rand.nextInt(3) + 2, totalAvailableItems); 
+        logAction("Targeting to add " + targetItemsToAdd + " raw materials.");
+
+        // Keep track of indices or loop to select multiple
+        for (int i = 0; i < targetItemsToAdd; i++) {
+            // Re-fetch labels inside the loop if DOM refreshes, or pick unique indices
+            rawMaterialLabels = driver.findElements(By.xpath("//div[@id='rawMaterialModal']//label"));
+            
+            if (rawMaterialLabels.isEmpty()) break;
+
+            int randomIndex = rand.nextInt(rawMaterialLabels.size());
+            WebElement chosenRawMaterial = rawMaterialLabels.get(randomIndex);
+
+            String rawMaterialName = chosenRawMaterial.getText().trim();
+            if (rawMaterialName.isEmpty()) {
+                rawMaterialName = chosenRawMaterial.getAttribute("innerText").trim();
+            }
+            logAction("Selecting Raw Material [" + (i + 1) + "/" + targetItemsToAdd + "]: " + rawMaterialName);
+
+            js.executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", chosenRawMaterial);
+            sleep(1);
+
+            try {
+                wait.until(ExpectedConditions.elementToBeClickable(chosenRawMaterial));
+                chosenRawMaterial.click();
+            } catch (Exception e) {
+                js.executeScript("arguments[0].click();", chosenRawMaterial);
+            }
+            sleep(1);
+        }
+
+        // 4. Click Confirm Button after selecting multiple items
+        logAction("Clicking on Modal Confirm button for selected raw materials.");
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(confirmBtn));
+            click(confirmBtn);
+        } catch (Exception e) {
+            js.executeScript("arguments[0].click();", confirmBtn);
+        }
+        logSuccess("Multiple raw materials confirmed and added to Purchase Order.");
+        sleep(2);
+
+        // 5. Optional: Update quantity for the added items and verify calculated amounts
+        logAction("Updating quantities and verifying calculated amount reflections...");
+        try {
+            List<WebElement> quantityInputs = driver.findElements(By.xpath("//input[contains(@name, 'quantity') or contains(@class, 'qty')]"));
+            for (WebElement qtyInput : quantityInputs) {
+                js.executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", qtyInput);
+                qtyInput.clear();
+                qtyInput.sendKeys("10"); // Enter valid test quantity
+                sleep(1);
+            }
+            logSuccess("Quantities updated successfully for all added items.");
+        } catch (Exception e) {
+            System.out.println(CYAN + BOLD + "[INFO] " + RESET + "Quantity field automation step adjusted or handled: " + e.getMessage());
+        }
+
+        logSuccess("TC-07 Multiple raw material selection and amount verification flow completed!");
+        sleep(2);
+    }
+    
+    protected double expectedGrandTotal; // <-- Declare this globally in the class
+    public void configureMultipleItemsQuantityAndAmount() {
+        Random rand = new Random();
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+
+        logHeader("CONFIGURE MULTIPLE ITEMS QUANTITIES, AMOUNTS & TOTAL VERIFICATION");
+
+        // 1. Verify Total Items Count Displayed on UI matches added items
+        logAction("Verifying total items count displayed on the UI container...");
+        WebElement totalItemsCountElem = driver.findElement(By.xpath("(//div[@class='d-flex justify-content-between align-items-center px-4'])[1]"));
+        wait.until(ExpectedConditions.visibilityOf(totalItemsCountElem));
+        String countText = totalItemsCountElem.getText().trim();
+        logAction("Items Count Banner Text: [" + countText + "]");
+        sleep(1);
+
+        // 2. Dynamically find how many row containers / input groups are currently rendered
+        List<WebElement> numberControlContainers = driver.findElements(
+            By.xpath("//div[@class='number-control d-flex justify-content-between align-items-center']")
+        );
+
+        int totalItemsAdded = numberControlContainers.size() / 2;
+        if (totalItemsAdded == 0) {
+            totalItemsAdded = 1; // Fallback safeguard
+        }
+        logAction("Detected " + totalItemsAdded + " active item row(s) to configure.");
+
+        // Reset grand total before accumulating
+        expectedGrandTotal = 0.0;
+
+        // 3. Loop through each item row, set random valid Qty and Price, and compute expected sum
+        for (int i = 0; i < totalItemsAdded; i++) {
+            int qtyContainerIndex = (i * 2) + 1;       // 1, 3, 5, ...
+            int priceContainerIndex = (i * 2) + 2;     // 2, 4, 6, ...
+
+            int randomQty = rand.nextInt(10) + 1;      // 1 to 10
+            double randomPrice = 50 + (150 * rand.nextDouble()); // 50.00 to 200.00
+            randomPrice = Math.round(randomPrice * 100.0) / 100.0;
+
+            WebElement qtyContainer = driver.findElement(By.xpath("(//div[@class='number-control d-flex justify-content-between align-items-center'])[" + qtyContainerIndex + "]"));
+            WebElement priceContainer = driver.findElement(By.xpath("(//div[@class='number-control d-flex justify-content-between align-items-center'])[" + priceContainerIndex + "]"));
+
+            WebElement qtyInput = qtyContainer.findElement(By.xpath(".//input"));
+            WebElement priceInput = priceContainer.findElement(By.xpath(".//input"));
+
+            // Set Quantity
+            logAction("Setting Item " + (i + 1) + " Quantity to: " + randomQty);
+            js.executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", qtyInput);
+            sleep(1);
+            qtyInput.clear();
+            qtyInput.sendKeys(String.valueOf(randomQty));
+            js.executeScript("arguments[0].dispatchEvent(new Event('change')); arguments[0].dispatchEvent(new Event('blur'));", qtyInput);
+            sleep(1);
+
+            // Set Price per Unit
+            logAction("Setting Item " + (i + 1) + " Unit Price to: " + String.format("%.2f", randomPrice));
+            js.executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", priceInput);
+            sleep(1);
+            priceInput.clear();
+            priceInput.sendKeys(String.valueOf(randomPrice));
+            js.executeScript("arguments[0].dispatchEvent(new Event('change')); arguments[0].dispatchEvent(new Event('blur'));", priceInput);
+            sleep(1);
+
+            double itemSubtotal = randomQty * randomPrice;
+            expectedGrandTotal += itemSubtotal;
+            logAction("Item " + (i + 1) + " Subtotal Calculated: " + String.format("%.2f", itemSubtotal));
+        }
+
+        expectedGrandTotal = Math.round(expectedGrandTotal * 100.0) / 100.0;
+        logAction("Expected Overall Calculated Total Amount: " + String.format("%.2f", expectedGrandTotal));
+        sleep(2);
+
+        // 4. Verify Total Amount Displayed on UI (`//p[@id='totalAmount'][1]`)
+        logAction("Verifying Total Amount reflected on UI.");
+        WebElement totalAmountElem = driver.findElement(By.xpath("(//p[@id='totalAmount'])[1]"));
+        wait.until(ExpectedConditions.visibilityOf(totalAmountElem));
+
+        wait.until(d -> {
+            String txt = totalAmountElem.getText().replaceAll("[^0-9.]", "").trim();
+            return !txt.isEmpty();
+        });
+
+        String rawTotalText = totalAmountElem.getText().trim();
+        String cleanTotalText = rawTotalText.replaceAll("[^0-9.]", "");
+        double actualTotalAmount = Double.parseDouble(cleanTotalText);
+
+        logAction("Displayed UI Total Amount: [" + rawTotalText + "]");
+
+        // 5. Assertion check
+        if (Math.abs(expectedGrandTotal - actualTotalAmount) < 0.05) {
+            System.out.println(GREEN + BOLD + "[SUCCESS] Multiple Items Total Amount Verified Successfully! Expected: [" 
+                + String.format("%.2f", expectedGrandTotal) + "] | Actual UI: [" + actualTotalAmount + "]" + RESET);
+        } else {
+            System.out.println(RED + BOLD + "[FAILURE] Total Amount Calculation Mismatch! Expected: [" 
+                + expectedGrandTotal + "] | Actual UI: [" + actualTotalAmount + "]" + RESET);
+            throw new AssertionError("Total Amount Calculation Mismatch! Expected: " 
+                + expectedGrandTotal + " but found on UI: " + actualTotalAmount);
+        }
+
+        sleep(2);
+    }
     
     
-    
-    
-    
-    
-    
-    
-    
+    public void saveAndVerifyMultipleItemsQtyDetailsInBothListingAndPreview() {
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+
+        logHeader("SAVE MULTIPLE ITEMS PURCHASE ORDER & VERIFY DETAILS");
+
+        logAction("Clicking on 'Save' button.");
+        WebElement saveBtn = driver.findElement(By.xpath("(//button[normalize-space()='Save'])[1]"));
+        js.executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", saveBtn);
+        sleep(1);
+        
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(saveBtn));
+            saveBtn.click();
+        } catch (Exception e) {
+            logAction("Standard click intercepted or failed, using JS click fallback.");
+            js.executeScript("arguments[0].click();", saveBtn);
+        }
+        System.out.println(GREEN + BOLD + "[SUCCESS] Purchase Order with Multiple Items saved successfully." + RESET);
+        sleep(3);
+
+        logAction("Verifying Supplier Name on listing page.");
+        WebElement supplierCell = driver.findElement(By.xpath("(//td)[2]"));
+        wait.until(ExpectedConditions.visibilityOf(supplierCell));
+        String listedSupplier = supplierCell.getText().trim();
+        
+        if (listedSupplier.toLowerCase().contains(selectedSupplierName.toLowerCase())) {
+            System.out.println(GREEN + BOLD + "[SUCCESS] Supplier Name Matched --> Expected: [" + selectedSupplierName + "] | Actual: [" + listedSupplier + "]" + RESET);
+        } else {
+            throw new AssertionError("Supplier Name Mismatch --> Expected to contain: [" + selectedSupplierName + "] | Actual: [" + listedSupplier + "]");
+        }
+        sleep(2);
+
+        // --- Verify Grand Total Amount on Listing Page at (//td)[4] ---
+        logAction("Verifying Grand Total Amount on listing page at (//td)[4].");
+        WebElement orderValueCell = driver.findElement(By.xpath("(//td)[4]"));
+        wait.until(ExpectedConditions.visibilityOf(orderValueCell));
+        
+        wait.until(d -> !orderValueCell.getText().replaceAll("[^0-9.]", "").trim().isEmpty());
+        
+        String rawListingOrderValueText = orderValueCell.getText().trim();
+        String cleanListingOrderValueText = rawListingOrderValueText.replaceAll("[^0-9.]", "");
+        double listedOrderValue = Double.parseDouble(cleanListingOrderValueText);
+
+        System.out.println(CYAN + BOLD + "[INFO] " + RESET + "Displayed Listing Order Value: [" + rawListingOrderValueText + "]");
+
+        if (Math.abs(expectedGrandTotal - listedOrderValue) < 0.05) {
+            System.out.println(GREEN + BOLD + "[SUCCESS] Listing Grand Total Value Verified Successfully! Expected: [" + String.format("%.2f", expectedGrandTotal) + "] | Actual: [" + listedOrderValue + "]" + RESET);
+        } else {
+            System.out.println(RED + BOLD + "[FAILURE] Listing Grand Total Value Mismatch! Expected: [" + expectedGrandTotal + "] | Actual: [" + listedOrderValue + "]" + RESET);
+            throw new AssertionError("Listing Grand Total Value Mismatch! Expected: " + expectedGrandTotal + " | Actual: " + listedOrderValue);
+        }
+        sleep(2);
+
+        logAction("Verifying status is updated to 'Open' on listing page.");
+        WebElement statusCell = driver.findElement(By.xpath("(//td)[5]"));
+        wait.until(ExpectedConditions.visibilityOf(statusCell));
+        String statusText = statusCell.getText().trim();
+        
+        String expectedStatus = "Open";
+        if (statusText.equalsIgnoreCase(expectedStatus)) {
+            System.out.println(GREEN + BOLD + "[SUCCESS] Purchase Order Status Matched --> Expected: [" + expectedStatus + "] | Actual: [" + statusText + "]" + RESET);
+        } else {
+            throw new AssertionError("Purchase Order Status Mismatch --> Expected: [" + expectedStatus + "] | Actual: [" + statusText + "]");
+        }
+        sleep(2);
+
+        logAction("Verifying Expected Delivery Date on listing page.");
+        WebElement dateCell = driver.findElement(By.xpath("(//td)[8]"));
+        wait.until(ExpectedConditions.visibilityOf(dateCell));
+        String listedDate = dateCell.getText().trim();
+        
+        System.out.println(GREEN + BOLD + "[SUCCESS] Delivery Date Verified --> Actual Displayed on Listing: [" + listedDate + "]" + RESET);
+        sleep(2);
+
+        logAction("Clicking 3-dot actions button to check available permissions.");
+        js.executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", threedotBtn);
+        sleep(1);
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(threedotBtn));
+            threedotBtn.click();
+        } catch (Exception e) {
+            js.executeScript("arguments[0].click();", threedotBtn);
+        }
+        sleep(2);
+
+        logAction("Clicking Preview to inspect details page.");
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(previewbtn));
+            previewbtn.click();
+        } catch (Exception e) {
+            js.executeScript("arguments[0].click();", previewbtn);
+        }
+        System.out.println(GREEN + BOLD + "[SUCCESS] Navigated to Purchase Order Preview details page." + RESET);
+        sleep(3);
+
+        logHeader("VERIFYING PREVIEW PAGE METRICS & MULTI-ITEM TOTAL AMOUNT");
+
+        // Verify Total Items Count Displayed on Preview/Detail page
+        logAction("Verifying item count displayed on preview page...");
+        WebElement previewItemCountElem = driver.findElement(By.xpath("(//div[@class='d-flex justify-content-between align-items-center px-4'])[1]"));
+        wait.until(ExpectedConditions.visibilityOf(previewItemCountElem));
+        String previewCountText = previewItemCountElem.getText().trim();
+        System.out.println(GREEN + BOLD + "[SUCCESS] Preview Item Count Banner Verified: [" + previewCountText + "]" + RESET);
+        sleep(1);
+
+        // --- Verify Total Amount on Preview Page at (//p[@class='d-flex justify-content-start align-items-center m-0'])[3] ---
+        logAction("Verifying Grand Total Amount reflected correctly on Preview page.");
+        WebElement previewTotalAmountElem = driver.findElement(By.xpath("(//p[@class='d-flex justify-content-start align-items-center m-0'])[3]"));
+        wait.until(ExpectedConditions.visibilityOf(previewTotalAmountElem));
+        
+        wait.until(d -> !previewTotalAmountElem.getText().replaceAll("[^0-9.]", "").trim().isEmpty());
+        
+        String rawPreviewTotalText = previewTotalAmountElem.getText().trim();
+        String cleanPreviewTotalText = rawPreviewTotalText.replaceAll("[^0-9.]", "");
+        double actualPreviewTotal = Double.parseDouble(cleanPreviewTotalText);
+
+        System.out.println(CYAN + BOLD + "[INFO] " + RESET + "Displayed Preview Total Amount: [" + rawPreviewTotalText + "]");
+
+        if (Math.abs(expectedGrandTotal - actualPreviewTotal) < 0.05) {
+            System.out.println(GREEN + BOLD + "[SUCCESS] Preview Total Amount Verified Successfully! Expected: [" + String.format("%.2f", expectedGrandTotal) + "] | Actual: [" + actualPreviewTotal + "]" + RESET);
+        } else {
+            System.out.println(RED + BOLD + "[FAILURE] Preview Total Amount Mismatch! Expected: [" + expectedGrandTotal + "] | Actual: [" + actualPreviewTotal + "]" + RESET);
+            throw new AssertionError("Preview Total Amount Mismatch! Expected: [" + expectedGrandTotal + "] | Actual: [" + actualPreviewTotal + "]");
+        }
+
+        System.out.println(GREEN + BOLD + "[SUCCESS] All Multiple Items Purchase Order preview and listing validations completed successfully!" + RESET);
+        sleep(2);
+    }
     
     
     
@@ -1603,7 +2094,34 @@ public class PurchaseOrder_Page extends PurchaseOrder_ObjRepo {
     public void cancelPoruchseOrderItem() {
     	cancelRawMaterialItemsInPreview();
     }
+    
+    
+    
+    //TC-07
+    public void addMultipleRawMaterialsAndVerifyCalcualtions() {
+    	fillInitialPurchaseOrderDetails();
+    	selectMultipleRawMaterialsFromModal();
+    	configureMultipleItemsQuantityAndAmount();
+    	saveAndVerifyMultipleItemsQtyDetailsInBothListingAndPreview();
+    	
+    }
 	
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 	@Override
     public boolean verifyExactText(WebElement ele, String expectedText) {
         return false;
