@@ -23,7 +23,10 @@ public class PageObjectManager {
    private Supplier_Page supplier;
    private Vendor_Page vendor;
    private PurchaseOrder_Page purchaseOrder;
+   private Purchase_Receive_Page purchaseReceive;
+   private WareHouse_Page ware;
 
+   
     public PageObjectManager(WebDriver driver) {
         this.driver = driver;
     }
@@ -83,4 +86,11 @@ public class PageObjectManager {
 	public PurchaseOrder_Page getPurchaseOrder_Page() {
 		return (purchaseOrder == null) ? purchaseOrder = new PurchaseOrder_Page(driver) : purchaseOrder;
 	}
+	public Purchase_Receive_Page getPurchase_Receive_Page() {
+		return (purchaseReceive == null) ? purchaseReceive = new Purchase_Receive_Page(driver) : purchaseReceive;
+	}
+	public WareHouse_Page getWareHouse_Page() {
+		return (ware == null) ? ware = new WareHouse_Page(driver) : ware;
+	}
+	
 }
