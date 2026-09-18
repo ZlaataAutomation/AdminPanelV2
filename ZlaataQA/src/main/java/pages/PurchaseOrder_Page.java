@@ -465,7 +465,7 @@ public class PurchaseOrder_Page extends PurchaseOrder_ObjRepo {
 	        JavascriptExecutor js = (JavascriptExecutor) driver;
 	
 	        logHeader("SAVE PURCHASE ORDER & VERIFY DETAILS");
-	
+	        sleep(5);
 	        logAction("Clicking on 'Save' button.");
 	        WebElement saveBtn = driver.findElement(By.xpath("(//button[normalize-space()='Save'])[1]"));
 	        js.executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", saveBtn);
@@ -1199,6 +1199,8 @@ public class PurchaseOrder_Page extends PurchaseOrder_ObjRepo {
             System.out.println(CYAN + BOLD + "[INFO] " + RESET + "No removal confirmation popup appeared; row deletion assumed complete.");
         }
     }
+    
+    
     // --- TC-03 Step 3: Save Edited Purchase Order ---
     public void saveEditedPurchaseOrderAndVerify() {
         JavascriptExecutor js = (JavascriptExecutor) driver;
@@ -1247,6 +1249,7 @@ public class PurchaseOrder_Page extends PurchaseOrder_ObjRepo {
 
         // --- Verification on Listing Page using edit-prefixed variables ---
         logAction("Verifying Edited Supplier Name on listing page.");
+        sleep(5);
         WebElement supplierCell = driver.findElement(By.xpath("(//td)[2]"));
         wait.until(ExpectedConditions.visibilityOf(supplierCell));
         String listedSupplier = supplierCell.getText().trim();
@@ -1277,8 +1280,8 @@ public class PurchaseOrder_Page extends PurchaseOrder_ObjRepo {
         // 1. VERIFICATIONS ON THE LISTING PAGE
         // ==========================================
         logAction("Verifying updated details on the Purchase Order listing page.");
-
         // Verify Supplier Name
+        sleep(5);
         WebElement supplierCell = driver.findElement(By.xpath("(//td)[2]"));
         wait.until(ExpectedConditions.visibilityOf(supplierCell));
         String actualListingSupplier = supplierCell.getText().trim();
@@ -2060,7 +2063,7 @@ public class PurchaseOrder_Page extends PurchaseOrder_ObjRepo {
     
     
     
-    
+    //TC-01
     public void createPurchaseOrderFlow() {
     	fillInitialPurchaseOrderDetails();
     	selectRawMaterialFromModal();
@@ -2070,7 +2073,7 @@ public class PurchaseOrder_Page extends PurchaseOrder_ObjRepo {
         savePurchaseOrderAndVerifyDetails();
     }
     
-    
+    //TC-02
     public void verifyQtyAndPricePerUnit() {
     	fillInitialPurchaseOrderDetails();
     	selectRawMaterialFromModal();
@@ -2078,7 +2081,7 @@ public class PurchaseOrder_Page extends PurchaseOrder_ObjRepo {
     	saveAndVerifyQtyDetailsInBothListingAndPreview();
     }
     
-    
+    //TC-03
     public void editPurchaseOrderFlow() {
     	  navigateToEditModeFromPreview();
           editPurchaseOrderDetails();
