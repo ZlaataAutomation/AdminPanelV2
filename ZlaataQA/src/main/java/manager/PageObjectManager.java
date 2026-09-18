@@ -26,6 +26,7 @@ public class PageObjectManager {
    private Purchase_Receive_Page purchaseReceive;
    private WareHouse_Page ware;
    private ManufactureOrder_Page maufactureOrder;
+   private ManufactureReceive_Page manufactureReceive;
 
    
     public PageObjectManager(WebDriver driver) {
@@ -96,6 +97,9 @@ public class PageObjectManager {
 	
 	public ManufactureOrder_Page getManufacutreOrder_Page() {
 		return (maufactureOrder == null) ? maufactureOrder = new ManufactureOrder_Page(driver) : maufactureOrder;
+	}
+	public ManufactureReceive_Page getManufactureReceive_Page() {
+		return (manufactureReceive == null) ? manufactureReceive = new ManufactureReceive_Page(driver) : manufactureReceive;
 	}
 	
 }
