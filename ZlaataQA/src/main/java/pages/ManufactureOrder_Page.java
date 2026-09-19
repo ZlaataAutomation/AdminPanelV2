@@ -111,10 +111,11 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         sleep(1);
     }
     
+    //TC-01
     public String selectedVendorText = "";
     public String selectedAddressText = "";
     public String selectedDateText = "";
-
+    
     public void selectRandomVendor() {
         scrollToElement(vendorDropdown);
         click(vendorDropdown);
@@ -696,7 +697,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
     }
     
     
-    
+    //TC-02
     public void clickEditManufactureOrder() {
         // 1. Click the 3-dot action button in the first row
     	// 1. Locate and click the 3-dot action button in the first row
@@ -1307,7 +1308,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
     
 
     
-    
+    //TC-03
     public void verifySaveAsDraft() {
         // 2. Add Notes
         waitFor(addNotesInput);
@@ -1451,7 +1452,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
     
     
 
-    
+    //TC-04
     public void verifyCancelItemsOptionIsDisplayed() {
         // ANSI Color Codes for Console Output
         String RESET = "\u001B[0m";
@@ -1579,7 +1580,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
     
 
     
-    
+    //TC-05
     public void convertAndVerifyManufactureOrderAsIssued() {
         System.out.println("\n=============================================================");
         System.out.println("      CONVERT MANUFACTURE ORDER TO ISSUED & VERIFY           ");
@@ -1751,7 +1752,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
 
   
 
-    
+    //TC-07
     public void addProductDetailsForSecondProduct() {
         // 1. Click the 'Add Product' button to open a new product form block/window
         waitFor(addProductBtn);
