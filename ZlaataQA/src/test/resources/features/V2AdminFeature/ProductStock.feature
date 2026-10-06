@@ -38,3 +38,17 @@ Feature: Product Stock Management
       | TD_UI_Zlaata_PS_03 |
       
       
+      
+     @PS 
+  @TC_UI_Zlaata_PS_04
+Scenario Outline: TC_UI_Zlaata_PS_04 |Verify that the Product Stocks export functionality works correctly and the corresponding columns are exported accurately in the Excel file| "<TD_ID>"
+
+Given admin navigates to the Product Stocks module
+When admin exports the Product Stocks data to an Excel file
+Then the corresponding Product Stocks columns should be exported correctly in the Excel file
+
+Examples:
+| TD_ID               |
+| TD_UI_Zlaata_PS_04  |    
+      
+      

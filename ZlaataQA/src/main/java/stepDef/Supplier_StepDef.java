@@ -157,4 +157,30 @@ public class Supplier_StepDef {
 
         softAssert.assertAll();
     }
+    
+    
+  //TC-SM-08
+
+    @When("admin exports the supplier data to an Excel file")
+    public void admin_exports_the_supplier_data_to_an_excel_file() throws Exception {
+    	supplier.validateExportSupplierFlow();
+    }
+
+    @Then("the corresponding supplier columns should be exported correctly in the Excel file")
+    public void the_corresponding_supplier_columns_should_be_exported_correctly_in_the_excel_file() {
+
+    }
+    
+    
+  //TC-SM-09
+
+    @When("admin imports a valid supplier Excel file")
+    public void admin_imports_a_valid_supplier_excel_file() throws Exception {
+    	supplier.validateImportSupplierFlow();
+    }
+
+    @Then("the supplier data should be imported successfully and displayed correctly on the Supplier Listing page")
+    public void the_supplier_data_should_be_imported_successfully_and_displayed_correctly_on_the_supplier_listing_page() throws Exception {
+    	supplier.verifyImportedSupplierOnListingPage();
+    }
 }

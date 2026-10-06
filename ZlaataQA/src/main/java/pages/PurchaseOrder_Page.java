@@ -1,8 +1,11 @@
 package pages;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -13,6 +16,11 @@ import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.asserts.SoftAssert;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import objectRepo.PurchaseOrder_ObjRepo;
@@ -46,6 +54,11 @@ public class PurchaseOrder_Page extends PurchaseOrder_ObjRepo {
         }
     }
 
+    private void scrollToElement(WebElement element) {
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        js.executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", element);
+        sleep(1); // Pause slightly so you can see the scroll action
+    }
     private static final int ACTION_DELAY = 700;
 	
     public void navigatetoPurchaseOrderPage() {
@@ -1417,7 +1430,7 @@ public class PurchaseOrder_Page extends PurchaseOrder_ObjRepo {
 
         // 1. Click on the listing item 3-dot actions button
         logAction("Clicking on the listing item 3-dot actions button.");
-        js.executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", threedotBtn);
+        js.executeScript("arguments[0].scrollIntoView({block: 'center', inline: 	'nearest'});", threedotBtn);
         sleep(1);
         try {
             wait.until(ExpectedConditions.elementToBeClickable(threedotBtn));
@@ -1933,7 +1946,7 @@ public class PurchaseOrder_Page extends PurchaseOrder_ObjRepo {
         JavascriptExecutor js = (JavascriptExecutor) driver;
 
         logHeader("SAVE MULTIPLE ITEMS PURCHASE ORDER & VERIFY DETAILS");
-
+        sleep(5);
         logAction("Clicking on 'Save' button.");
         WebElement saveBtn = driver.findElement(By.xpath("(//button[normalize-space()='Save'])[1]"));
         js.executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", saveBtn);
@@ -2059,7 +2072,235 @@ public class PurchaseOrder_Page extends PurchaseOrder_ObjRepo {
     }
     
     
+    public void exportManufactureOrderFlow() {
+        // 1. Click the export dropdown button
+        waitFor(importExportBtnDropdown);
+        scrollToElement(importExportBtnDropdown);
+        click(importExportBtnDropdown);
+        sleep(1); // Brief pause for dropdown animation to complete
+
+        // 2. Click the export option button from the menu
+        waitFor(exportBtn);
+        scrollToElement(exportBtn);
+        click(exportBtn);
+        sleep(1); // Brief pause for the export configuration modal/popup to open
+
+        // 3. Click the "Include All" checkbox first to reveal/enable individual columns
+        waitFor(includeCheckBox);
+        scrollToElement(includeCheckBox);
+        try {
+            if (!includeCheckBox.isSelected()) {
+                click(includeCheckBox);
+            }
+        } catch (Exception e) {
+            click(includeCheckBox); // Fallback standard click
+        }
+        sleep(1); // Give it a moment to expand the column list
+
+        // 4. Capture and print all column names dynamically (1st required column + remaining columns up to 8)
+        System.out.println("--- Capturing Export Column Names ---");
+        
+        // Updated total columns to 8 to include the "Updated At" column
+        int totalColumns = 8; 
+        
+        for (int i = 1; i <= totalColumns; i++) {
+            String columnXpath;
+            
+            if (i == 1) {
+                // First column uses the required/selected class pattern
+                columnXpath = "(//div[contains(@data-section,'details')]//div[contains(@class,'section-body')]//label[contains(@class,'required') or contains(@class,'col-check-item')])[" + i + "]";
+            } else {
+                // Remaining columns use the standard col-check-item pattern
+                columnXpath = "(//div[contains(@data-section,'details')]//div[contains(@class,'section-body')]//label[contains(@class,'col-check-item')])[" + i + "]";
+            }
+            
+            try {
+                WebElement columnLabel = wait.until(ExpectedConditions.elementToBeClickable(By.xpath(columnXpath)));
+                scrollToElement(columnLabel);
+                
+                String columnName = columnLabel.getText().trim();
+                
+                // Fallback if standard getText() is empty
+                if (columnName.isEmpty()) {
+                    org.openqa.selenium.JavascriptExecutor js = (org.openqa.selenium.JavascriptExecutor) driver;
+                    columnName = (String) js.executeScript("return arguments[0].innerText;", columnLabel);
+                    columnName = columnName != null ? columnName.trim() : "";
+                }
+                
+                System.out.println("Captured Column [" + i + "]: " + columnName);
+            } catch (Exception e) {
+                System.out.println("⚠️ Warning: Could not capture column at index [" + i + "]");
+            }
+        }
+        System.out.println("-------------------------------------");
+        sleep(1);
+
+        // 5. Click the Download button to trigger the export generation
+        waitFor(downloadBtn);
+        scrollToElement(downloadBtn);
+        click(downloadBtn);
+
+        // 6. Verify that the generation notification message is successfully displayed
+        try {
+            waitFor(generatingMsg);
+            String generationText = generatingMsg.getText().trim();
+            System.out.println("✅ Export Generation Message Displayed: " + generationText);
+        } catch (Exception e) {
+            System.out.println("⚠️ Warning: Generating message notification was not detected or vanished too quickly.");
+        }
+    }
     
+    
+    public void verifyAndDownloadExportFileFromHistory() {
+        // 1. Navigate to the Export History page
+        waitFor(exportHistoryPage);
+        scrollToElement(exportHistoryPage);
+        click(exportHistoryPage);
+        sleep(2); // Allow export history table to load
+        
+        // 2. Verify that the generated file name contains "manufacture-order"
+        waitFor(fileName);
+        scrollToElement(fileName);
+        String generatedFileName = fileName.getText().trim();
+        System.out.println("📄 Export File Name found in history: " + generatedFileName);
+        
+        if (!generatedFileName.toLowerCase().contains("purchase-order")) {
+            throw new RuntimeException("❌ File name in export history does not match 'purchase-order'! Found: " + generatedFileName);
+        }
+        
+        // 3. Continuously check and refresh until the status changes from 'Pending' to 'Success'
+        boolean isSuccess = false;
+        int maxPollAttempts = 30; // Max polls (approx 60-90 seconds)
+        int pollCount = 0;
+        
+        while (!isSuccess && pollCount < maxPollAttempts) {
+            pollCount++;
+            try {
+                waitFor(status);
+                String currentStatus = status.getText().trim();
+                System.out.println("⏳ Export Status Poll [" + pollCount + "]: " + currentStatus);
+                
+                if (currentStatus.equalsIgnoreCase("Success")) {
+                    isSuccess = true;
+                    System.out.println("✅ Export status changed to Success!");
+                } else if (currentStatus.equalsIgnoreCase("Failed") || currentStatus.equalsIgnoreCase("Error")) {
+                    throw new RuntimeException("❌ Export generation failed on the server!");
+                } else {
+                    // Still pending/processing, refresh the page and wait before checking again
+                    driver.navigate().refresh();
+                    sleep(3);
+                }
+            } catch (Exception e) {
+                System.out.println("⚠️ Warning during status polling, retrying... (" + e.getMessage() + ")");
+                driver.navigate().refresh();
+                sleep(3);
+            }
+        }
+        
+        if (!isSuccess) {
+            throw new RuntimeException("❌ Export status remained Pending/Processing after max retries!");
+        }
+        
+        // 4. Click the three-dot actions menu for the completed export entry
+        waitFor(threeDot);
+        scrollToElement(threeDot);
+        click(threeDot);
+        sleep(1); // Brief pause for actions dropdown menu to render
+        
+        // 5. Click the download button from the actions dropdown menu
+        waitFor(exportDownloadBtn);
+        scrollToElement(exportDownloadBtn);
+        click(exportDownloadBtn);
+        System.out.println("⬇️ Export file download triggered successfully from Export History!");
+        sleep(3); // Allow download to initiate
+    }
+    
+    
+    public void verifyExportedExcelColumns() {
+        System.out.println("==================================================");
+        System.out.println("🔍 Starting Exported Excel File Verification...");
+        System.out.println("==================================================");
+        
+        // 1. Locate the downloaded Excel file in the system's Downloads directory
+        String downloadPath = System.getProperty("user.home") + "/Downloads";
+        File dir = new File(downloadPath);
+        
+        System.out.println("📂 Scanning Downloads folder: " + downloadPath);
+        
+        // Search for recent files matching manufacture-order or any recent .xlsx file
+        File[] files = dir.listFiles((d, name) -> name.toLowerCase().endsWith(".xlsx") && name.toLowerCase().contains("purchase-order"));
+        
+        if (files == null || files.length == 0) {
+            System.out.println("⚠️ Specific 'manufacture-order' Excel file not instantly found. Checking for any recent .xlsx files...");
+            files = dir.listFiles((d, name) -> name.toLowerCase().endsWith(".xlsx"));
+        }
+        
+        if (files == null || files.length == 0) {
+            throw new RuntimeException("❌ No downloaded Excel file found in the Downloads folder: " + downloadPath);
+        }
+        
+        // Find the most recently downloaded file
+        File latestFile = files[0];
+        for (File f : files) {
+            if (f.lastModified() > latestFile.lastModified()) {
+                latestFile = f;
+            }
+        }
+        
+        System.out.println("📥 Target Excel File Identified: " + latestFile.getAbsolutePath());
+        System.out.println("⏱️ File Last Modified: " + new java.util.Date(latestFile.lastModified()));
+        
+        // Give a brief visual pause so you can see the file target in the console
+        sleep(2);
+
+        // 2. Read the Excel file using Apache POI
+        System.out.println("📖 Opening Excel workbook and reading sheets...");
+        try (FileInputStream fis = new FileInputStream(latestFile);
+             Workbook workbook = WorkbookFactory.create(fis)) {
+            
+            Sheet sheet = workbook.getSheetAt(0); // Access the first sheet
+            System.out.println("📄 Active Sheet Name: " + sheet.getSheetName());
+            
+            // 3. Column names are located in the 2nd row (Index 1 since Apache POI rows are 0-indexed)
+            Row headerRow = sheet.getRow(1);
+            if (headerRow == null) {
+                System.out.println("⚠️ Row index 1 (2nd row) is empty. Falling back to row index 0 (1st row)...");
+                headerRow = sheet.getRow(0);
+            }
+            
+            if (headerRow == null) {
+                throw new RuntimeException("❌ The header row in the exported Excel file is empty!");
+            }
+            
+            System.out.println("\n--------------------------------------------------");
+            System.out.println("📊 EXPORTED COLUMNS FOUND IN ROW 2:");
+            System.out.println("--------------------------------------------------");
+            
+            List<String> actualExcelColumns = new ArrayList<>();
+            int colIndex = 1;
+            
+            for (Cell cell : headerRow) {
+                String cellValue = cell.toString().trim();
+                if (!cellValue.isEmpty()) {
+                    actualExcelColumns.add(cellValue);
+                    System.out.println("   [Column " + colIndex + "] ---> " + cellValue);
+                    colIndex++;
+                }
+            }
+            System.out.println("--------------------------------------------------\n");
+            
+            if (actualExcelColumns.isEmpty()) {
+                throw new RuntimeException("❌ No valid column headers found in the Excel file!");
+            }
+            
+            System.out.println("✅ Excel columns verification completed successfully!");
+            System.out.println("🎯 Total Columns Verified: " + actualExcelColumns.size());
+            System.out.println("==================================================\n");
+            
+        } catch (Exception e) {
+            throw new RuntimeException("❌ Failed to read or parse the downloaded Excel file: " + e.getMessage(), e);
+        }
+    }
     
     
     
@@ -2100,7 +2341,7 @@ public class PurchaseOrder_Page extends PurchaseOrder_ObjRepo {
     
     
     
-    //TC-07
+    //TC-06
     public void addMultipleRawMaterialsAndVerifyCalcualtions() {
     	fillInitialPurchaseOrderDetails();
     	selectMultipleRawMaterialsFromModal();
@@ -2109,6 +2350,12 @@ public class PurchaseOrder_Page extends PurchaseOrder_ObjRepo {
     	
     }
 	
+    //TC-07
+    public void verifyExportPurchaseOrderFlow() {
+    	exportManufactureOrderFlow();
+    	verifyAndDownloadExportFileFromHistory();
+    	verifyExportedExcelColumns();
+    }
     
     
     

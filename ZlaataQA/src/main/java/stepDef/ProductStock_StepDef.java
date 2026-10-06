@@ -68,6 +68,21 @@ public class ProductStock_StepDef {
     	System.out.println("✅ Low stock alert set for: " + productstock.getCapturedProductName());
     }
     
+  //TC-PS-04
+    @Given("admin navigates to the Product Stocks module")
+    public void admin_navigates_to_the_product_stocks_module() throws Exception {
+    	productstock.verifyProductStockExportFlow();
+    }
+
+    @When("admin exports the Product Stocks data to an Excel file")
+    public void admin_exports_the_product_stocks_data_to_an_excel_file() throws Exception {
+
+    }
+
+    @Then("the corresponding Product Stocks columns should be exported correctly in the Excel file")
+    public void the_corresponding_product_stocks_columns_should_be_exported_correctly_in_the_excel_file() {
+
+    }
     
     
     

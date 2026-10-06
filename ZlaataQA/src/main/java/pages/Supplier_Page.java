@@ -1,5 +1,8 @@
 package pages;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.time.Duration;
 import java.util.Random;
 import java.util.ArrayList;
@@ -11,6 +14,13 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Keys;
@@ -22,7 +32,9 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import junit.framework.Assert;
 import objectRepo.Supplier_ObjRepo;
+import utils.Common;
 
 public class Supplier_Page extends Supplier_ObjRepo {
 
@@ -1872,15 +1884,586 @@ public class Supplier_Page extends Supplier_ObjRepo {
     }
     
 
+    //TC-08
+    private void sleep(int seconds) {
+        try {
+            Thread.sleep(seconds * 1000L);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+    
+    private void scrollToElement(WebElement element) {
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        js.executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", element);
+        sleep(1); // Pause slightly so you can see the scroll action
+    }
+
+ public void exportSupplierFlow() {
+        // 1. Click the export dropdown button
+        waitFor(importExportBtnDropdown);
+        scrollToElement(importExportBtnDropdown);
+        click(importExportBtnDropdown);
+        sleep(1); // Brief pause for dropdown animation to complete
+
+        // 2. Click the export option button from the menu
+        waitFor(exportBtn);
+        scrollToElement(exportBtn);
+        click(exportBtn);
+        sleep(1); // Brief pause for the export configuration modal/popup to open
+
+        // 3. Click the "Include All" checkbox first to reveal/enable individual columns
+        waitFor(includeCheckBox);
+        scrollToElement(includeCheckBox);
+        try {
+            if (!includeCheckBox.isSelected()) {
+                click(includeCheckBox);
+            }
+        } catch (Exception e) {
+            click(includeCheckBox); // Fallback standard click
+        }
+        sleep(1); // Give it a moment to expand the column list
+
+        // 4. Capture and print all column names dynamically (1st required column + remaining columns up to 8)
+        System.out.println("--- Capturing Export Column Names ---");
+        
+        // Updated total columns to 8 to include the "Updated At" column
+        int totalColumns = 10; 
+        
+        for (int i = 1; i <= totalColumns; i++) {
+            String columnXpath;
+            
+            if (i == 1) {
+                // First column uses the required/selected class pattern
+                columnXpath = "(//div[contains(@data-section,'details')]//div[contains(@class,'section-body')]//label[contains(@class,'required') or contains(@class,'col-check-item')])[" + i + "]";
+            } else {
+                // Remaining columns use the standard col-check-item pattern
+                columnXpath = "(//div[contains(@data-section,'details')]//div[contains(@class,'section-body')]//label[contains(@class,'col-check-item')])[" + i + "]";
+            }
+            
+            try {
+                WebElement columnLabel = wait.until(ExpectedConditions.elementToBeClickable(By.xpath(columnXpath)));
+                scrollToElement(columnLabel);
+                
+                String columnName = columnLabel.getText().trim();
+                
+                // Fallback if standard getText() is empty
+                if (columnName.isEmpty()) {
+                    org.openqa.selenium.JavascriptExecutor js = (org.openqa.selenium.JavascriptExecutor) driver;
+                    columnName = (String) js.executeScript("return arguments[0].innerText;", columnLabel);
+                    columnName = columnName != null ? columnName.trim() : "";
+                }
+                
+                System.out.println("Captured Column [" + i + "]: " + columnName);
+            } catch (Exception e) {
+                System.out.println("⚠️ Warning: Could not capture column at index [" + i + "]");
+            }
+        }
+        System.out.println("-------------------------------------");
+        sleep(1);
+
+        // 5. Click the Download button to trigger the export generation
+        waitFor(downloadBtn);
+        scrollToElement(downloadBtn);
+        click(downloadBtn);
+
+        // 6. Verify that the generation notification message is successfully displayed
+        try {
+            waitFor(generatingMsg);
+            String generationText = generatingMsg.getText().trim();
+            System.out.println("✅ Export Generation Message Displayed: " + generationText);
+        } catch (Exception e) {
+            System.out.println("⚠️ Warning: Generating message notification was not detected or vanished too quickly.");
+        }
+    }
     
     
+    public void verifyAndDownloadExportFileFromHistory() {
+        // 1. Navigate to the Export History page
+        waitFor(exportHistoryPage);
+        scrollToElement(exportHistoryPage);
+        click(exportHistoryPage);
+        sleep(2); // Allow export history table to load
+        
+        // 2. Verify that the generated file name contains "manufacture-order"
+        waitFor(fileName);
+        scrollToElement(fileName);
+        String generatedFileName = fileName.getText().trim();
+        System.out.println("📄 Export File Name found in history: " + generatedFileName);
+        
+        if (!generatedFileName.toLowerCase().contains("supplier")) {
+            throw new RuntimeException("❌ File name in export history does not match 'supplier'! Found: " + generatedFileName);
+        }
+        
+        // 3. Continuously check and refresh until the status changes from 'Pending' to 'Success'
+        boolean isSuccess = false;
+        int maxPollAttempts = 50; // Max polls (approx 60-90 seconds)
+        int pollCount = 0;
+        
+        while (!isSuccess && pollCount < maxPollAttempts) {
+            pollCount++;
+            try {
+                waitFor(status);
+                String currentStatus = status.getText().trim();
+                System.out.println("⏳ Export Status Poll [" + pollCount + "]: " + currentStatus);
+                
+                if (currentStatus.equalsIgnoreCase("Success")) {
+                    isSuccess = true;
+                    System.out.println("✅ Export status changed to Success!");
+                } else if (currentStatus.equalsIgnoreCase("Failed") || currentStatus.equalsIgnoreCase("Error")) {
+                    throw new RuntimeException("❌ Export generation failed on the server!");
+                } else {
+                    // Still pending/processing, refresh the page and wait before checking again
+                    driver.navigate().refresh();
+                    sleep(3);
+                }
+            } catch (Exception e) {
+                System.out.println("⚠️ Warning during status polling, retrying... (" + e.getMessage() + ")");
+                driver.navigate().refresh();
+                sleep(3);
+            }
+        }
+        
+        if (!isSuccess) {
+            throw new RuntimeException("❌ Export status remained Pending/Processing after max retries!");
+        }
+        
+        // 4. Click the three-dot actions menu for the completed export entry
+        waitFor(threeDot);
+        scrollToElement(threeDot);
+        click(threeDot);
+        sleep(1); // Brief pause for actions dropdown menu to render
+        
+        // 5. Click the download button from the actions dropdown menu
+        waitFor(exportDownloadBtn);
+        scrollToElement(exportDownloadBtn);
+        click(exportDownloadBtn);
+        System.out.println("⬇️ Export file download triggered successfully from Export History!");
+        sleep(3); // Allow download to initiate
+    }
     
     
+    public void verifyExportedExcelColumns() {
+        System.out.println("==================================================");
+        System.out.println("🔍 Starting Exported Excel File Verification...");
+        System.out.println("==================================================");
+        
+        // 1. Locate the downloaded Excel file in the system's Downloads directory
+        String downloadPath = System.getProperty("user.home") + "/Downloads";
+        File dir = new File(downloadPath);
+        
+        System.out.println("📂 Scanning Downloads folder: " + downloadPath);
+        
+        // Search for recent files matching manufacture-order or any recent .xlsx file
+        File[] files = dir.listFiles((d, name) -> name.toLowerCase().endsWith(".xlsx") && name.toLowerCase().contains("supplier"));
+        
+        if (files == null || files.length == 0) {
+            System.out.println("⚠️ Specific 'supplier' Excel file not instantly found. Checking for any recent .xlsx files...");
+            files = dir.listFiles((d, name) -> name.toLowerCase().endsWith(".xlsx"));
+        }
+        
+        if (files == null || files.length == 0) {
+            throw new RuntimeException("❌ No downloaded Excel file found in the Downloads folder: " + downloadPath);
+        }
+        
+        // Find the most recently downloaded file
+        File latestFile = files[0];
+        for (File f : files) {
+            if (f.lastModified() > latestFile.lastModified()) {
+                latestFile = f;
+            }
+        }
+        
+        System.out.println("📥 Target Excel File Identified: " + latestFile.getAbsolutePath());
+        System.out.println("⏱️ File Last Modified: " + new java.util.Date(latestFile.lastModified()));
+        
+        // Give a brief visual pause so you can see the file target in the console
+        sleep(2);
+
+        // 2. Read the Excel file using Apache POI
+        System.out.println("📖 Opening Excel workbook and reading sheets...");
+        try (FileInputStream fis = new FileInputStream(latestFile);
+             Workbook workbook = WorkbookFactory.create(fis)) {
+            
+            Sheet sheet = workbook.getSheetAt(0); // Access the first sheet
+            System.out.println("📄 Active Sheet Name: " + sheet.getSheetName());
+            
+            // 3. Column names are located in the 2nd row (Index 1 since Apache POI rows are 0-indexed)
+            Row headerRow = sheet.getRow(1);
+            if (headerRow == null) {
+                System.out.println("⚠️ Row index 1 (2nd row) is empty. Falling back to row index 0 (1st row)...");
+                headerRow = sheet.getRow(0);
+            }
+            
+            if (headerRow == null) {
+                throw new RuntimeException("❌ The header row in the exported Excel file is empty!");
+            }
+            
+            System.out.println("\n--------------------------------------------------");
+            System.out.println("📊 EXPORTED COLUMNS FOUND IN ROW 2:");
+            System.out.println("--------------------------------------------------");
+            
+            List<String> actualExcelColumns = new ArrayList<>();
+            int colIndex = 1;
+            
+            for (Cell cell : headerRow) {
+                String cellValue = cell.toString().trim();
+                if (!cellValue.isEmpty()) {
+                    actualExcelColumns.add(cellValue);
+                    System.out.println("   [Column " + colIndex + "] ---> " + cellValue);
+                    colIndex++;
+                }
+            }
+            System.out.println("--------------------------------------------------\n");
+            
+            if (actualExcelColumns.isEmpty()) {
+                throw new RuntimeException("❌ No valid column headers found in the Excel file!");
+            }
+            
+            System.out.println("✅ Excel columns verification completed successfully!");
+            System.out.println("🎯 Total Columns Verified: " + actualExcelColumns.size());
+            System.out.println("==================================================\n");
+            
+        } catch (Exception e) {
+            throw new RuntimeException("❌ Failed to read or parse the downloaded Excel file: " + e.getMessage(), e);
+        }
+    }
+
+    private Map<String, String> importedExcelData = new LinkedHashMap<>();
+    //TC-SM-09
+    public void verifySupplierImportFlow() throws Exception {
+
+        // ANSI Color Codes for Console Outputs
+        final String RESET  = "\u001B[0m";
+        final String RED    = "\u001B[31m";
+        final String GREEN  = "\u001B[32m";
+        final String YELLOW = "\u001B[33m";
+        final String BLUE   = "\u001B[34m";
+        final String PURPLE = "\u001B[35m";
+        final String CYAN   = "\u001B[36m";
+        final String WHITE  = "\u001B[37m";
+
+        System.out.println(PURPLE + "\n==================================================" + RESET);
+        System.out.println(PURPLE + "🚀 STARTING SUPPLIER IMPORT FLOW TEST CASE" + RESET);
+        System.out.println(PURPLE + "==================================================" + RESET);
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+        // 1. Click Import/Export dropdown button
+        System.out.println(YELLOW + "👆 [ACTION] Waiting for Import/Export dropdown button to be clickable..." + RESET);
+        wait.until(ExpectedConditions.elementToBeClickable(importExportBtnDropdown)).click();
+        System.out.println(GREEN + "✅ [SUCCESS] Clicked 'Import/Export' dropdown button." + RESET);
+        actionPause();
+
+        // 2. Click Import option from dropdown
+        System.out.println(YELLOW + "👆 [ACTION] Waiting for 'Import' option in dropdown to be clickable..." + RESET);
+        wait.until(ExpectedConditions.elementToBeClickable(importBtn)).click();
+        System.out.println(GREEN + "✅ [SUCCESS] Clicked 'Import' button from dropdown." + RESET);
+        actionPause();
+
+        // =========================================================================
+        // INLINE EXCEL EDITING & ALL DATA CAPTURING FOR SUPPLIER TEMPLATE
+        // =========================================================================
+        String excelFilePath = System.getProperty("user.dir") + "/src/test/resources/ImportFile/supplier_template.xlsx";
+        System.out.println(CYAN + "\n📁 [DATA ACTION] Reading Excel file from path: " + excelFilePath + RESET);
+
+        try (FileInputStream fis = new FileInputStream(excelFilePath);
+             Workbook workbook = WorkbookFactory.create(fis)) {
+
+            Sheet sheet = workbook.getSheetAt(0);
+            System.out.println(BLUE + "📑 [EXCEL] Accessed sheet: " + sheet.getSheetName() + RESET);
+
+            Row headerRow = sheet.getRow(1); // Row index 1 contains column names
+            Row dataRow = sheet.getRow(2);   // Row index 2 contains data
+
+            if (dataRow == null) {
+                dataRow = sheet.createRow(2);
+                System.out.println(RED + "⚠️️ [EXCEL] Data row (index 2) was empty. Created a new row." + RESET);
+            }
+
+            // Map column names to their cell index dynamically
+            Map<String, Integer> colIndexMap = new HashMap<>();
+            for (Cell cell : headerRow) {
+                if (cell != null) {
+                    colIndexMap.put(cell.getStringCellValue().trim().toLowerCase(), cell.getColumnIndex());
+                }
+            }
+
+            Random random = new Random();
+            int randomDigits = random.nextInt(9000) + 1000; // 4-digit random number (1000-9999)
+
+            // Dynamic Contact Person Details
+            String[] firstNames = {"Alex", "Jordan", "Taylor", "Morgan", "Sam", "Chris", "Pat", "Riley"};
+            String[] lastNames  = {"Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller"};
+            
+            String randomFirstName = firstNames[random.nextInt(firstNames.length)];
+            String randomLastName  = lastNames[random.nextInt(lastNames.length)];
+            
+            String generatedContactName  = randomFirstName + " " + randomLastName;
+            String generatedContactEmail = randomFirstName.toLowerCase() + "." + randomLastName.toLowerCase() + randomDigits + "@abc.com";
+
+            String[] mobilePrefixes = {"9", "8", "7"};
+
+            // ---------------------------------------------------------------------
+            // A1. UPDATE SUPPLIER NAME
+            // ---------------------------------------------------------------------
+            if (colIndexMap.containsKey("supplier_name")) {
+                int nameIndex = colIndexMap.get("supplier_name");
+                Cell nameCell = dataRow.getCell(nameIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+
+                String currentName = nameCell.getCellType() == CellType.STRING 
+                        ? nameCell.getStringCellValue() 
+                        : "Automation Test Supplier";
+
+                String baseName = currentName.replaceAll("-\\d+$", "").replaceAll("^\\d+_", "");
+                String updatedSupplierName = randomDigits + "_" + baseName;
+
+                nameCell.setCellValue(updatedSupplierName);
+                System.out.println(GREEN + "🔄 [DATA UPDATE] Updated supplier_name to: \"" + updatedSupplierName + "\"" + RESET);
+            }
+
+            // ---------------------------------------------------------------------
+            // A2. UPDATE SUPPLIER EMAIL
+            // ---------------------------------------------------------------------
+            if (colIndexMap.containsKey("supplier_email")) {
+                int emailIndex = colIndexMap.get("supplier_email");
+                Cell emailCell = dataRow.getCell(emailIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+
+                String updatedEmail = "supplier_" + randomDigits + "@abc.com";
+                emailCell.setCellValue(updatedEmail);
+                System.out.println(GREEN + "🔄 [DATA UPDATE] Updated supplier_email to: \"" + updatedEmail + "\"" + RESET);
+            }
+
+            // ---------------------------------------------------------------------
+            // A3. UPDATE SUPPLIER PHONE (Fixed 10 Digits)
+            // ---------------------------------------------------------------------
+            if (colIndexMap.containsKey("supplier_phone")) {
+                int phoneIndex = colIndexMap.get("supplier_phone");
+                Cell phoneCell = dataRow.getCell(phoneIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+
+                String supplierPrefix = mobilePrefixes[random.nextInt(mobilePrefixes.length)];
+                long supplier9Digits = 100000000L + (long)(random.nextDouble() * 900000000L);
+                String updatedSupplierPhone = supplierPrefix + supplier9Digits; // 10 digits total
+
+                phoneCell.setCellValue(updatedSupplierPhone);
+                System.out.println(GREEN + "🔄 [DATA UPDATE] Updated supplier_phone to: \"" + updatedSupplierPhone + "\"" + RESET);
+            }
+
+            // ---------------------------------------------------------------------
+            // A4. UPDATE CONTACT PERSON NAME
+            // ---------------------------------------------------------------------
+            if (colIndexMap.containsKey("contact_person_name")) {
+                int contactNameIndex = colIndexMap.get("contact_person_name");
+                Cell contactNameCell = dataRow.getCell(contactNameIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+
+                contactNameCell.setCellValue(generatedContactName);
+                System.out.println(GREEN + "🔄 [DATA UPDATE] Updated contact_person_name to: \"" + generatedContactName + "\"" + RESET);
+            }
+
+            // ---------------------------------------------------------------------
+            // A5. UPDATE CONTACT EMAIL
+            // ---------------------------------------------------------------------
+            if (colIndexMap.containsKey("contact_email")) {
+                int contactEmailIndex = colIndexMap.get("contact_email");
+                Cell contactEmailCell = dataRow.getCell(contactEmailIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+
+                contactEmailCell.setCellValue(generatedContactEmail);
+                System.out.println(GREEN + "🔄 [DATA UPDATE] Updated contact_email to: \"" + generatedContactEmail + "\"" + RESET);
+            }
+
+            // ---------------------------------------------------------------------
+            // A6. UPDATE CONTACT PHONE (Fixed 10 Digits)
+            // ---------------------------------------------------------------------
+            if (colIndexMap.containsKey("contact_phone")) {
+                int contactPhoneIndex = colIndexMap.get("contact_phone");
+                Cell contactPhoneCell = dataRow.getCell(contactPhoneIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+
+                String contactPrefix = mobilePrefixes[random.nextInt(mobilePrefixes.length)];
+                long contact9Digits = 100000000L + (long)(random.nextDouble() * 900000000L);
+                String updatedContactPhone = contactPrefix + contact9Digits; // 10 digits total
+
+                contactPhoneCell.setCellValue(updatedContactPhone);
+                System.out.println(GREEN + "🔄 [DATA UPDATE] Updated contact_phone to: \"" + updatedContactPhone + "\"" + RESET);
+            }
+
+            // Save updated file back to disk
+            try (FileOutputStream fos = new FileOutputStream(excelFilePath)) {
+                workbook.write(fos);
+                System.out.println(CYAN + "💾 [FILE SAVE] Successfully wrote modified data back to supplier_template.xlsx" + RESET);
+            }
+
+            // ---------------------------------------------------------------------
+            // STEP B: CAPTURE ALL EXCEL COLUMN VALUES FOR VERIFICATION
+            // ---------------------------------------------------------------------
+            DataFormatter formatter = new DataFormatter();
+            System.out.println(PURPLE + "\n📋 [DATA CAPTURE] Capturing all cell values from supplier_template.xlsx..." + RESET);
+
+            for (int i = 0; i < headerRow.getLastCellNum(); i++) {
+                Cell headerCell = headerRow.getCell(i);
+                Cell valueCell = dataRow.getCell(i);
+
+                if (headerCell != null) {
+                    String columnName = headerCell.getStringCellValue().trim();
+                    String cellValue = (valueCell != null) ? formatter.formatCellValue(valueCell).trim() : "";
+
+                    // Store in Map for verification usage
+                    importedExcelData.put(columnName, cellValue);
+
+                    // Print captured value to console
+                    System.out.println(CYAN + "  🔹 [CAPTURED] " + columnName + " ➡️ " + WHITE + "\"" + cellValue + "\"" + RESET);
+                }
+            }
+
+            System.out.println(GREEN + "✅ [DATA CAPTURE COMPLETE] Total " + importedExcelData.size() + " columns captured and stored for verification." + RESET);
+
+        } catch (Exception e) {
+            System.err.println(RED + "❌ [EXCEL ERROR] Failed to process Supplier Excel inline: " + e.getMessage() + RESET);
+            e.printStackTrace();
+        }
+        actionPause();
+        // =========================================================================
+
+        // 3. Upload updated Supplier Excel file to the dropzone input
+        System.out.println(YELLOW + "\n📤 [ACTION] Locating upload input element (id: simFileInput)..." + RESET);
+        WebElement uploadInput = wait.until(ExpectedConditions.presenceOfElementLocated(By.id("simFileInput")));
+
+        System.out.println(YELLOW + "📤 [ACTION] Entering file path into upload input: " + excelFilePath + RESET);
+        uploadInput.sendKeys(excelFilePath);
+
+        System.out.println(GREEN + "✅ [SUCCESS] File attached to element: " + excelFilePath + RESET);
+        actionPause();
+
+        // 4. Click 1st Next button
+        System.out.println(YELLOW + "\n👆 [ACTION] Waiting for 1st 'Next' button to be clickable..." + RESET);
+        wait.until(ExpectedConditions.elementToBeClickable(nextBtn)).click();
+        System.out.println(GREEN + "✅ [SUCCESS] Clicked 1st 'Next' button." + RESET);
+        actionPause();
+
+        // 5. Click 2nd Next button
+        System.out.println(YELLOW + "\n👆 [ACTION] Waiting for 2nd 'Next' button to be clickable..." + RESET);
+        wait.until(ExpectedConditions.elementToBeClickable(nextBtn)).click();
+        System.out.println(GREEN + "✅ [SUCCESS] Clicked 2nd 'Next' button." + RESET);
+        actionPause();
+
+        // 6. Click Start Import button
+        System.out.println(YELLOW + "\n👆 [ACTION] Waiting for 'Start Import' button to be clickable..." + RESET);
+        wait.until(ExpectedConditions.elementToBeClickable(startImportBtn)).click();
+        System.out.println(GREEN + "✅ [SUCCESS] Clicked 'Start Import' button." + RESET);
+        actionPause();
+        
+     // 7. Click Close Import button
+        System.out.println(YELLOW + "\n👆 [ACTION] Waiting for 'Close Import' button to be clickable..." + RESET);
+        wait.until(ExpectedConditions.elementToBeClickable(closeBtn)).click();
+        System.out.println(GREEN + "✅ [SUCCESS] Clicked 'Start Import' button." + RESET);
+        actionPause();
+        
+        System.out.println(PURPLE + "==================================================" + RESET);
+        System.out.println(PURPLE + "🎉 SUPPLIER IMPORT FLOW EXECUTED SUCCESSFULLY" + RESET);
+        System.out.println(PURPLE + "==================================================\n" + RESET);
+        actionPause();
+        actionPause();
+    }
     
+    /**
+     * Verifies that the top record on the Supplier Listing page matches 
+     * the values captured during the import step.
+     */
+    public void verifyImportedSupplierOnListingPage() throws Exception {
+
+        // ANSI Color Codes for Console Outputs
+        final String RESET  = "\u001B[0m";
+        final String GREEN  = "\u001B[32m";
+        final String YELLOW = "\u001B[33m";
+        final String PURPLE = "\u001B[35m";
+        
+     // -------------------------------------------------------------------------
+     // PAGE REFRESH CYCLE (Refreshes 3 times before checking data)
+     // -------------------------------------------------------------------------
+     int totalRefreshes = 2;
+     for (int i = 1; i <= totalRefreshes; i++) {
+          System.out.println(YELLOW + "🔄 [REFRESH] Refreshing supplier listing page (" + i + "/" + totalRefreshes + ")..." + RESET);
+          driver.navigate().refresh();
+          actionPause(); // Pause after each refresh to let data settle/render
+      }
+     
+        System.out.println(PURPLE + "\n==================================================" + RESET);
+        System.out.println(PURPLE + "🔍 VERIFYING IMPORTED SUPPLIER DETAILS ON LISTING PAGE" + RESET);
+        System.out.println(PURPLE + "==================================================" + RESET);
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+        // Wait for supplier listing table row to appear
+        wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("(//td)[2]")));
+
+        // Locators for table cells
+        By supplierNameXpath  = By.xpath("(//td)[2]");
+        By supplierTypeXpath  = By.xpath("(//td)[3]");
+        By supplierEmailXpath = By.xpath("(//td)[4]");
+        By tagsXpath          = By.xpath("(//td)[5]");
+        By supplierPhoneXpath = By.xpath("(//td)[6]");
+
+        // Retrieve expected values from class-level importedExcelData
+        String expectedName  = importedExcelData.getOrDefault("supplier_name", "").trim();
+        String expectedType  = importedExcelData.getOrDefault("supplier_type", "").trim();
+        String expectedEmail = importedExcelData.getOrDefault("supplier_email", "").trim();
+        String expectedTags  = importedExcelData.getOrDefault("tags", "").trim();
+        String expectedPhone = importedExcelData.getOrDefault("supplier_phone", "").trim();
+
+        // -------------------------------------------------------------------------
+        // 1. VERIFY SUPPLIER NAME - 
+        // -------------------------------------------------------------------------
+        System.out.println(YELLOW + "👆 [VERIFICATION] Checking Supplier Name..." + RESET);
+        String actualName = wait.until(ExpectedConditions.visibilityOfElementLocated(supplierNameXpath)).getText().trim();
+        Assert.assertEquals("Supplier Name mismatch on Listing Page!", expectedName, actualName);
+        System.out.println(GREEN + "✅ [MATCHED] Supplier Name ➡️ Expected: \"" + expectedName + "\" | Actual: \"" + actualName + "\"" + RESET);
+        actionPause();
+
+        // -------------------------------------------------------------------------
+        // 2. VERIFY SUPPLIER TYPE - 
+        // -------------------------------------------------------------------------
+        System.out.println(YELLOW + "👆 [VERIFICATION] Checking Supplier Type..." + RESET);
+        String actualType = wait.until(ExpectedConditions.visibilityOfElementLocated(supplierTypeXpath)).getText().trim();
+        Assert.assertTrue("Supplier Type mismatch on Listing Page! Expected: " + expectedType + " but found: " + actualType,
+                actualType.equalsIgnoreCase(expectedType));
+        System.out.println(GREEN + "✅ [MATCHED] Supplier Type ➡️ Expected: \"" + expectedType + "\" | Actual: \"" + actualType + "\"" + RESET);
+        actionPause();
+
+        // -------------------------------------------------------------------------
+        // 3. VERIFY SUPPLIER EMAIL - 
+        // -------------------------------------------------------------------------
+        System.out.println(YELLOW + "👆 [VERIFICATION] Checking Supplier Email..." + RESET);
+        String actualEmail = wait.until(ExpectedConditions.visibilityOfElementLocated(supplierEmailXpath)).getText().trim();
+        Assert.assertEquals("Supplier Email mismatch on Listing Page!", expectedEmail, actualEmail);
+        System.out.println(GREEN + "✅ [MATCHED] Supplier Email ➡️ Expected: \"" + expectedEmail + "\" | Actual: \"" + actualEmail + "\"" + RESET);
+        actionPause();
+
+        // -------------------------------------------------------------------------
+        // 4. VERIFY TAGS - 
+        // -------------------------------------------------------------------------
+        System.out.println(YELLOW + "👆 [VERIFICATION] Checking Tags..." + RESET);
+        String actualTags = wait.until(ExpectedConditions.visibilityOfElementLocated(tagsXpath)).getText().trim();
+        Assert.assertEquals("Supplier Tags mismatch on Listing Page!", expectedTags, actualTags);
+        System.out.println(GREEN + "✅ [MATCHED] Tags ➡️ Expected: \"" + expectedTags + "\" | Actual: \"" + actualTags + "\"" + RESET);
+        actionPause();
+
+        // -------------------------------------------------------------------------
+        // 5. VERIFY SUPPLIER PHONE - 
+        // -------------------------------------------------------------------------
+        System.out.println(YELLOW + "👆 [VERIFICATION] Checking Supplier Phone..." + RESET);
+        String actualPhone = wait.until(ExpectedConditions.visibilityOfElementLocated(supplierPhoneXpath)).getText().trim();
+        Assert.assertEquals("Supplier Phone mismatch on Listing Page!", expectedPhone, actualPhone);
+        System.out.println(GREEN + "✅ [MATCHED] Supplier Phone ➡️ Expected: \"" + expectedPhone + "\" | Actual: \"" + actualPhone + "\"" + RESET);
+        actionPause();
+
+        System.out.println(PURPLE + "==================================================" + RESET);
+        System.out.println(PURPLE + "🎉 ALL SUPPLIER LISTING PAGE VERIFICATIONS PASSED" + RESET);
+        System.out.println(PURPLE + "==================================================\n" + RESET);
+    }
+
     
     
 
-    // TC-01 Full Flow Execution
+	// TC-01 Full Flow Execution
     public void validateCreatenewsupplier() {
         createNewSupplier();
         addSupplierAddressDetails();
@@ -1935,7 +2518,7 @@ public class Supplier_Page extends Supplier_ObjRepo {
         clickSaveAndNextWithoutMandatoryFields();
     }
     
-    
+    //TC-SM-07
     public void validateMultipleContactAndBankAccount() {
     	adminLogin();
         navigatetoSupplierPage();
@@ -1946,8 +2529,21 @@ public class Supplier_Page extends Supplier_ObjRepo {
         navigateToSupplierPreviewPage();
     }
     
+    //TC-SM-08
+    public void validateExportSupplierFlow() {
+		adminLogin();
+		navigatetoSupplierPage();
+		exportSupplierFlow();
+		verifyAndDownloadExportFileFromHistory();
+		verifyExportedExcelColumns();
+	}
     
-    
+   //TC-SM-09
+    public void validateImportSupplierFlow() throws Exception {
+    	adminLogin();
+		navigatetoSupplierPage();
+		verifySupplierImportFlow();
+    }
     
     
     
