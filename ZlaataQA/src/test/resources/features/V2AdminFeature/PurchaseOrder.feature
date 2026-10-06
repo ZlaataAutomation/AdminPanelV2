@@ -80,3 +80,16 @@ Scenario Outline: TC_UI_Zlaata_PO_06 |Verify that multiple raw materials can be 
 Examples:
   | TD_ID               |
   | TD_UI_Zlaata_PO_06  |
+  
+  
+   @PO 
+  @TC_UI_Zlaata_PO_07
+Scenario Outline: TC_UI_Zlaata_PO_07 |Verify that the Purchase Order export functionality works correctly and the corresponding columns are exported accurately in the Excel file| "<TD_ID>"
+
+Given admin navigates to the Purchase Order module
+When admin exports the Purchase Order data to an Excel file
+Then the corresponding Purchasr Order columns should be exported correctly in the Excel file
+
+Examples:
+| TD_ID               |
+| TD_UI_Zlaata_PO_07  |

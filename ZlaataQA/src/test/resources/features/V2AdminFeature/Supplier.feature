@@ -83,3 +83,27 @@ Feature: Supplier Management verification
 	Examples:
 	  | TD_ID               |
 	  | TD_UI_Zlaata_SM_07  |
+	  
+	  
+	@SM 
+  @TC_UI_Zlaata_SM_08
+Scenario Outline: TC_UI_Zlaata_SM_08 |Verify that the supplier export functionality works correctly and the corresponding columns are exported accurately in the Excel file| "<TD_ID>"
+
+When admin exports the supplier data to an Excel file
+Then the corresponding supplier columns should be exported correctly in the Excel file
+
+Examples:
+| TD_ID               |
+| TD_UI_Zlaata_SM_08  |
+
+
+@SM
+@TC_UI_Zlaata_SM_09
+Scenario Outline: TC_UI_Zlaata_SM_09 |Verify that the supplier import functionality works correctly and valid supplier data is imported successfully| "<TD_ID>"
+
+When admin imports a valid supplier Excel file
+Then the supplier data should be imported successfully and displayed correctly on the Supplier Listing page
+
+Examples:
+| TD_ID               |
+| TD_UI_Zlaata_SM_09  |

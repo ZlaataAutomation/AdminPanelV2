@@ -137,7 +137,15 @@ public class ManufactureOrder_StepDef {
 
     }
     
-    
+    //TC-MO-08
+    @When("admin exports the Manufacture Order data to an Excel file")
+    public void admin_exports_the_manufacture_order_data_to_an_excel_file() throws Exception {
+    	manufactureOrder.verfiyExportFunctionalityFlow();
+    }
 
-    
+    @Then("the corresponding Manufacture Order columns should be exported correctly in the Excel file")
+    public void the_corresponding_manufacture_order_columns_should_be_exported_correctly_in_the_excel_file() {
+
+    }
+        
 }

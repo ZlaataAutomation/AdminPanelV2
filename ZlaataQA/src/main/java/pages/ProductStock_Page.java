@@ -1,10 +1,17 @@
 package pages;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Keys;
@@ -56,6 +63,7 @@ public class ProductStock_Page extends ProductStock_ObjRepo {
             Thread.currentThread().interrupt();
         }
     }
+    
     public void selectRandomProductCaptureDetailsClickEditAndPreview() {
         WebDriverWait customWait = new WebDriverWait(driver, Duration.ofSeconds(15));
 
@@ -75,15 +83,47 @@ public class ProductStock_Page extends ProductStock_ObjRepo {
             throw new RuntimeException("❌ No product rows found in the table!");
         }
 
-        int selectedIndex = new Random().nextInt(totalRows);
-        WebElement selectedRow = productDataRows.get(selectedIndex);
+        boolean validProductFound = false;
+        WebElement selectedRow = null;
+        int maxAttempts = totalRows; // Try up to total rows available to avoid infinite loops
+        int attempts = 0;
 
-        // 3. Capture Details
-        WebElement nameCell = selectedRow.findElement(By.xpath(".//td[1]"));
-        wait.until(ExpectedConditions.visibilityOf(nameCell));
-        capturedProductName = nameCell.getText().trim();
-        System.out.println("ℹ️ Selected Product Name: " + capturedProductName);
+        Random random = new Random();
 
+        while (!validProductFound && attempts < maxAttempts) {
+            attempts++;
+            int selectedIndex = random.nextInt(totalRows);
+            selectedRow = productDataRows.get(selectedIndex);
+
+            // Check stock status for this candidate row first
+            if (selectedRow.findElements(By.xpath(".//span[@class='stock_warning_para']")).size() > 0) {
+                capturedStockStatus = "LOW_STOCK";
+            } else if (selectedRow.findElements(By.xpath(".//span[@class='stock_active_para in-stock']")).size() > 0) {
+                capturedStockStatus = "IN_STOCK";
+            } else if (selectedRow.findElements(By.xpath(".//span[@class='stock_inactive_para']")).size() > 0) {
+                capturedStockStatus = "OUT_OF_STOCK";
+            } else {
+                capturedStockStatus = "UNKNOWN";
+            }
+
+            // 3. If Out of Stock, skip and retry with another product
+            WebElement nameCell = selectedRow.findElement(By.xpath(".//td[1]"));
+            String tempProductName = nameCell.getText().trim();
+
+            if (capturedStockStatus.equals("OUT_OF_STOCK")) {
+                System.out.println("⏭️ Skipping product [" + tempProductName + "] because its status is OUT_OF_STOCK. Trying another...");
+            } else {
+                validProductFound = true;
+                capturedProductName = tempProductName;
+                System.out.println("✅ Selected Valid Product: " + capturedProductName + " [Status: " + capturedStockStatus + "]");
+            }
+        }
+
+        if (!validProductFound) {
+            throw new RuntimeException("❌ Failed to find any product that is in stock after checking available rows!");
+        }
+
+        // Capture remaining details for the valid product
         WebElement qtyCell = selectedRow.findElement(By.xpath(".//td[3]"));
         wait.until(ExpectedConditions.visibilityOf(qtyCell));
         String qtyText = qtyCell.getText().trim();
@@ -93,19 +133,9 @@ public class ProductStock_Page extends ProductStock_ObjRepo {
             capturedStockQuantity = 0;
         }
         System.out.println("ℹ️ Captured Current Quantity: " + capturedStockQuantity);
-
-        if (selectedRow.findElements(By.xpath(".//span[@class='stock_warning_para']")).size() > 0) {
-            capturedStockStatus = "LOW_STOCK";
-        } else if (selectedRow.findElements(By.xpath(".//span[@class='stock_active_para in-stock']")).size() > 0) {
-            capturedStockStatus = "IN_STOCK";
-        } else if (selectedRow.findElements(By.xpath(".//span[@class='stock_inactive_para']")).size() > 0) {
-            capturedStockStatus = "OUT_OF_STOCK";
-        } else {
-            capturedStockStatus = "UNKNOWN";
-        }
         System.out.println("ℹ️ Captured Stock Status: " + capturedStockStatus);
 
-     // 4. Locate 3-dots action button strictly INSIDE the selected row
+        // 4. Locate 3-dots action button strictly INSIDE the selected row
         WebElement actionBtn = selectedRow.findElement(By.xpath(".//i[contains(@class,'bi-three-dots-vertical')]"));
 
         // Scroll into view first
@@ -465,6 +495,79 @@ public class ProductStock_Page extends ProductStock_ObjRepo {
     
     
     //TC-02
+    public void selectRandomProductCaptureDetailsClickPreview() {
+        WebDriverWait customWait = new WebDriverWait(driver, Duration.ofSeconds(15));
+
+        // 1. Navigate to Inventory -> Product Stocks
+        wait.until(ExpectedConditions.visibilityOf(inventory));
+        new Actions(driver).moveToElement(inventory).perform();
+
+        wait.until(ExpectedConditions.visibilityOf(productStockModule));
+        click(productStockModule);
+
+        // 2. Wait for table rows to load dynamically in DOM
+        customWait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.xpath("//table/tbody/tr")));
+        wait.until(ExpectedConditions.visibilityOfAllElements(productDataRows));
+
+        int totalRows = productDataRows.size();
+        if (totalRows == 0) {
+            throw new RuntimeException("❌ No product rows found in the table!");
+        }
+
+        // 3. Select a random product row immediately (accepts any status)
+        int selectedIndex = new Random().nextInt(totalRows);
+        WebElement selectedRow = productDataRows.get(selectedIndex);
+
+        WebElement nameCell = selectedRow.findElement(By.xpath(".//td[1]"));
+        wait.until(ExpectedConditions.visibilityOf(nameCell));
+        capturedProductName = nameCell.getText().trim();
+        System.out.println("✅ Selected Random Product: " + capturedProductName);
+
+        // Check and capture stock status
+        if (selectedRow.findElements(By.xpath(".//span[@class='stock_warning_para']")).size() > 0) {
+            capturedStockStatus = "LOW_STOCK";
+        } else if (selectedRow.findElements(By.xpath(".//span[@class='stock_active_para in-stock']")).size() > 0) {
+            capturedStockStatus = "IN_STOCK";
+        } else if (selectedRow.findElements(By.xpath(".//span[@class='stock_inactive_para']")).size() > 0) {
+            capturedStockStatus = "OUT_OF_STOCK";
+        } else {
+            capturedStockStatus = "UNKNOWN";
+        }
+        System.out.println("ℹ️ Captured Stock Status: " + capturedStockStatus);
+
+        // Capture quantity details
+        WebElement qtyCell = selectedRow.findElement(By.xpath(".//td[3]"));
+        wait.until(ExpectedConditions.visibilityOf(qtyCell));
+        String qtyText = qtyCell.getText().trim();
+        try {
+            capturedStockQuantity = Integer.parseInt(qtyText);
+        } catch (NumberFormatException e) {
+            capturedStockQuantity = 0;
+        }
+        System.out.println("ℹ️ Captured Current Quantity: " + capturedStockQuantity);
+
+        // 4. Locate 3-dots action button strictly INSIDE the selected row
+        WebElement actionBtn = selectedRow.findElement(By.xpath(".//i[contains(@class,'bi-three-dots-vertical')]"));
+
+        // Scroll into view first
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'center'});", actionBtn);
+
+        // Wait for visibility, NOT clickability
+        customWait.until(ExpectedConditions.visibilityOf(actionBtn));
+
+        // Force click using JS to bypass Selenium's strict interactability checks
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", actionBtn);
+        System.out.println("🖱️ Clicked 3-dots action button for: " + capturedProductName);
+
+        // 5. Wait for the Preview button in the dynamically opened dropdown
+        By previewMenuOption = By.xpath("//div[contains(@class,'show')]//span[contains(text(),'Preview')] | .//span[contains(text(),'Preview')]");
+        WebElement previewBtn = customWait.until(ExpectedConditions.presenceOfNestedElementLocatedBy(selectedRow, previewMenuOption));
+
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center'});", previewBtn);
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", previewBtn);
+        System.out.println("🖱️ Clicked Preview button for: " + capturedProductName);
+    }
+    
     public void verifyDetailsPageAndClickUpdateStock() {
         // ===== STEP 1: Verify overall quantity is displayed correctly on details page =====
         System.out.println("⏳ Waiting for overall quantity to be visible...");
@@ -975,6 +1078,101 @@ private boolean isElementPresent(By by) {
 }
 
 
+public void selectRandomProductCaptureDetailsInStockOnly() {
+    WebDriverWait customWait = new WebDriverWait(driver, Duration.ofSeconds(15));
+
+    // 1. Navigate to Inventory -> Product Stocks
+    wait.until(ExpectedConditions.visibilityOf(inventory));
+    new Actions(driver).moveToElement(inventory).perform();
+
+    wait.until(ExpectedConditions.visibilityOf(productStockModule));
+    click(productStockModule);
+
+    // 2. Wait for table rows to load dynamically in DOM
+    customWait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.xpath("//table/tbody/tr")));
+    wait.until(ExpectedConditions.visibilityOfAllElements(productDataRows));
+
+    int totalRows = productDataRows.size();
+    if (totalRows == 0) {
+        throw new RuntimeException("❌ No product rows found in the table!");
+    }
+
+    boolean validProductFound = false;
+    WebElement selectedRow = null;
+    int maxAttempts = totalRows; // Try up to total rows available to avoid infinite loops
+    int attempts = 0;
+
+    Random random = new Random();
+
+    while (!validProductFound && attempts < maxAttempts) {
+        attempts++;
+        int selectedIndex = random.nextInt(totalRows);
+        selectedRow = productDataRows.get(selectedIndex);
+
+        // Check stock status for this candidate row first
+        if (selectedRow.findElements(By.xpath(".//span[@class='stock_warning_para']")).size() > 0) {
+            capturedStockStatus = "LOW_STOCK";
+        } else if (selectedRow.findElements(By.xpath(".//span[@class='stock_active_para in-stock']")).size() > 0) {
+            capturedStockStatus = "IN_STOCK";
+        } else if (selectedRow.findElements(By.xpath(".//span[@class='stock_inactive_para']")).size() > 0) {
+            capturedStockStatus = "OUT_OF_STOCK";
+        } else {
+            capturedStockStatus = "UNKNOWN";
+        }
+
+        // 3. Ignore both OUT_OF_STOCK and LOW_STOCK products; only select IN_STOCK
+        WebElement nameCell = selectedRow.findElement(By.xpath(".//td[1]"));
+        String tempProductName = nameCell.getText().trim();
+
+        if (capturedStockStatus.equals("OUT_OF_STOCK") || capturedStockStatus.equals("LOW_STOCK")) {
+            System.out.println("⏭️ Skipping product [" + tempProductName + "] because its status is " + capturedStockStatus + ". Trying another...");
+        } else if (capturedStockStatus.equals("IN_STOCK")) {
+            validProductFound = true;
+            capturedProductName = tempProductName;
+            System.out.println("✅ Selected Valid IN_STOCK Product: " + capturedProductName);
+        } else {
+            System.out.println("⏭️ Skipping product [" + tempProductName + "] with unknown stock status.");
+        }
+    }
+
+    if (!validProductFound) {
+        throw new RuntimeException("❌ Failed to find any product with 'IN_STOCK' status after checking available rows!");
+    }
+
+    // Capture remaining details for the valid product
+    WebElement qtyCell = selectedRow.findElement(By.xpath(".//td[3]"));
+    wait.until(ExpectedConditions.visibilityOf(qtyCell));
+    String qtyText = qtyCell.getText().trim();
+    try {
+        capturedStockQuantity = Integer.parseInt(qtyText);
+    } catch (NumberFormatException e) {
+        capturedStockQuantity = 0;
+    }
+    System.out.println("ℹ️ Captured Current Quantity: " + capturedStockQuantity);
+    System.out.println("ℹ️ Captured Stock Status: " + capturedStockStatus);
+
+    // 4. Locate 3-dots action button strictly INSIDE the selected row
+    WebElement actionBtn = selectedRow.findElement(By.xpath(".//i[contains(@class,'bi-three-dots-vertical')]"));
+
+    // Scroll into view first
+    ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'center'});", actionBtn);
+
+    // Wait for visibility, NOT clickability
+    customWait.until(ExpectedConditions.visibilityOf(actionBtn));
+
+    // Force click using JS to bypass Selenium's strict interactability checks
+    ((JavascriptExecutor) driver).executeScript("arguments[0].click();", actionBtn);
+    System.out.println("🖱️ Clicked 3-dots action button for: " + capturedProductName);
+
+    // 5. Wait for the Preview button in the dynamically opened dropdown
+    By previewMenuOption = By.xpath("//div[contains(@class,'show')]//span[contains(text(),'Preview')] | .//span[contains(text(),'Preview')]");
+    WebElement previewBtn = customWait.until(ExpectedConditions.presenceOfNestedElementLocatedBy(selectedRow, previewMenuOption));
+
+    ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center'});", previewBtn);
+    ((JavascriptExecutor) driver).executeScript("arguments[0].click();", previewBtn);
+    System.out.println("🖱️ Clicked Preview button for: " + capturedProductName);
+}
+
 //==================== METHOD: Handle Top + Bottom Flow ====================
 private void handleTopBottomAlertFlow(boolean hasTop, boolean hasBottom) {
 	  
@@ -1402,24 +1600,277 @@ private void handleAccessoryAlertFlow() {
 	  }
 	  pause(800);
 	}
-public String getCapturedProductName() {
-    return capturedProductName;
-}
-public String getCapturedStockStatus() {
-    return capturedStockStatus;
-}
+	public String getCapturedProductName() {
+	    return capturedProductName;
+	}
+	public String getCapturedStockStatus() {
+	    return capturedStockStatus;
+	}
+	
+	public int getCapturedStockQuantity() {
+	    return capturedStockQuantity;
+	}
+	
+	public int getAddedStockQuantity() {
+	    return addedStockQuantity;
+	}
+	
+	public int getNewTotalQuantity() {
+	    return newTotalQuantity;
+	}  
+	
+	 private void sleep(int seconds) {
+	        try {
+	            Thread.sleep(seconds * 1000L);
+	        } catch (InterruptedException e) {
+	            Thread.currentThread().interrupt();
+	        }
+	    }
+	
+	 private void scrollToElement(WebElement element) {
+	        JavascriptExecutor js = (JavascriptExecutor) driver;
+	        js.executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", element);
+	        sleep(1); // Pause slightly so you can see the scroll action
+	    }
+	
+	 public void exportProductStockFlow() {
+		 
+		 WebDriverWait customWait = new WebDriverWait(driver, Duration.ofSeconds(15));
 
-public int getCapturedStockQuantity() {
-    return capturedStockQuantity;
-}
+	        // 1. Navigate to Inventory -> Product Stocks
+	        wait.until(ExpectedConditions.visibilityOf(inventory));
+	        new Actions(driver).moveToElement(inventory).perform();
 
-public int getAddedStockQuantity() {
-    return addedStockQuantity;
-}
+	        wait.until(ExpectedConditions.visibilityOf(productStockModule));
+	        click(productStockModule);
+	        // 1. Click the export dropdown button
+	        waitFor(importExportBtnDropdown);
+	        scrollToElement(importExportBtnDropdown);
+	        click(importExportBtnDropdown);
+	        sleep(1); // Brief pause for dropdown animation to complete
 
-public int getNewTotalQuantity() {
-    return newTotalQuantity;
-}    
+	        // 2. Click the export option button from the menu
+	        waitFor(exportBtn);
+	        scrollToElement(exportBtn);
+	        click(exportBtn);
+	        sleep(1); // Brief pause for the export configuration modal/popup to open
+
+	        // 3. Click the "Include All" checkbox first to reveal/enable individual columns
+	        waitFor(includeCheckBox);
+	        scrollToElement(includeCheckBox);
+	        try {
+	            if (!includeCheckBox.isSelected()) {
+	                click(includeCheckBox);
+	            }
+	        } catch (Exception e) {
+	            click(includeCheckBox); // Fallback standard click
+	        }
+	        sleep(1); // Give it a moment to expand the column list
+
+	        // 4. Capture and print all column names dynamically (1st required column + remaining columns up to 8)
+	        System.out.println("--- Capturing Export Column Names ---");
+	        
+	        // Updated total columns to 8 to include the "Updated At" column
+	        int totalColumns = 8; 
+	        
+	        for (int i = 1; i <= totalColumns; i++) {
+	            String columnXpath;
+	            
+	            if (i == 1) {
+	                // First column uses the required/selected class pattern
+	                columnXpath = "(//div[contains(@data-section,'details')]//div[contains(@class,'section-body')]//label[contains(@class,'required') or contains(@class,'col-check-item')])[" + i + "]";
+	            } else {
+	                // Remaining columns use the standard col-check-item pattern
+	                columnXpath = "(//div[contains(@data-section,'details')]//div[contains(@class,'section-body')]//label[contains(@class,'col-check-item')])[" + i + "]";
+	            }
+	            
+	            try {
+	                WebElement columnLabel = wait.until(ExpectedConditions.elementToBeClickable(By.xpath(columnXpath)));
+	                scrollToElement(columnLabel);
+	                
+	                String columnName = columnLabel.getText().trim();
+	                
+	                // Fallback if standard getText() is empty
+	                if (columnName.isEmpty()) {
+	                    org.openqa.selenium.JavascriptExecutor js = (org.openqa.selenium.JavascriptExecutor) driver;
+	                    columnName = (String) js.executeScript("return arguments[0].innerText;", columnLabel);
+	                    columnName = columnName != null ? columnName.trim() : "";
+	                }
+	                
+	                System.out.println("Captured Column [" + i + "]: " + columnName);
+	            } catch (Exception e) {
+	                System.out.println("⚠️ Warning: Could not capture column at index [" + i + "]");
+	            }
+	        }
+	        System.out.println("-------------------------------------");
+	        sleep(1);
+
+	        // 5. Click the Download button to trigger the export generation
+	        waitFor(downloadBtn);
+	        scrollToElement(downloadBtn);
+	        click(downloadBtn);
+
+	        // 6. Verify that the generation notification message is successfully displayed
+	        try {
+	            waitFor(generatingMsg);
+	            String generationText = generatingMsg.getText().trim();
+	            System.out.println("✅ Export Generation Message Displayed: " + generationText);
+	        } catch (Exception e) {
+	            System.out.println("⚠️ Warning: Generating message notification was not detected or vanished too quickly.");
+	        }
+	    }
+	    
+	    
+	    public void verifyAndDownloadExportFileFromHistory() {
+	        // 1. Navigate to the Export History page
+	        waitFor(exportHistoryPage);
+	        scrollToElement(exportHistoryPage);
+	        click(exportHistoryPage);
+	        sleep(2); // Allow export history table to load
+	        
+	        // 2. Verify that the generated file name contains "manufacture-order"
+	        waitFor(fileName);
+	        scrollToElement(fileName);
+	        String generatedFileName = fileName.getText().trim();
+	        System.out.println("📄 Export File Name found in history: " + generatedFileName);
+	        
+	        if (!generatedFileName.toLowerCase().contains("product-stock")) {
+	            throw new RuntimeException("❌ File name in export history does not match 'product-stock'! Found: " + generatedFileName);
+	        }
+	        
+	        // 3. Continuously check and refresh until the status changes from 'Pending' to 'Success'
+	        boolean isSuccess = false;
+	        int maxPollAttempts = 50; // Max polls (approx 60-90 seconds)
+	        int pollCount = 0;
+	        
+	        while (!isSuccess && pollCount < maxPollAttempts) {
+	            pollCount++;
+	            try {
+	                waitFor(status);
+	                String currentStatus = status.getText().trim();
+	                System.out.println("⏳ Export Status Poll [" + pollCount + "]: " + currentStatus);
+	                
+	                if (currentStatus.equalsIgnoreCase("Success")) {
+	                    isSuccess = true;
+	                    System.out.println("✅ Export status changed to Success!");
+	                } else if (currentStatus.equalsIgnoreCase("Failed") || currentStatus.equalsIgnoreCase("Error")) {
+	                    throw new RuntimeException("❌ Export generation failed on the server!");
+	                } else {
+	                    // Still pending/processing, refresh the page and wait before checking again
+	                    driver.navigate().refresh();
+	                    sleep(3);
+	                }
+	            } catch (Exception e) {
+	                System.out.println("⚠️ Warning during status polling, retrying... (" + e.getMessage() + ")");
+	                driver.navigate().refresh();
+	                sleep(3);
+	            }
+	        }
+	        
+	        if (!isSuccess) {
+	            throw new RuntimeException("❌ Export status remained Pending/Processing after max retries!");
+	        }
+	        
+	        // 4. Click the three-dot actions menu for the completed export entry
+	        waitFor(threeDot);
+	        scrollToElement(threeDot);
+	        click(threeDot);
+	        sleep(1); // Brief pause for actions dropdown menu to render
+	        
+	        // 5. Click the download button from the actions dropdown menu
+	        waitFor(exportDownloadBtn);
+	        scrollToElement(exportDownloadBtn);
+	        click(exportDownloadBtn);
+	        System.out.println("⬇️ Export file download triggered successfully from Export History!");
+	        sleep(3); // Allow download to initiate
+	    }
+	    
+	    
+	    public void verifyExportedExcelColumns() {
+	        System.out.println("==================================================");
+	        System.out.println("🔍 Starting Exported Excel File Verification...");
+	        System.out.println("==================================================");
+	        
+	        // 1. Locate the downloaded Excel file in the system's Downloads directory
+	        String downloadPath = System.getProperty("user.home") + "/Downloads";
+	        File dir = new File(downloadPath);
+	        
+	        System.out.println("📂 Scanning Downloads folder: " + downloadPath);
+	        
+	        // Search for recent files matching manufacture-order or any recent .xlsx file
+	        File[] files = dir.listFiles((d, name) -> name.toLowerCase().endsWith(".xlsx") && name.toLowerCase().contains("product-stock"));
+	        
+	        if (files == null || files.length == 0) {
+	            System.out.println("⚠️ Specific 'product-stock' Excel file not instantly found. Checking for any recent .xlsx files...");
+	            files = dir.listFiles((d, name) -> name.toLowerCase().endsWith(".xlsx"));
+	        }
+	        
+	        if (files == null || files.length == 0) {
+	            throw new RuntimeException("❌ No downloaded Excel file found in the Downloads folder: " + downloadPath);
+	        }
+	        
+	        // Find the most recently downloaded file
+	        File latestFile = files[0];
+	        for (File f : files) {
+	            if (f.lastModified() > latestFile.lastModified()) {
+	                latestFile = f;
+	            }
+	        }
+	        
+	        System.out.println("📥 Target Excel File Identified: " + latestFile.getAbsolutePath());
+	        System.out.println("⏱️ File Last Modified: " + new java.util.Date(latestFile.lastModified()));
+	        
+	        // Give a brief visual pause so you can see the file target in the console
+	        sleep(2);
+
+	        // 2. Read the Excel file using Apache POI
+	        System.out.println("📖 Opening Excel workbook and reading sheets...");
+	        try (FileInputStream fis = new FileInputStream(latestFile);
+	             Workbook workbook = WorkbookFactory.create(fis)) {
+	            
+	            Sheet sheet = workbook.getSheetAt(0); // Access the first sheet
+	            System.out.println("📄 Active Sheet Name: " + sheet.getSheetName());
+	            
+	            // 3. Column names are located in the 2nd row (Index 1 since Apache POI rows are 0-indexed)
+	            Row headerRow = sheet.getRow(1);
+	            if (headerRow == null) {
+	                System.out.println("⚠️ Row index 1 (2nd row) is empty. Falling back to row index 0 (1st row)...");
+	                headerRow = sheet.getRow(0);
+	            }
+	            
+	            if (headerRow == null) {
+	                throw new RuntimeException("❌ The header row in the exported Excel file is empty!");
+	            }
+	            
+	            System.out.println("\n--------------------------------------------------");
+	            System.out.println("📊 EXPORTED COLUMNS FOUND IN ROW 2:");
+	            System.out.println("--------------------------------------------------");
+	            
+	            List<String> actualExcelColumns = new ArrayList<>();
+	            int colIndex = 1;
+	            
+	            for (Cell cell : headerRow) {
+	                String cellValue = cell.toString().trim();
+	                if (!cellValue.isEmpty()) {
+	                    actualExcelColumns.add(cellValue);
+	                    System.out.println("   [Column " + colIndex + "] ---> " + cellValue);
+	                    colIndex++;
+	                }
+	            }
+	            System.out.println("--------------------------------------------------\n");
+	            
+	            if (actualExcelColumns.isEmpty()) {
+	                throw new RuntimeException("❌ No valid column headers found in the Excel file!");
+	            }
+	            
+	            System.out.println("✅ Excel columns verification completed successfully!");
+	            System.out.println("🎯 Total Columns Verified: " + actualExcelColumns.size());
+	            System.out.println("==================================================\n");
+	            
+	        } catch (Exception e) {
+	            throw new RuntimeException("❌ Failed to read or parse the downloaded Excel file: " + e.getMessage(), e);
+	        }
+	    }
     
     
     
@@ -1448,7 +1899,7 @@ public int getNewTotalQuantity() {
   //TC-02 Orchestration method to run the full flow for Add stock and verification
     public void validateProductAddStockPage() throws InterruptedException {
         adminLogin();
-        selectRandomProductCaptureDetailsClickEditAndPreview();
+        selectRandomProductCaptureDetailsClickPreview();
         verifyDetailsPageAndClickUpdateStock(); 
         addRandomStockInPopup();
         verifyOverallQuantityAfterAdd();
@@ -1460,9 +1911,15 @@ public int getNewTotalQuantity() {
     
     public void setLowStockAlertPage() throws InterruptedException{
     	adminLogin();
-    	selectRandomProductCaptureDetailsClickEditAndPreview();
-
-    	
+    	selectRandomProductCaptureDetailsInStockOnly();
+    }
+    
+    
+    public void verifyProductStockExportFlow() {
+    	adminLogin();
+    	exportProductStockFlow();
+    	verifyAndDownloadExportFileFromHistory();
+    	verifyExportedExcelColumns();
     }
     
     

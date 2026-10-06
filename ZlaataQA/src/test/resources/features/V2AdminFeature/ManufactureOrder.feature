@@ -94,6 +94,19 @@ Examples:
 | TD_UI_Zlaata_MO_07  |
 
 
+@MO
+@TC_UI_Zlaata_MO_08
+Scenario Outline: TC_UI_Zlaata_MO_08 |Verify that the Manufacture Order export functionality works correctly and the corresponding columns are exported accurately in the Excel file| "<TD_ID>"
+
+Given admin navigates to the Manufacture Order module
+When admin exports the Manufacture Order data to an Excel file
+Then the corresponding Manufacture Order columns should be exported correctly in the Excel file
+
+Examples:
+| TD_ID               |
+| TD_UI_Zlaata_MO_08  |
+
+
 
 
 

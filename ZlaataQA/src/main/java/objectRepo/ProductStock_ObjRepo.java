@@ -65,5 +65,37 @@ public abstract class ProductStock_ObjRepo extends BasePage {
      
      @FindBy(xpath = "//span[contains(normalize-space(),'Preview')]")
      protected List<WebElement> previewIcons;
+     
+     
+     
+     @FindBy(xpath = "(//button[@class='import-export-btn js-toggle'])[1]")
+     protected WebElement importExportBtnDropdown;
+     
+     @FindBy(xpath = "(//button[@class='js-option'])[1]")
+     protected WebElement exportBtn;
+     
+     @FindBy(xpath = "(//label[@class='section-toggle'])[1]")
+     protected WebElement includeCheckBox;
+     
+     @FindBy(xpath ="(//button[normalize-space()='Download'])[1]")
+     protected WebElement downloadBtn;
+     
+     @FindBy(xpath = "(//div[@class='noty_body'])[1]")
+     protected WebElement generatingMsg;
+     
+     @FindBy(xpath = "(//span[normalize-space()='Export History'])[1]")
+     protected WebElement exportHistoryPage;
+     
+     @FindBy(xpath = "//tbody/tr[1]/td[2]")
+     protected WebElement fileName;
+     
+     @FindBy(xpath = "(//td)[7]")
+     protected WebElement status;
+     
+     @FindBy(xpath = "(//div[@class='dropdown actions-dropdown-wrapper'])[1]")
+     protected WebElement threeDot;
+
+     @FindBy(xpath = "//div[@class='dropdown-menu actions-dropdown-menu dropdown-menu-right dropdown_button_wrapper show']//a[1]")
+     protected WebElement exportDownloadBtn;
  		
 }

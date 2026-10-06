@@ -246,8 +246,6 @@ public abstract class Supplier_ObjRepo extends BasePage{
     
     
     
-    
-    
     @FindBy(xpath = "//tbody/tr[1]/td[1]")
     protected WebElement firstRowSupplierId;
 
@@ -263,5 +261,54 @@ public abstract class Supplier_ObjRepo extends BasePage{
     @FindBy(xpath = "(//form[@id='supplierDeleteForm']//button[@type='button'][normalize-space()='Cancel'])[1]")
     protected WebElement deletePopupCancelBtn;
     
+    
+    
+    //TC-08
+    @FindBy(xpath = "(//button[@class='import-export-btn js-toggle'])[1]")
+    protected WebElement importExportBtnDropdown;
+    
+    @FindBy(xpath = "(//button[@class='js-option'])[1]")
+    protected WebElement exportBtn;
+    
+    @FindBy(xpath = "(//label[@class='section-toggle'])[1]")
+    protected WebElement includeCheckBox;
+    
+    @FindBy(xpath ="(//button[normalize-space()='Download'])[1]")
+    protected WebElement downloadBtn;
+    
+    @FindBy(xpath = "(//div[@class='noty_body'])[1]")
+    protected WebElement generatingMsg;
+    
+    @FindBy(xpath = "(//span[normalize-space()='Export History'])[1]")
+    protected WebElement exportHistoryPage;
+    
+    @FindBy(xpath = "//tbody/tr[1]/td[2]")
+    protected WebElement fileName;
+    
+    @FindBy(xpath = "(//td)[7]")
+    protected WebElement status;
+    
+    @FindBy(xpath = "(//div[@class='dropdown actions-dropdown-wrapper'])[1]")
+    protected WebElement threeDot;
+
+    @FindBy(xpath = "//div[@class='dropdown-menu actions-dropdown-menu dropdown-menu-right dropdown_button_wrapper show']//a[1]")
+    protected WebElement exportDownloadBtn;
+    
+    
+    
+    @FindBy(xpath = "(//button[@class='js-option js-custom-import-trigger'])[1]")
+    protected WebElement importBtn;
+    
+    @FindBy(xpath = "(//div[@class='sim-formats'])[1]")
+    protected WebElement DragAndDropArea;
+    
+    @FindBy(xpath = "(//button[normalize-space()='Next'])[1]")
+    protected WebElement nextBtn;
+    
+    @FindBy(xpath = "(//button[normalize-space()='Start Import'])[1]")
+    protected WebElement startImportBtn;
+    
+    @FindBy(xpath = "(//button[normalize-space()='Close'])[1]")
+    protected WebElement closeBtn;
     
 }

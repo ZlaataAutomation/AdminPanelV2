@@ -110,4 +110,16 @@ public class PurchaseOrder_StepDef {
     public void the_available_quantity_and_calculated_amount_should_be_displayed_correctly_for_all_added_raw_materials() {
 
     }
+    
+    
+  //TC-PO-07
+    @When("admin exports the Purchase Order data to an Excel file")
+    public void admin_exports_the_purchase_order_data_to_an_excel_file() throws Exception {
+    	purchaseOrder.verifyExportPurchaseOrderFlow();
+    }
+
+    @Then("the corresponding Purchasr Order columns should be exported correctly in the Excel file")
+    public void the_corresponding_purchasr_order_columns_should_be_exported_correctly_in_the_excel_file() {
+
+    }
 }
