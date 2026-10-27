@@ -737,11 +737,12 @@ public class PurchaseOrder_Page extends PurchaseOrder_ObjRepo {
         JavascriptExecutor js = (JavascriptExecutor) driver;
 
         logHeader("SAVE PURCHASE ORDER & VERIFY DETAILS");
-
+        sleep(5);
         logAction("Clicking on 'Save' button.");
         WebElement saveBtn = driver.findElement(By.xpath("(//button[normalize-space()='Save'])[1]"));
         js.executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", saveBtn);
         sleep(1);
+        sleep(5);
         
         try {
             wait.until(ExpectedConditions.elementToBeClickable(saveBtn));
@@ -1951,6 +1952,8 @@ public class PurchaseOrder_Page extends PurchaseOrder_ObjRepo {
         WebElement saveBtn = driver.findElement(By.xpath("(//button[normalize-space()='Save'])[1]"));
         js.executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", saveBtn);
         sleep(1);
+        sleep(6);
+        
         
         try {
             wait.until(ExpectedConditions.elementToBeClickable(saveBtn));
@@ -1961,6 +1964,7 @@ public class PurchaseOrder_Page extends PurchaseOrder_ObjRepo {
         }
         System.out.println(GREEN + BOLD + "[SUCCESS] Purchase Order with Multiple Items saved successfully." + RESET);
         sleep(3);
+        sleep(6);
 
         logAction("Verifying Supplier Name on listing page.");
         WebElement supplierCell = driver.findElement(By.xpath("(//td)[2]"));
