@@ -39,7 +39,7 @@ Feature: Product Stock Management
       
       
       
-     @PS 
+     
   @TC_UI_Zlaata_PS_04
 Scenario Outline: TC_UI_Zlaata_PS_04 |Verify that the Product Stocks export functionality works correctly and the corresponding columns are exported accurately in the Excel file| "<TD_ID>"
 

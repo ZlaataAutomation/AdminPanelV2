@@ -187,7 +187,7 @@ public class Raw_Material_Page extends Raw_Material_ObjRepo {
 	            if (expectedMaterialType == null || expectedMaterialType.isEmpty()) {
 	                expectedMaterialType = randomOption.getText().trim();
 	            }
-	            
+	        
 	            randomOption.click();
 	            logAction("Material Type Selected: " + BLUE + expectedMaterialType + RESET);
 	        } else {
@@ -230,59 +230,67 @@ public class Raw_Material_Page extends Raw_Material_ObjRepo {
 	    }
 	    Common.waitForElement(1);
 
-	    // ==========================================
-	    // 4. SUPPLIER DROPDOWN (4th Dropdown - Standard Random from 0)
-	    // ==========================================
-	    WebElement supplierDropdown = wait.until(ExpectedConditions.elementToBeClickable(
-	            By.xpath("(//button[contains(@class,'select-trigger-btn')])[4]")));
-	    supplierDropdown.click();
-	    Common.waitForElement(1);
+	 // ==========================================
+	 // 4. SUPPLIER DROPDOWN
+	 // ==========================================
+	 WebElement supplierDropdown = wait.until(ExpectedConditions.elementToBeClickable(
+	         By.xpath("(//button[contains(@class,'select-trigger-btn')])[4]")));
+	 supplierDropdown.click();
+	 Common.waitForElement(1);
 
-	    try {
-	        List<WebElement> supplierOptions = wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(
-	                By.xpath("//ul[@class='select-options-menu']/li[@class='option-item']")));
-	                
-	        if (supplierOptions != null && !supplierOptions.isEmpty()) {
-	            WebElement randomOption = supplierOptions.get(random.nextInt(supplierOptions.size()));
-	            
-	            expectedSupplier = randomOption.getAttribute("data-label");
-	            if (expectedSupplier == null || expectedSupplier.isEmpty()) {
-	                expectedSupplier = randomOption.getText().trim();
-	            }
-	            
-	            randomOption.click();
-	            logAction("Supplier Selected     : " + BLUE + expectedSupplier + RESET);
-	        }
-	    } catch (Exception e) {
-	        logFailure("Failed to select a random Supplier: " + e.getMessage());
-	    }
-	    Common.waitForElement(2);
+	 try {
+	     List<WebElement> supplierOptions = wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(
+	             By.xpath("//ul[@class='select-options-menu']/li[@class='option-item']")));
+	             
+	     if (supplierOptions != null && !supplierOptions.isEmpty()) {
+	         WebElement randomOption = supplierOptions.get(random.nextInt(supplierOptions.size()));
+	         
+	         expectedSupplier = randomOption.getAttribute("data-label");
+	         if (expectedSupplier == null || expectedSupplier.isEmpty()) {
+	             expectedSupplier = randomOption.getText().trim();
+	         }
+	         
+	         randomOption.click();
+	         logAction("Supplier Selected     : " + BLUE + expectedSupplier + RESET);
+	     }
+	 } catch (Exception e) {
+	     logFailure("Failed to select a random Supplier: " + e.getMessage());
+	 }
 
-	    // Handle optional search box interaction if present in your DOM flow
-	    try {
-	        WebElement searchBox = wait.until(ExpectedConditions.elementToBeClickable(
-	                By.xpath("//input[contains(@class,'select-search-input')]")));
-	        searchBox.click();
-	        searchBox.sendKeys(Keys.ENTER);
-	    } catch (Exception ignored) {
-	        // Optional element; safe to ignore if not rendered
-	    }
+	 // Close the dropdown menu by clicking the trigger button again
+	 try {
+	     supplierDropdown.click();
+	 } catch (Exception e) {
+	     // Dropdown closed automatically or overlay vanished
+	 }
 
-	    // Get Selected Supplier Name from the resulting chip label if needed to confirm
-	    try {
-	        String supplierName = wait.until(ExpectedConditions.visibilityOfElementLocated(
-	                By.xpath("//span[@class='chip-label']")))
-	                .getText()
-	                .replace("×", "")
-	                .replace("\n", "")
-	                .trim();
-	        if (supplierName != null && !supplierName.isEmpty()) {
-	            expectedSupplier = supplierName;
-	        }
-	        logSuccess("Verified Chip Label   : " + BLUE + expectedSupplier + RESET);
-	    } catch (Exception ignored) {
-	        // Fallback to what was clicked if chip label isn't mandatory
-	    }
+	 Common.waitForElement(1);
+
+	 // Optional: Interact with search box if present
+	 try {
+	     WebElement searchBox = wait.until(ExpectedConditions.elementToBeClickable(
+	             By.xpath("//input[contains(@class,'select-search-input')]")));
+	     searchBox.click();
+	     searchBox.sendKeys(Keys.ENTER);
+	 } catch (Exception ignored) {
+	     // Safe to ignore if not rendered
+	 }
+
+	 // Verify Selected Supplier Chip Label
+	 try {
+	     String supplierName = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	             By.xpath("//span[@class='chip-label']")))
+	             .getText()
+	             .replace("×", "")
+	             .replace("\n", "")
+	             .trim();
+	     if (supplierName != null && !supplierName.isEmpty()) {
+	         expectedSupplier = supplierName;
+	     }
+	     logSuccess("Verified Chip Label   : " + BLUE + expectedSupplier + RESET);
+	 } catch (Exception ignored) {
+	     // Fallback if chip label isn't mandatory
+	 }
 
 	    // Quantity
 	    WebElement quantityField = driver.findElement(By.name("quantity"));
@@ -404,7 +412,7 @@ public class Raw_Material_Page extends Raw_Material_ObjRepo {
 	
 	
 	public void selectRandomProductonRawMaterialSection() {
-		WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+	    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
 	    Actions actions = new Actions(driver);
 	    
 	    // Hover on Inventory
@@ -420,60 +428,71 @@ public class Raw_Material_Page extends Raw_Material_ObjRepo {
 	    Common.waitForElement(2);
 	    
 	    wait.until(ExpectedConditions.visibilityOfAllElements(productDataRows));
-        int totalRows = productDataRows.size();
-        if (totalRows == 0) {
-            throw new RuntimeException("No product rows found in the table!");
-        }
-        int selectedIndex = new Random().nextInt(totalRows);
-        WebElement selectedRow = productDataRows.get(selectedIndex);
+	    int totalRows = productDataRows.size();
+	    if (totalRows == 0) {
+	        throw new RuntimeException("No product rows found in the table!");
+	    }
+	    int selectedIndex = new Random().nextInt(totalRows);
+	    WebElement selectedRow = productDataRows.get(selectedIndex);
 
-        WebElement nameCell = selectedRow.findElement(By.xpath(".//td[2]"));
-        wait.until(ExpectedConditions.visibilityOf(nameCell));
-        capturedProductName = nameCell.getText().trim();
-        WebElement skuCell = selectedRow.findElement(By.xpath(".//td[1]"));
-        wait.until(ExpectedConditions.visibilityOf(skuCell));
-        caturedSKU = skuCell.getText().trim();
-         System.out.println(":information_source: Selected Raw Material Name: " + capturedProductName);
-        System.out.println(":information_source: Selected Raw Material SKU: " + caturedSKU);
+	    WebElement nameCell = selectedRow.findElement(By.xpath(".//td[2]"));
+	    wait.until(ExpectedConditions.visibilityOf(nameCell));
+	    capturedProductName = nameCell.getText().trim();
 
-        
-        WebElement searchBar = driver.findElement(By.id("text-filter-sku"));
-        searchBar.click();
-        searchBar.clear();
-        searchBar.sendKeys(caturedSKU); 
+	    WebElement skuCell = selectedRow.findElement(By.xpath(".//td[1]"));
+	    wait.until(ExpectedConditions.visibilityOf(skuCell));
+	    caturedSKU = skuCell.getText().trim();
+
+	    System.out.println("ℹ️ Selected Raw Material Name: " + capturedProductName);
+	    System.out.println("ℹ️ Selected Raw Material SKU: " + caturedSKU);
+
+	    WebElement searchBar = driver.findElement(By.id("text-filter-sku"));
+	    searchBar.click();
+	    searchBar.clear();
+	    searchBar.sendKeys(caturedSKU); 
 	    Common.waitForElement(2);
 
-        
-	 // ===== Capture Quantity (3rd column) =====
-	    WebElement qtyCell = driver.findElement(By.xpath("(//tbody/tr/td[6])[1]"));
-	    wait.until(ExpectedConditions.visibilityOf(qtyCell));
+	    // ===== Capture Quantity safely (6th column of filtered row) =====
+	    WebElement qtyCell = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("(//tbody/tr[1]/td[6])[1]")));
 
-	    String qtyText = qtyCell.getText().trim();
-	    capturedStockQuantity = Integer.parseInt(qtyText);
+	    String rawQtyText = qtyCell.getText().trim();
+	    
+	    // Clean string by removing everything except digits and minus signs
+	    String cleanedQtyText = rawQtyText.replaceAll("[^0-9-]", "");
+
+	    try {
+	        if (!cleanedQtyText.isEmpty() && !cleanedQtyText.equals("-")) {
+	            capturedStockQuantity = Integer.parseInt(cleanedQtyText);
+	        } else {
+	            capturedStockQuantity = 0; // Default to 0 if dash or empty
+	        }
+	    } catch (NumberFormatException e) {
+	        System.err.println("⚠️ Failed to parse quantity string '" + rawQtyText + "', defaulting to 0.");
+	        capturedStockQuantity = 0;
+	    }
 
 	    System.out.println("Captured Quantity: " + capturedStockQuantity);
 
-	    // ===== Capture Stock Status (4th column) =====
-	    WebElement stockStatusElement = driver.findElement(
-	            By.xpath("(//tbody/tr/td[5])[1]"));
-	    wait.until(ExpectedConditions.visibilityOf(stockStatusElement));
+	    // ===== Capture Stock Status (5th column of filtered row) =====
+	    WebElement stockStatusElement = wait.until(ExpectedConditions.visibilityOfElementLocated(
+	            By.xpath("(//tbody/tr[1]/td[5])[1]")));
 
 	    capturedStockStatus = stockStatusElement.getText().trim();
-
 	    System.out.println("Captured Stock Status: " + capturedStockStatus);
 
-        wait.until(ExpectedConditions.visibilityOfAllElements(editButtons));
-     // Click the three-dot menu
-        WebElement menu = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//a[contains(@class,'actions-buttons-column')]")));
-        menu.click();
-        Common.waitForElement(1);
-        // Click the Edit option
-        WebElement previewBtn = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//a[@bp-button='show']")));
-        previewBtn.click();
-        System.out.println(":three_button_mouse: Clicked preview  button for: " + capturedProductName + " — navigating to preview page");
-        Common.waitForElement(2);
+	    // ===== Click Action Menu on the filtered row =====
+	    WebElement menu = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("(//tbody/tr[1]//a[contains(@class,'actions-buttons-column')])[1]")));
+	    menu.click();
+	    Common.waitForElement(1);
+
+	    // Click Preview Option
+	    WebElement previewBtn = wait.until(ExpectedConditions.elementToBeClickable(
+	            By.xpath("//a[@bp-button='show']")));
+	    previewBtn.click();
+	    System.out.println("🖱️ Clicked preview button for: " + capturedProductName + " — navigating to preview page");
+	    Common.waitForElement(2);
 	}
 	
 	

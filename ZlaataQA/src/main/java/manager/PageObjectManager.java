@@ -29,6 +29,8 @@ public class PageObjectManager {
    private ManufactureReceive_Page manufactureReceive;
    private ProductArchive_Page archive;
    private SizeChart_Page size;
+   private Products_Page products;
+   private ProductAccessories_Page accessories;
 
    
     public PageObjectManager(WebDriver driver) {
@@ -110,5 +112,13 @@ public class PageObjectManager {
 	public SizeChart_Page getSizeChart_Page() {
 		return (size == null) ? size = new SizeChart_Page(driver) : size;
 	}
+	public Products_Page getProducts_Page() {
+		return (products == null) ? products = new Products_Page(driver) : products;
+	}
+	
+	public ProductAccessories_Page getProductAccessories_Page() { 
+		return (accessories == null) ? accessories = new ProductAccessories_Page(driver) : accessories;
+	}
+
 	
 }

@@ -82,7 +82,7 @@ Examples:
   | TD_UI_Zlaata_PO_06  |
   
   
-   @PO 
+   @P
   @TC_UI_Zlaata_PO_07
 Scenario Outline: TC_UI_Zlaata_PO_07 |Verify that the Purchase Order export functionality works correctly and the corresponding columns are exported accurately in the Excel file| "<TD_ID>"
 

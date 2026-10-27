@@ -163,7 +163,7 @@ public abstract class ManufactureOrder_ObjRepo extends BasePage{
     @FindBy(xpath = "//tbody/tr[1]/td[2]")
     protected WebElement fileName;
     
-    @FindBy(xpath = "(//td)[7]")
+    @FindBy(xpath = "(//td)[6]")
     protected WebElement status;
     
     @FindBy(xpath = "(//div[@class='dropdown actions-dropdown-wrapper'])[1]")

@@ -116,6 +116,16 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         sleep(1);
     }
     
+    public void clickCustomProductTab() {
+        By customProductTab = By.xpath("(//a[normalize-space()='Custom Product'])[1]");
+
+        WebElement tab = wait.until(ExpectedConditions.elementToBeClickable(customProductTab));
+        scrollToElement(tab);
+        tab.click();
+        sleep(4);
+        System.out.println("Clicked Custom Product tab.");
+    }
+    
     //TC-01
     public String selectedVendorText = "";
     public String selectedAddressText = "";
@@ -233,6 +243,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
     
     public double firstProductExpectedCost = 0.0;
     public double secondProductExpectedCost = 0.0;
+    public int totalSizeOptionsCount = 0; // number of size options available in the dropdown (env-independent)
     
     public void addProductDetails() {
         // 1. Enter Product Name
@@ -269,6 +280,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         By sizeOptionsLocator = By.xpath("(//div[@class='tag_menu js-tag_menu'])[1]//label[@class='tag_option']");
         wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(sizeOptionsLocator));
         List<WebElement> sizeOptions = driver.findElements(sizeOptionsLocator);
+        totalSizeOptionsCount = sizeOptions.size();
 
         // Clear lists and sums for a fresh run
         selectedSizesList.clear();
@@ -339,25 +351,8 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
     }
     
     // Helper method mapping each size name precisely to its exact raw material input index
-    private int getRawMaterialIndexForSize(String sizeText) {
-        String upper = sizeText.toUpperCase().trim();
-        
-        if (upper.contains("XXL")) {
-            return 13;
-        } else if (upper.contains("XL")) {
-            return 12;
-        } else if (upper.contains("XS")) {
-            return 8;
-        } else if (upper.contains("PGR")) {
-            return 14;
-        } else if (upper.contains(" S ") || upper.endsWith("- S") || upper.equals("S")) {
-            return 9;
-        } else if (upper.contains(" M ") || upper.endsWith("- M") || upper.equals("M")) {
-            return 10;
-        } else if (upper.contains(" L ") || upper.endsWith("- L") || upper.equals("L")) {
-            return 11;
-        }
-        return 8; // Default fallback index
+    private int getRawMaterialIndexForSizeIndex(int sizeIndex) {
+        return sizeIndex + totalSizeOptionsCount;
     }
     
     public void selectRawMaterialAndFillQuantities() {
@@ -412,8 +407,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             System.out.println("Attempt " + attempts + " - Selected Raw Material: " + rmText);
 
             // 3. Enter a high quantity (1000000) into the first selected size's input box to trigger validation
-            String firstSize = selectedSizesList.get(0);
-            int firstSizeInputIndex = getRawMaterialIndexForSize(firstSize);
+            int firstSizeInputIndex = getRawMaterialIndexForSizeIndex(selectedSizeIndices.get(0));
             
             By firstInputLocator = By.xpath("(//input[@placeholder='-'])[" + firstSizeInputIndex + "]");
             WebElement firstQtyInput = wait.until(ExpectedConditions.elementToBeClickable(firstInputLocator));
@@ -452,7 +446,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
                 for (int i = 0; i < selectedSizesList.size(); i++) {
                     String targetSize = selectedSizesList.get(i);
                     int exactQty = selectedQuantitiesList.get(i);
-                    int rmInputIndex = getRawMaterialIndexForSize(targetSize);
+                    int rmInputIndex = getRawMaterialIndexForSizeIndex(selectedSizeIndices.get(i));
                     
                     By rmQtyInputLocator = By.xpath("(//input[@placeholder='-'])[" + rmInputIndex + "]");
                     WebElement rmQtyInput = wait.until(ExpectedConditions.elementToBeClickable(rmQtyInputLocator));
@@ -520,6 +514,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
     
     
     public void verifyManufactureOrderOnListingPage() {
+    	clickCustomProductTab();
         System.out.println("\n=============================================================");
         System.out.println("          MANUFACTURE ORDER LISTING PAGE VERIFICATION        ");
         System.out.println("=============================================================");
@@ -704,8 +699,10 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
     
     //TC-02
     public void clickEditManufactureOrder() {
+    	clickCustomProductTab();
         // 1. Click the 3-dot action button in the first row
     	// 1. Locate and click the 3-dot action button in the first row
+    	
         By threeDotLocator = By.xpath("(//i[@class='bi bi-three-dots-vertical'])[1]");
         WebElement threeDotBtn = wait.until(ExpectedConditions.elementToBeClickable(threeDotLocator));
         scrollToElement(threeDotBtn);
@@ -1146,6 +1143,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
     }
     
     public void verifyEditedManufactureOrderOnListingPage() {
+    	clickCustomProductTab();
         System.out.println("\n=============================================================");
         System.out.println("      EDITED MANUFACTURE ORDER LISTING PAGE VERIFICATION     ");
         System.out.println("=============================================================");
@@ -1340,6 +1338,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
     
  // Step 2: Verify it on the listing page (Status = Draft)
     public void verifyDraftManufactureOrderOnListingPage() {
+    	clickCustomProductTab();
         System.out.println("\n=============================================================");
         System.out.println("      DRAFT MANUFACTURE ORDER LISTING VERIFICATION           ");
         System.out.println("=============================================================");
@@ -1466,7 +1465,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         System.out.println("\n=============================================================");
         System.out.println("          VERIFY CANCEL ITEMS OPTION ON PREVIEW PAGE         ");
         System.out.println("=============================================================");
-        
+        clickCustomProductTab();
         // 1. Click 3-dot action button on listing page using repo element
         click(threeDotBtn);
         sleep(1);
@@ -1550,7 +1549,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         String RESET = "\u001B[0m";
         String GREEN = "\u001B[32m";
         String RED = "\u001B[31m";
-
+        
         System.out.println("\n=============================================================");
         System.out.println("       VERIFYING CANCELLED STATUS ACROSS PAGES               ");
         System.out.println("=============================================================");
@@ -1566,6 +1565,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         // 2. Click Back Button using the repository element (`backBtn`)
         click(backBtn);
         sleep(2);
+        clickCustomProductTab();
 
         // 3. Verify listing page status using repository element (`listingPageStatusLocator` i.e. `(//td)[7]`)
         waitFor(listingPageStatusLocator);
@@ -1624,7 +1624,8 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             WebElement backButton = wait.until(ExpectedConditions.elementToBeClickable(backBtn));
             backButton.click();
             sleep(2);
-
+            
+            clickCustomProductTab();
             // 6. Verify Status on Listing Page
             WebElement listingStatus = wait.until(ExpectedConditions.visibilityOf(listingPageStatusLocator));
             String actualListingStatus = listingStatus.getText().trim();
@@ -1815,37 +1816,38 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
                 chosenIndices.add(random.nextInt(sizeOptions2.size()));
             }
 
+            int sizeCount = sizeOptions2.size(); // N, works for any server
+
             for (int index : chosenIndices) {
-                WebElement sizeOption = sizeOptions2.get(index);
-                String sizeText = sizeOption.getText().trim();
-                selectedSizesList.add(sizeText);
-                
-                // Get the exact size option index (8 to 14)
-                int sizeIndex = getRawMaterialIndexForSize(sizeText);
-                selectedSizeIndices.add(sizeIndex);
-                
-                // Click the size option using the exact global index (e.g. (//label[@class='tag_option'])[8])
-                By specificOption = By.xpath("(//label[@class='tag_option'])[" + sizeIndex + "]");
+                int itemNumber = index + 1; // 1-based position inside the second tag menu
+                selectedSizeIndices.add(itemNumber); // same convention as first product
+
+                // Click the option scoped to the second menu (no hardcoded global index)
+                By specificOption = By.xpath("((//div[@class='tag_menu js-tag_menu'])[2]//label[@class='tag_option'])[" + itemNumber + "]");
                 WebElement specificSizeEl = wait.until(ExpectedConditions.elementToBeClickable(specificOption));
+
+                String sizeText = specificSizeEl.getText().trim();
+                selectedSizesList.add(sizeText);
+
                 scrollToElement(specificSizeEl);
                 specificSizeEl.click();
                 sleep(1);
-                
-                // Second product input placeholder index starts at 15 for XS (sizeIndex + 7)
-                int inputIndex = sizeIndex + 7;
-                By quantityInputLocator = By.xpath("(//input[@placeholder='-'])[" + inputIndex + "]"); 
+
+                // Second product size inputs come after product 1's size + raw material inputs (2N)
+                int inputIndex = (2 * sizeCount) + itemNumber;
+                By quantityInputLocator = By.xpath("(//input[@placeholder='-'])[" + inputIndex + "]");
                 WebElement qtyInput = wait.until(ExpectedConditions.elementToBeClickable(quantityInputLocator));
-                
-                int randomQty = 1 + random.nextInt(5); 
-                selectedQuantitiesList.add(randomQty); 
-                totalQuantitySum += randomQty; 
-                
+
+                int randomQty = 1 + random.nextInt(5);
+                selectedQuantitiesList.add(randomQty);
+                totalQuantitySum += randomQty;
+
                 scrollToElement(qtyInput);
                 qtyInput.clear();
                 qtyInput.sendKeys(String.valueOf(randomQty));
                 sleep(1);
-                
-                System.out.println("Selected Second Product Size: '" + sizeText + "' at tag option index [" + sizeIndex + "] and placeholder index [" + inputIndex + "] with Quantity: " + randomQty);
+
+                System.out.println("Selected Second Product Size: '" + sizeText + "' at menu index [" + itemNumber + "] and placeholder index [" + inputIndex + "] with Quantity: " + randomQty);
             }
             
             secondProductExpectedCost = lastMakingCost * totalQuantitySum;
@@ -1864,6 +1866,10 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         } else {
             throw new RuntimeException("No size options available in the second tag menu container!");
         }
+    }
+    
+    private int getSecondProductRawMaterialIndex(int sizeIndex) {
+        return sizeIndex + (3 * totalSizeOptionsCount);
     }
     
     public void selectRawMaterialAndFillQuantitiesForSecondProduct() {
@@ -1921,9 +1927,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             System.out.println("Attempt " + attempts + " - Selected Raw Material for 2nd Product: " + rmText);
 
             // 3. Enter a high quantity (1000000) into the first selected size's input box with offset +14 to trigger validation
-            String firstSize = selectedSizesList.get(0);
-            int firstSizeIndex = getRawMaterialIndexForSize(firstSize); // e.g. 8 for XS
-            int firstSizeInputIndex = firstSizeIndex + 14;              // 8 + 14 = 22
+            int firstSizeInputIndex = getSecondProductRawMaterialIndex(selectedSizeIndices.get(0));             // 8 + 14 = 22
             
             By firstInputLocator = By.xpath("(//input[@placeholder='-'])[" + firstSizeInputIndex + "]");
             WebElement firstQtyInput = wait.until(ExpectedConditions.elementToBeClickable(firstInputLocator));
@@ -1963,8 +1967,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
                 for (int i = 0; i < selectedSizesList.size(); i++) {
                     String targetSize = selectedSizesList.get(i);
                     int exactQty = selectedQuantitiesList.get(i);
-                    int targetSizeIndex = getRawMaterialIndexForSize(targetSize);
-                    int rmInputIndex = targetSizeIndex + 14; 
+                    int rmInputIndex = getSecondProductRawMaterialIndex(selectedSizeIndices.get(i));
                     
                     By rmQtyInputLocator = By.xpath("(//input[@placeholder='-'])[" + rmInputIndex + "]");
                     WebElement rmQtyInput = wait.until(ExpectedConditions.elementToBeClickable(rmQtyInputLocator));
@@ -2063,6 +2066,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
     public int firstProductTotalQuantity = 0;
     public int secondProductTotalQuantity = 0;
     public void verifyManufactureOrderForMultipleProductsOnListingPage() {
+    	clickCustomProductTab();
         System.out.println("\n=============================================================");
         System.out.println("          MANUFACTURE ORDER LISTING PAGE VERIFICATION        ");
         System.out.println("=============================================================");
@@ -2507,9 +2511,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         addProductDetails();
         selectRawMaterialAndFillQuantities();
         verifyTotalAmountAndAddNotesAndSave();
-		System.out.println("\n=============================================================");
-		System.out.println("          STARTING CANCEL MANUFACTURE ORDER FLOW             ");
-		System.out.println("=============================================================");
 		verifyCancelItemsOptionIsDisplayed();
 		cancelItemsInManufactureOrder();
 		verifyManufactureOrderStatusIsCancelled();
