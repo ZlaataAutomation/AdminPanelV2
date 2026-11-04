@@ -36,7 +36,22 @@ public class ManufactureOrder_StepDef {
     }
     
   //TC-PO-02
+    @When("admin edits an existing Manufacture Order with valid updated details")
+    public void admin_edits_an_existing_manufacture_order_with_valid_updated_details() throws Exception {
 
+    }
+
+    @When("admin saves the edited Manufacture Order")
+    public void admin_saves_the_edited_manufacture_order() throws Exception {
+    	manufactureOrder.editManufactureOrderFlow();
+    }
+
+    @Then("the updated Manufacture Order details should be reflected correctly on the Manufacture Order Listing page")
+    public void the_updated_manufacture_order_details_should_be_reflected_correctly_on_the_manufacture_order_listing_page() {
+
+    }
+    
+    //TC-MO-03
     @When("admin creates a new product with valid details and saves it as Draft")
     public void admin_creates_a_new_product_with_valid_details_and_saves_it_as_draft() throws Exception {
         // Keep this strictly focused on creation and saving as draft
@@ -58,23 +73,6 @@ public class ManufactureOrder_StepDef {
     @Then("the Draft product should be deleted successfully")
     public void the_draft_product_should_be_deleted_successfully() {
         System.out.println("✅ Draft product successfully verified and deleted.");
-    }
-    
-    
-    //TC-MO-03
-    @When("admin edits an existing Manufacture Order with valid updated details")
-    public void admin_edits_an_existing_manufacture_order_with_valid_updated_details() throws Exception {
-
-    }
-
-    @When("admin saves the edited Manufacture Order")
-    public void admin_saves_the_edited_manufacture_order() throws Exception {
-    	manufactureOrder.editManufactureOrderFlow();
-    }
-
-    @Then("the updated Manufacture Order details should be reflected correctly on the Manufacture Order Listing page")
-    public void the_updated_manufacture_order_details_should_be_reflected_correctly_on_the_manufacture_order_listing_page() {
-
     }
     
     //TC-MO-04
@@ -113,12 +111,13 @@ public class ManufactureOrder_StepDef {
     //TC-MO-06
     @When("admin clicks on Save without entering the mandatory details")
     public void admin_clicks_on_save_without_entering_the_mandatory_details() throws Exception {
-    	manufactureOrder.clickAddManufactureOrder();
+    	manufactureOrder.clickAddManufactureOrderForCustomProduct();
+    	manufactureOrder.verifyMandatoryFieldsValidationMessages();
     }
 
     @Then("mandatory field validation messages should be displayed for all required fields")
     public void mandatory_field_validation_messages_should_be_displayed_for_all_required_fields() {
-    	manufactureOrder.verifyMandatoryFieldsValidationMessages();
+    	
     }
     
   //TC-MO-07
@@ -147,5 +146,107 @@ public class ManufactureOrder_StepDef {
     public void the_corresponding_manufacture_order_columns_should_be_exported_correctly_in_the_excel_file() {
 
     }
+    
+    
+    
+    //TC-MO-09
+    @When("admin creates a new Manufacture Order using an existing Product saves the Manufacture Order")
+    public void admin_creates_a_new_manufacture_order_using_an_existing_product_saves_the_manufacture_order() {
+    	manufactureOrder.createManufactureOrderExistingProductFlow();
+    }
+    
+    
+    //TC-MO-10
+    @When("admin edits an existing Manufacture Order with valid updated details and saves it")
+    public void admin_edits_an_existing_manufacture_order_with_valid_updated_details_and_saves_it() {
+    	manufactureOrder.editManufactureOrderExistingProductFlow();
+    }
+
+    @Then("the updated Manufacture Order details should be displayed correctly on the Manufacture Order Listing page")
+    public void the_updated_manufacture_order_details_should_be_displayed_correctly_on_the_manufacture_order_listing_page() {
+
+    }
+    
+    
+    //TC-MO-11
+    @When("admin creates a new Manufacture Order with valid details and saves it as Draft")
+    public void admin_creates_a_new_manufacture_order_with_valid_details_and_saves_it_as_draft() {
+        manufactureOrder.createExistingDraftManufactureOrderFlow();
+    }
+
+    @Then("the Manufacture Order status should be displayed as Draft")
+    public void the_manufacture_order_status_should_be_displayed_as_draft() {
+        
+    }
+
+    @When("admin deletes the Draft Manufacture Order")
+    public void admin_deletes_the_draft_manufacture_order() {
+    	
+    }
+
+    @Then("the Draft Manufacture Order should be deleted successfully")
+    public void the_draft_manufacture_order_should_be_deleted_successfully() {
+        
+    }
+    
+    //TC-MO-12
+    @When("admin selects an existing Manufacture Order from the listing page")
+    public void admin_selects_an_existing_manufacture_order_from_the_listing_page() {
+        manufactureOrder.cancelExistingProductManufactureOrderFlow();
+    }
+
+    @Then("the {string} option should be available for the selected Manufacture Order")
+    public void the_option_should_be_available_for_the_selected_manufacture_order(String option) {
+       
+    }
+
+    @When("admin selects the {string} option and confirms the cancellation")
+    public void admin_selects_the_option_and_confirms_the_cancellation(String option) {
+     
+    }
+
+    @Then("the Manufacture Order status should be updated to {string} on the listing page")
+    public void the_manufacture_order_status_should_be_updated_on_the_listing_page(String status) {
+   
+    }
+    
+    //TC-MO-13
+    @When("admin selects an existing Manufacture Order with Open status from the listing page")
+    public void admin_selects_an_existing_manufacture_order_with_open_status_from_the_listing_page() {
+    	manufactureOrder.markAsIssuedForExistingProductManufactureOrderFlow();
+    }
+
+    @When("admin changes the Manufacture Order status to {string}")
+    public void admin_changes_the_manufacture_order_status_to(String status) {
+
+    }
+
+    @Then("the updated status should be displayed as {string} on the Manufacture Order Listing page")
+    public void the_updated_status_should_be_displayed_on_the_manufacture_order_listing_page(String status) {
+
+    }
+
+    @Then("the status should also be displayed as {string} on the Manufacture Order Detail page")
+    public void the_status_should_also_be_displayed_on_the_manufacture_order_detail_page(String status) {
+
+    }
+    
+    //TC-MO-14
+    @When("admin opens an existing Manufacture Order and clicks Save without filling the mandatory fields")
+    public void admin_opens_an_existing_manufacture_order_and_clicks_save_without_filling_the_mandatory_fields() {
+        manufactureOrder.mandatoryFieldValidationsForExistingProduct();
+    }
+    
+    //TC-MO-15
+	@Given("admin adds multiple product items and raw materials to the Manufacture Order")
+	public void admin_adds_multiple_product_items_and_raw_materials_to_the_manufacture_order() {
+		manufactureOrder.verifyMultipleProductsAndTotalsFlowForExisting();
+	}
+	
+	@Then("all added products and raw materials should be displayed correctly in the Manufacture Order")
+	public void all_added_products_and_raw_materials_should_be_displayed_correctly_in_the_manufacture_order() {
+	    // Verify that all added products and raw materials are displayed correctly
+	}
+    
         
 }

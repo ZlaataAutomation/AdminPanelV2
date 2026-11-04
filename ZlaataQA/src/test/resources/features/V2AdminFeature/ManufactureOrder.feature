@@ -107,6 +107,121 @@ Examples:
 | TD_UI_Zlaata_MO_08  |
 
 
+@MO
+@TC_UI_Zlaata_MO_09
+
+Scenario Outline: TC_UI_Zlaata_MO_09 |Verify that admin can create a Manufacture Order using an existing Product and it is displayed on the Manufacture Order Listing page| "<TD_ID>"
+
+Given admin navigates to the Manufacture Order module
+When admin creates a new Manufacture Order using an existing Product saves the Manufacture Order
+Then the newly created Manufacture Order should be displayed on the Manufacture Order Listing page
+
+Examples:
+
+| TD_ID                  |
+| TD_UI_Zlaata_MO_09     |
+
+
+@MO
+@TC_UI_Zlaata_MO_10
+
+Scenario Outline: TC_UI_Zlaata_MO_10 |Verify that the user is able to edit an existing Manufacture Order and the updated details are reflected correctly on the Manufacture Order Listing page| "<TD_ID>"
+
+  Given admin navigates to the Manufacture Order module
+  When admin edits an existing Manufacture Order with valid updated details and saves it
+  Then the updated Manufacture Order details should be displayed correctly on the Manufacture Order Listing page
+
+Examples:
+  | TD_ID              |
+  | TD_UI_Zlaata_MO_10 |
+  
+  
+  
+
+@MO
+@TC_UI_Zlaata_MO_11
+
+Scenario Outline: TC_UI_Zlaata_MO_11 |Verify that a newly created Manufacture Order can be saved as Draft, the Draft status is displayed correctly, and the Draft Manufacture Order can be deleted| "<TD_ID>"
+
+  Given admin navigates to the Manufacture Order module
+  When admin creates a new Manufacture Order with valid details and saves it as Draft
+  Then the Manufacture Order status should be displayed as Draft
+  When admin deletes the Draft Manufacture Order
+  Then the Draft Manufacture Order should be deleted successfully
+
+Examples:
+  | TD_ID              |
+  | TD_UI_Zlaata_MO_11 |
+  
+  
+  
+
+@MO
+@TC_UI_Zlaata_MO_12
+
+Scenario Outline: TC_UI_Zlaata_MO_12 |Verify that the Cancel Items option is available and the Manufacture Order status changes to Cancelled after cancelling the items| "<TD_ID>"
+
+   Given admin navigates to the Manufacture Order module
+  When admin selects an existing Manufacture Order from the listing page
+  Then the "Cancel Items" option should be available for the selected Manufacture Order
+  When admin selects the "Cancel Items" option and confirms the cancellation
+  Then the Manufacture Order status should be updated to "Cancelled" on the listing page
+
+Examples:
+  | TD_ID              |
+  | TD_UI_Zlaata_MO_12 |
+  
+  
+  
+
+@MO
+@TC_UI_Zlaata_MO_13
+
+Scenario Outline: TC_UI_Zlaata_MO_13 |Verify that an existing Open Manufacture Order can be marked as Issued and the updated status is reflected on both the Listing page and Detail page| "<TD_ID>"
+
+  Given admin navigates to the Manufacture Order module
+  When admin selects an existing Manufacture Order with Open status from the listing page
+  And admin changes the Manufacture Order status to "Issued"
+  Then the updated status should be displayed as "Issued" on the Manufacture Order Listing page
+  And the status should also be displayed as "Issued" on the Manufacture Order Detail page
+
+Examples:
+  | TD_ID              |
+  | TD_UI_Zlaata_MO_13 |
+  
+  
+@MO
+@TC_UI_Zlaata_MO_14
+
+Scenario Outline: TC_UI_Zlaata_MO_14 |Verify that mandatory field validation messages are displayed when an existing Manufacture Order is saved without entering the required details| "<TD_ID>"
+
+  Given admin navigates to the Manufacture Order module
+  When admin opens an existing Manufacture Order and clicks Save without filling the mandatory fields
+  Then mandatory field validation messages should be displayed for all required fields
+
+Examples:
+  | TD_ID              |
+  | TD_UI_Zlaata_MO_14 |
+  
+  
+  
+@MO
+@TC_UI_Zlaata_MO_15
+
+Scenario Outline: TC_UI_Zlaata_MO_15 |Verify that multiple products and raw materials can be added while creating a new Manufacture Order| "<TD_ID>"
+
+  Given admin navigates to the Manufacture Order module
+  And admin adds multiple product items and raw materials to the Manufacture Order
+  Then all added products and raw materials should be displayed correctly in the Manufacture Order
+
+Examples:
+  | TD_ID              |
+  | TD_UI_Zlaata_MO_15 |
+
+
+
+
+
 
 
 
