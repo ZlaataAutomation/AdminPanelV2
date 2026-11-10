@@ -5,7 +5,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Random;
-
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
@@ -20,7 +19,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.List;
-
 import objectRepo.ManufactureOrder_ObjRepo;
 
 public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
@@ -38,21 +36,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
     public static final String BLUE = "\u001B[34m";
     public static final String CYAN = "\u001B[36m";
     public static final String BOLD = "\u001B[1m";
-	
-    // --- Colored Console Logging Utilities ---
-    private void logAction(String message) {
-        System.out.println(CYAN + BOLD + "[ACTION] " + RESET + message);
-    }
-
-    private void logSuccess(String message) {
-        System.out.println(GREEN + BOLD + "[SUCCESS] " + RESET + message);
-    }
-
-    private void logHeader(String message) {
-        System.out.println("\n" + YELLOW + BOLD + "========== " + message + " ==========" + RESET);
-    }
     
-    // --- Class-Level Global Variables for Verification ---
     private String selectedSupplierName;
     private String selectedWarehouseName;
 
@@ -68,10 +52,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         AdminLogin_Page login = new AdminLogin_Page(driver);
         login.adminLoginApp();
     }
-    
-//    public void fillManufactureOrderDetails() {
-//        // Implement your form filling steps here
-//    }
 
     public void clickSaveManufactureOrder() {
         scrollToElement(saveBtn);
@@ -87,11 +67,10 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         }
     }
 
-    // --- Helper to scroll element into view for visibility ---
     private void scrollToElement(WebElement element) {
         JavascriptExecutor js = (JavascriptExecutor) driver;
         js.executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", element);
-        sleep(1); // Pause slightly so you can see the scroll action
+        sleep(1);
     }
 	
     public void navigatetoManufactureOrderPage() {
@@ -105,7 +84,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         sleep(1);
     }
     
-    public void clickAddManufactureOrder() {
+    public void clickAddManufactureOrderForCustomProduct() {
         scrollToElement(addManufactureOrderBtn);
         click(addManufactureOrderBtn);
         sleep(1);
@@ -131,7 +110,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
     public String selectedAddressText = "";
     public String selectedDateText = "";
     
-    public void selectRandomVendor() {
+    public void selectVendorDateAndAddress() {
         scrollToElement(vendorDropdown);
         click(vendorDropdown);
         sleep(1);
@@ -142,11 +121,11 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         By scopedOptionLocator = By.xpath("(//div[@class='options_box'])[1]//div[@class='option']");
         wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(scopedOptionLocator));
         
-        List<WebElement> options = driver.findElements(scopedOptionLocator);
+        List<WebElement> vendorOptions = driver.findElements(scopedOptionLocator);
         
-        if (!options.isEmpty()) {
+        if (!vendorOptions.isEmpty()) {
             Random random = new Random();
-            int index = random.nextInt(options.size());
+            int index = random.nextInt(vendorOptions.size());
             
             int itemNumber = index + 1;
             By specificOption = By.xpath("((//div[@class='options_box'])[1]//div[@class='option'])[" + itemNumber + "]");
@@ -160,22 +139,16 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         } else {
             throw new RuntimeException("No vendor options available in the options box!");
         }
-    }
 
-    public void selectRandomDeliveryDate() {
         waitFor(expectedDeliveryDateCalendar);
         scrollToElement(expectedDeliveryDateCalendar);
         
-        // 1. Click the input field to open the Flatpickr calendar popup
         click(expectedDeliveryDateCalendar);
-        sleep(1); // Give the calendar popup a split second to render
+        sleep(1);
         
-        // 2. Target valid, clickable days inside the specific Flatpickr dayContainer
         By activeDaysLocator = By.xpath("(//div[@class='dayContainer'])[1]//span[contains(@class, 'flatpickr-day') and not(contains(@class, 'flatpickr-disabled')) and not(contains(@class, 'prevMonthDay')) and not(contains(@class, 'nextMonthDay'))]");
-        
         List<WebElement> dayElements = driver.findElements(activeDaysLocator);
         
-        // Fallback if your Flatpickr build uses divs instead of spans for days
         if (dayElements.isEmpty()) {
             activeDaysLocator = By.xpath("(//div[@class='dayContainer'])[1]//div[contains(@class, 'flatpickr-day') and not(contains(@class, 'flatpickr-disabled')) and not(contains(@class, 'prevMonthDay')) and not(contains(@class, 'nextMonthDay'))]");
             dayElements = driver.findElements(activeDaysLocator);
@@ -185,28 +158,23 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             throw new RuntimeException("❌ Could not find any active/selectable days inside the Flatpickr dayContainer!");
         }
         
-        // 3. Pick a random day element from the available pool
-        Random random = new Random();
-        WebElement randomDayElement = dayElements.get(random.nextInt(dayElements.size()));
+        Random dateRandom = new Random();
+        WebElement randomDayElement = dayElements.get(dateRandom.nextInt(dayElements.size()));
         
         scrollToElement(randomDayElement);
         wait.until(ExpectedConditions.elementToBeClickable(randomDayElement));
         
-        // 4. Click using JavaScript to trigger Flatpickr's internal event bindings safely
         org.openqa.selenium.JavascriptExecutor js = (org.openqa.selenium.JavascriptExecutor) driver;
         js.executeScript("arguments[0].click();", randomDayElement);
-        sleep(1); // Allow the date to bind to the input field
+        sleep(1);
         
-        // 5. Extract the populated date from the input field value property
         selectedDateText = expectedDeliveryDateCalendar.getAttribute("value");
         if (selectedDateText == null || selectedDateText.isEmpty()) {
             selectedDateText = (String) js.executeScript("return arguments[0].value;", expectedDeliveryDateCalendar);
         }
         
         System.out.println("Selected Delivery Date from Calendar: " + selectedDateText);
-    }
 
-    public void selectRandomDeliveryAddress() {
         scrollToElement(deliveryAddressDropdown);
         click(deliveryAddressDropdown);
         sleep(1);
@@ -214,14 +182,14 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         By addressOptionLocator = By.xpath("(//div[@class='options_box'])[2]//div[@class='option']");
         wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(addressOptionLocator));
         
-        List<WebElement> options = driver.findElements(addressOptionLocator);
+        List<WebElement> addressOptions = driver.findElements(addressOptionLocator);
         
-        if (!options.isEmpty()) {
-            Random random = new Random();
-            int index = random.nextInt(options.size());
+        if (!addressOptions.isEmpty()) {
+            Random addressRandom = new Random();
+            int addressIndex = addressRandom.nextInt(addressOptions.size());
             
-            int itemNumber = index + 1;
-            By specificAddress = By.xpath("((//div[@class='options_box'])[2]//div[@class='option'])[" + itemNumber + "]");
+            int addressItemNumber = addressIndex + 1;
+            By specificAddress = By.xpath("((//div[@class='options_box'])[2]//div[@class='option'])[" + addressItemNumber + "]");
             WebElement chosenAddress = wait.until(ExpectedConditions.elementToBeClickable(specificAddress));
             
             selectedAddressText = chosenAddress.getText().trim();
@@ -236,17 +204,16 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
     
     public List<String> selectedSizesList = new java.util.ArrayList<>();
     public List<Integer> selectedSizeIndices = new java.util.ArrayList<>();
-    public List<Integer> selectedQuantitiesList = new java.util.ArrayList<>(); // Stores exact quantity for each size
+    public List<Integer> selectedQuantitiesList = new java.util.ArrayList<>(); 
     public double lastMakingCost = 0.0;
     public int totalQuantitySum = 0;
     
     
     public double firstProductExpectedCost = 0.0;
     public double secondProductExpectedCost = 0.0;
-    public int totalSizeOptionsCount = 0; // number of size options available in the dropdown (env-independent)
+    public int totalSizeOptionsCount = 0; 
     
     public void addProductDetails() {
-        // 1. Enter Product Name
         waitFor(productNameInput);
         scrollToElement(productNameInput);
         String randomProductName = "Product_" + new Random().nextInt(1000);
@@ -255,14 +222,13 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         sleep(1);
         System.out.println("Entered Product Name: " + randomProductName);
 
-        // 2. Enter Dynamic Making Cost (Supports optional decimals)
         waitFor(makingCostInput);
         scrollToElement(makingCostInput);
         
         Random random = new Random();
-        int randomCostValue = 10 + random.nextInt(990); // Generates a random whole number between 10 and 999
-        lastMakingCost = (double) randomCostValue; // Store as double for calculation if needed
-        String makingCostStr = String.valueOf(randomCostValue); // Converts to clean whole number string (e.g., "350")
+        int randomCostValue = 10 + random.nextInt(990); 
+        lastMakingCost = (double) randomCostValue; 
+        String makingCostStr = String.valueOf(randomCostValue); 
         
         waitFor(makingCostInput);
         scrollToElement(makingCostInput);
@@ -271,57 +237,48 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         sleep(1);
         System.out.println("Entered Making Cost: " + makingCostStr);
 
-        // 3. Click Size Tags Dropdown to open the menu container
         scrollToElement(sizeTagsDropdown);
         click(sizeTagsDropdown);
         sleep(1);
 
-        // 4. Locate all size options inside the tag menu box
         By sizeOptionsLocator = By.xpath("(//div[@class='tag_menu js-tag_menu'])[1]//label[@class='tag_option']");
         wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(sizeOptionsLocator));
         List<WebElement> sizeOptions = driver.findElements(sizeOptionsLocator);
         totalSizeOptionsCount = sizeOptions.size();
 
-        // Clear lists and sums for a fresh run
         selectedSizesList.clear();
         selectedSizeIndices.clear();
         selectedQuantitiesList.clear();
         totalQuantitySum = 0;
 
         if (!sizeOptions.isEmpty()) {
-            // Decide to select between 1 to 3 random sizes (at least 1, up to 3)
             int numberOfSizesToSelect = Math.min(1 + random.nextInt(3), sizeOptions.size());
             
-            // Track unique indices to prevent selecting the same size twice
             java.util.Set<Integer> chosenIndices = new java.util.HashSet<>();
             while (chosenIndices.size() < numberOfSizesToSelect) {
                 chosenIndices.add(random.nextInt(sizeOptions.size()));
             }
 
-            // Loop through chosen sizes and fill their corresponding quantity inputs using placeholder '-'
             for (int index : chosenIndices) {
-                int itemNumber = index + 1; // 1-based indexing matching your XPath (e.g., 1, 2, 3...)
-                selectedSizeIndices.add(itemNumber); // Store the index for product size use
+                int itemNumber = index + 1; 
+                selectedSizeIndices.add(itemNumber); 
                 
                 By specificOption = By.xpath("((//div[@class='tag_menu js-tag_menu'])[1]//label[@class='tag_option'])[" + itemNumber + "]");
                 WebElement sizeOption = wait.until(ExpectedConditions.elementToBeClickable(specificOption));
                 
-                // Capture the actual text of the size before clicking it
                 String sizeText = sizeOption.getText().trim();
                 selectedSizesList.add(sizeText);
                 
-                // Scroll to and click the size tag option
                 scrollToElement(sizeOption);
                 sizeOption.click();
                 sleep(1);
                 
-                // Match the exact index for the quantity input: (//input[@placeholder='-'])[n]
                 By quantityInputLocator = By.xpath("(//input[@placeholder='-'])[" + itemNumber + "]");
                 WebElement qtyInput = wait.until(ExpectedConditions.elementToBeClickable(quantityInputLocator));
                 
-                int randomQty = 1 + random.nextInt(5); // Random quantity between 1 and 5
-                selectedQuantitiesList.add(randomQty); // Save exact quantity for raw material matching later
-                totalQuantitySum += randomQty; // Accumulate total quantity
+                int randomQty = 1 + random.nextInt(5); 
+                selectedQuantitiesList.add(randomQty); 
+                totalQuantitySum += randomQty; 
                 
                 scrollToElement(qtyInput);
                 qtyInput.clear();
@@ -331,10 +288,8 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
                 System.out.println("Selected Size Name: '" + sizeText + "' at index [" + itemNumber + "] with Quantity: " + randomQty);
             }
             
-            // Save expected total cost for product 1
             firstProductExpectedCost = lastMakingCost * totalQuantitySum;
             
-            // 5. Close the size dropdown by clicking it again or clicking outside
             try {
                 scrollToElement(sizeTagsDropdown);
                 click(sizeTagsDropdown);
@@ -350,7 +305,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         }
     }
     
-    // Helper method mapping each size name precisely to its exact raw material input index
     private int getRawMaterialIndexForSizeIndex(int sizeIndex) {
         return sizeIndex + totalSizeOptionsCount;
     }
@@ -358,7 +312,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
     public void selectRawMaterialAndFillQuantities() {
         Random random = new Random();
         
-        // Calculate total required quantity across all selected sizes
         int totalRequiredQty = 0;
         for (int qty : selectedQuantitiesList) {
             totalRequiredQty += qty;
@@ -372,7 +325,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         while (!sufficientStockFound && attempts < maxRetries) {
             attempts++;
             
-            // 1. Open Raw Material Dropdown
             try {
                 WebElement dropdownToggle = wait.until(ExpectedConditions.elementToBeClickable(
                     By.xpath("(//div[@class='w-100 d-flex justify-content-start align-items-center'])[1]")
@@ -385,7 +337,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             }
             sleep(1);
 
-            // 2. Select a random option from the 3rd options box
             By rawMaterialOptionLocator = By.xpath("(//div[@class='options_box'])[3]//div[@class='option']");
             wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(rawMaterialOptionLocator));
             List<WebElement> rawMaterialOptions = driver.findElements(rawMaterialOptionLocator);
@@ -406,7 +357,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             sleep(1);
             System.out.println("Attempt " + attempts + " - Selected Raw Material: " + rmText);
 
-            // 3. Enter a high quantity (1000000) into the first selected size's input box to trigger validation
             int firstSizeInputIndex = getRawMaterialIndexForSizeIndex(selectedSizeIndices.get(0));
             
             By firstInputLocator = By.xpath("(//input[@placeholder='-'])[" + firstSizeInputIndex + "]");
@@ -417,8 +367,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             firstQtyInput.sendKeys("1000000");
             sleep(1);
 
-            // 4. Check non-intrusively for the stock error validation message
-            int availableStock = 1000000; // Default to assume sufficient if no error is shown
+            int availableStock = 1000000; 
             try {
                 By errorMsgLocator = By.xpath("(//span[@class='text-danger error-stock-msg'])[1]");
                 
@@ -439,7 +388,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
 
             System.out.println("Available Stock detected: " + availableStock);
 
-            // 5. Validate if available stock is sufficient
             if (availableStock >= totalRequiredQty) {
                 System.out.println("Sufficient stock found! Filling exact quantities...");
                 
@@ -474,13 +422,11 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
     }
     
     public void verifyTotalAmountAndAddNotesAndSave() {
-        // 1. Verify Total Amount Reflection
         waitFor(totalCostText);
         scrollToElement(totalCostText);
         String displayedTotalText = totalCostText.getText().trim();
         System.out.println("Displayed Total Cost Text on UI: " + displayedTotalText);
         
-        // Calculate expected total (Making Cost * Total Quantity Sum)
         double expectedTotalCost = lastMakingCost * totalQuantitySum;
         System.out.println("Calculated Expected Total Cost: " + String.format(java.util.Locale.US, "%.2f", expectedTotalCost));
         
@@ -488,7 +434,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             throw new RuntimeException("Total amount field is empty or not reflecting correctly!");
         }
 
-        // 2. Add Notes
         waitFor(addNotesInput);
         scrollToElement(addNotesInput);
         addNotesInput.clear();
@@ -496,7 +441,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         sleep(1);
         System.out.println("Entered Notes successfully.");
 
-        // 3. Add Description
         waitFor(addDescriptionInput);
         scrollToElement(addDescriptionInput);
         addDescriptionInput.clear();
@@ -504,14 +448,12 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         sleep(1);
         System.out.println("Entered Description successfully.");
 
-        // 4. Click Save Button
         waitFor(saveBtn);
         scrollToElement(saveBtn);
         click(saveBtn);
         sleep(10);
         System.out.println("Clicked Save Button successfully.");
-    }
-    
+    }  
     
     public void verifyManufactureOrderOnListingPage() {
     	clickCustomProductTab();
@@ -519,27 +461,22 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         System.out.println("          MANUFACTURE ORDER LISTING PAGE VERIFICATION        ");
         System.out.println("=============================================================");
 
-        // ANSI Color Codes for Console Output
         String RESET = "\u001B[0m";
         String GREEN = "\u001B[32m";
         String RED = "\u001B[31m";
 
-        // Define Expected Values from test run variables
         String expectedVendor = (selectedVendorText != null) ? selectedVendorText.trim() : "";
         String expectedQty = String.valueOf(totalQuantitySum);
         
-        // Calculate expected total amount (Making Cost * Total Quantity Sum)
         double calculatedTotalAmount = lastMakingCost * totalQuantitySum;
         String expectedAmountStr = String.format(java.util.Locale.US, "%.2f", calculatedTotalAmount);
         String expectedStatus = "Open";
 
-        // Locate elements on the listing table using your specific XPaths
         By vendorCellLocator = By.xpath("(//td)[4]");
         By qtyCellLocator = By.xpath("(//td)[5]");
         By amountCellLocator = By.xpath("(//td)[6]");
         By statusCellLocator = By.xpath("(//td)[7]");
 
-        // Wait for listing data to load
         WebElement vendorCell = wait.until(ExpectedConditions.visibilityOfElementLocated(vendorCellLocator));
         String actualVendor = vendorCell.getText().trim();
         
@@ -547,7 +484,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         String actualAmount = driver.findElement(amountCellLocator).getText().trim();
         String actualStatus = driver.findElement(statusCellLocator).getText().trim();
 
-        // Perform validations and print color-graded console comparison
         boolean allPassed = true;
         
 
@@ -555,17 +491,14 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         wait.until(ExpectedConditions.visibilityOfElementLocated(listingRowLocator));
         sleep(1);
 
-        // 1. Vendor Name Verification
         boolean vendorMatch = actualVendor.contains(expectedVendor) || expectedVendor.contains(actualVendor);
         printComparison("Vendor Name", expectedVendor, actualVendor, vendorMatch, GREEN, RED, RESET);
         if (!vendorMatch) allPassed = false;
 
-        // 2. Overall Quantity Verification
         boolean qtyMatch = actualQty.replaceAll("[^0-9]", "").equals(expectedQty);
         printComparison("Overall Quantity", expectedQty, actualQty, qtyMatch, GREEN, RED, RESET);
         if (!qtyMatch) allPassed = false;
 
-        // 3. Total Amount Verification
         boolean amountMatch = false;
         try {
             double expectedNumericAmount = Double.parseDouble(expectedAmountStr);
@@ -577,7 +510,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         printComparison("Total Amount", expectedAmountStr, actualAmount, amountMatch, GREEN, RED, RESET);
         if (!amountMatch) allPassed = false;
 
-        // 4. Status Verification (Uncomment if needed)
          boolean statusMatch = actualStatus.equalsIgnoreCase(expectedStatus);
          printComparison("Status", expectedStatus, actualStatus, statusMatch, GREEN, RED, RESET);
          if (!statusMatch) allPassed = false;
@@ -597,50 +529,42 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         System.out.println("           MANUFACTURE ORDER PREVIEW PAGE VERIFICATION       ");
         System.out.println("=============================================================");
 
-        // ANSI Color Codes for Console Output
         String RESET = "\u001B[0m";
         String GREEN = "\u001B[32m";
         String RED = "\u001B[31m";
 
-        // Define Expected Values from test run variables
         String expectedQty = String.valueOf(totalQuantitySum);
         double calculatedTotalAmount = lastMakingCost * totalQuantitySum;
         String expectedAmountStr = String.format(java.util.Locale.US, "%.2f", calculatedTotalAmount);
 
         try {
-            // 1. Locate and click the 3-dot action button in the first row
             By threeDotLocator = By.xpath("(//i[@class='bi bi-three-dots-vertical'])[1]");
             WebElement threeDotBtn = wait.until(ExpectedConditions.elementToBeClickable(threeDotLocator));
             scrollToElement(threeDotBtn);
             try {
                 threeDotBtn.click();
             } catch (Exception ex) {
-                // Fallback using JavaScript click if intercepted or obscured
                 ((org.openqa.selenium.JavascriptExecutor) driver).executeScript("arguments[0].click();", threeDotBtn);
             }
             sleep(1);
 
-            // 2. Click Preview option from the dropdown menu
             WebElement previewBtn = wait.until(ExpectedConditions.elementToBeClickable(
                 By.xpath("//div[@class='dropdown-menu actions-dropdown-menu dropdown-menu-right dropdown_button_wrapper show']//a[1]")
             ));
             previewBtn.click();
             sleep(2);
 
-            // 3. Capture Preview Page actual values using precise XPaths
             String actualPreviewDate = driver.findElement(By.xpath("(//p[@class='card_coupon_code modal_para_dark'])[4]")).getText().trim();
             String actualPreviewAddress = driver.findElement(By.xpath("(//p[@class='card_coupon_code modal_para_dark'])[5]")).getText().trim();
             String actualPreviewProductName = driver.findElement(By.xpath("(//p[@class='font_14 m-0 fw-bold'])[1]")).getText().trim();
             String actualPreviewQty = driver.findElement(By.xpath("//body[1]/div[1]/main[1]/div[1]/div[2]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/table[1]/tbody[1]/tr[1]/td[2]")).getText().trim();
             String actualPreviewAmount = driver.findElement(By.xpath("(//p[@class='d-flex justify-content-start align-items-center m-0'])[2]")).getText().trim();
             
-            // Notes & Terms verification fields
             String actualNotes = driver.findElement(By.xpath("(//p[@class='info_dd mb-0'])[1]")).getText().trim();
             String actualTerms = driver.findElement(By.xpath("(//p[@class='info_dd mb-0'])[2]")).getText().trim();
 
             boolean previewPassed = true;
 
-            // 4. Perform Assertions & Comparisons
             boolean dateMatch = actualPreviewDate.contains(selectedDateText);
             printComparison("Preview Date", selectedDateText, actualPreviewDate, dateMatch, GREEN, RED, RESET);
             if (!dateMatch) previewPassed = false;
@@ -682,7 +606,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         }
     }
 
-    // Helper method to format console comparison logs cleanly
     private void printComparison(String fieldName, String expected, String actual, boolean isMatch, String green, String red, String reset) {
         String statusColor = isMatch ? green : red;
         String statusSymbol = isMatch ? "[PASS]" : "[FAIL]";
@@ -694,14 +617,11 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
                 statusColor + statusSymbol, 
                 isMatch ? "MATCHED" : "MISMATCHED", 
                 reset));
-    }
-    
+    } 
     
     //TC-02
     public void clickEditManufactureOrder() {
     	clickCustomProductTab();
-        // 1. Click the 3-dot action button in the first row
-    	// 1. Locate and click the 3-dot action button in the first row
     	
         By threeDotLocator = By.xpath("(//i[@class='bi bi-three-dots-vertical'])[1]");
         WebElement threeDotBtn = wait.until(ExpectedConditions.elementToBeClickable(threeDotLocator));
@@ -709,12 +629,10 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         try {
             threeDotBtn.click();
         } catch (Exception ex) {
-            // Fallback using JavaScript click if intercepted or obscured
             ((org.openqa.selenium.JavascriptExecutor) driver).executeScript("arguments[0].click();", threeDotBtn);
         }
         sleep(1);
 
-        // 2. Click the Edit button from the dropdown
         WebElement editButton = wait.until(ExpectedConditions.elementToBeClickable(editBtn));
         scrollToElement(editButton);
         editButton.click();
@@ -722,8 +640,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         System.out.println("Navigated to Edit Manufacture Order page successfully.");
     }
 
-    public void editRandomVendor() {
-        // 1. Locate and click the vendor dropdown container specific to the edit page
+    public void editVendorDateAndAddress() {
         By vendorDropdownLocator = By.xpath("(//div[@class='select-wrapper vendor-select-wrapper'])[1]");
         WebElement vendorDropdownElement = wait.until(ExpectedConditions.elementToBeClickable(vendorDropdownLocator));
         scrollToElement(vendorDropdownElement);
@@ -735,22 +652,19 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         }
         sleep(1);
         
-        // 2. Wait for the search input or options box to render after clicking
         By searchInputLocator = By.xpath("(//input[@placeholder='Search the vendors'])[1]");
         try {
             wait.until(ExpectedConditions.visibilityOfElementLocated(searchInputLocator));
         } catch (Exception ignored) {
-            // Fallback if placeholder text differs slightly
         }
         
-        // 3. Retrieve all options from the first options box
         By scopedOptionLocator = By.xpath("(//div[@class='options_box'])[1]//div[@class='option']");
         wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(scopedOptionLocator));
-        List<WebElement> options = driver.findElements(scopedOptionLocator);
+        List<WebElement> vendorOptions = driver.findElements(scopedOptionLocator);
         
-        if (!options.isEmpty()) {
+        if (!vendorOptions.isEmpty()) {
             Random random = new Random();
-            int index = random.nextInt(options.size());
+            int index = random.nextInt(vendorOptions.size());
             int itemNumber = index + 1;
             
             By specificOption = By.xpath("((//div[@class='options_box'])[1]//div[@class='option'])[" + itemNumber + "]");
@@ -764,10 +678,42 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         } else {
             throw new RuntimeException("No vendor options available in the options box for editing!");
         }
-    }
 
-    public void editRandomDeliveryAddress() {
-        // 1. Locate and click the delivery address dropdown container specific to the edit page
+        waitFor(expectedDeliveryDateCalendar);
+        scrollToElement(expectedDeliveryDateCalendar);
+        
+        click(expectedDeliveryDateCalendar);
+        sleep(1);
+        
+        By activeDaysLocator = By.xpath("(//div[@class='dayContainer'])[1]//span[contains(@class, 'flatpickr-day') and not(contains(@class, 'flatpickr-disabled')) and not(contains(@class, 'prevMonthDay')) and not(contains(@class, 'nextMonthDay'))]");
+        List<WebElement> dayElements = driver.findElements(activeDaysLocator);
+        
+        if (dayElements.isEmpty()) {
+            activeDaysLocator = By.xpath("(//div[@class='dayContainer'])[1]//div[contains(@class, 'flatpickr-day') and not(contains(@class, 'flatpickr-disabled')) and not(contains(@class, 'prevMonthDay')) and not(contains(@class, 'nextMonthDay'))]");
+            dayElements = driver.findElements(activeDaysLocator);
+        }
+        
+        if (dayElements.isEmpty()) {
+            throw new RuntimeException("❌ Could not find any active/selectable days inside the Flatpickr dayContainer!");
+        }
+        
+        Random dateRandom = new Random();
+        WebElement randomDayElement = dayElements.get(dateRandom.nextInt(dayElements.size()));
+        
+        scrollToElement(randomDayElement);
+        wait.until(ExpectedConditions.elementToBeClickable(randomDayElement));
+        
+        org.openqa.selenium.JavascriptExecutor js = (org.openqa.selenium.JavascriptExecutor) driver;
+        js.executeScript("arguments[0].click();", randomDayElement);
+        sleep(1);
+        
+        selectedDateText = expectedDeliveryDateCalendar.getAttribute("value");
+        if (selectedDateText == null || selectedDateText.isEmpty()) {
+            selectedDateText = (String) js.executeScript("return arguments[0].value;", expectedDeliveryDateCalendar);
+        }
+        
+        System.out.println("Updated Delivery Date from Calendar: " + selectedDateText);
+
         By addressDropdownLocator = By.xpath("(//div[@class='select-wrapper address-select-wrapper'])[1]");
         WebElement addressDropdownElement = wait.until(ExpectedConditions.elementToBeClickable(addressDropdownLocator));
         scrollToElement(addressDropdownElement);
@@ -779,17 +725,16 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         }
         sleep(1);
         
-        // 2. Retrieve all options from the second options box
         By addressOptionLocator = By.xpath("(//div[@class='options_box'])[2]//div[@class='option']");
         wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(addressOptionLocator));
-        List<WebElement> options = driver.findElements(addressOptionLocator);
+        List<WebElement> addressOptions = driver.findElements(addressOptionLocator);
         
-        if (!options.isEmpty()) {
-            Random random = new Random();
-            int index = random.nextInt(options.size());
-            int itemNumber = index + 1;
+        if (!addressOptions.isEmpty()) {
+            Random addressRandom = new Random();
+            int addressIndex = addressRandom.nextInt(addressOptions.size());
+            int addressItemNumber = addressIndex + 1;
             
-            By specificAddress = By.xpath("((//div[@class='options_box'])[2]//div[@class='option'])[" + itemNumber + "]");
+            By specificAddress = By.xpath("((//div[@class='options_box'])[2]//div[@class='option'])[" + addressItemNumber + "]");
             WebElement chosenAddress = wait.until(ExpectedConditions.elementToBeClickable(specificAddress));
             
             selectedAddressText = chosenAddress.getText().trim();
@@ -803,7 +748,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
     }
     
     public void editProductDetails() {
-        // 1. Update Product Name with an updated random value
         waitFor(productNameInput);
         scrollToElement(productNameInput);
         String updatedProductName = "Updated_Product_" + new Random().nextInt(1000);
@@ -812,12 +756,11 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         sleep(1);
         System.out.println("Updated Product Name: " + updatedProductName);
 
-        // 2. Update Making Cost with a new dynamic value
         waitFor(makingCostInput);
         scrollToElement(makingCostInput);
         
         Random random = new Random();
-        int randomCostValue = 20 + random.nextInt(980); // Generates a random whole number between 20 and 999
+        int randomCostValue = 20 + random.nextInt(980); 
         lastMakingCost = (double) randomCostValue; 
         String makingCostStr = String.valueOf(randomCostValue);
         
@@ -826,24 +769,21 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         sleep(1);
         System.out.println("Updated Making Cost: " + makingCostStr);
 
-        // 3. Click Size Tags Dropdown to open the menu container
         scrollToElement(sizeTagsDropdown);
         click(sizeTagsDropdown);
         sleep(1);
 
-        // 4. Locate all size options inside the tag menu box
         By sizeOptionsLocator = By.xpath("(//div[@class='tag_menu js-tag_menu'])[1]//label[@class='tag_option']");
         wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(sizeOptionsLocator));
         List<WebElement> sizeOptions = driver.findElements(sizeOptionsLocator);
+        totalSizeOptionsCount = sizeOptions.size(); 
 
-        // Clear lists and sums for a fresh edit run
         selectedSizesList.clear();
         selectedSizeIndices.clear();
         selectedQuantitiesList.clear();
         totalQuantitySum = 0;
 
         if (!sizeOptions.isEmpty()) {
-            // Check each size option to see if it is already selected/active from the previous order creation
             for (int i = 0; i < sizeOptions.size(); i++) {
                 int itemNumber = i + 1;
                 WebElement sizeOption = sizeOptions.get(i);
@@ -851,7 +791,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
                 String optionClass = sizeOption.getAttribute("class");
                 boolean isSelected = optionClass != null && (optionClass.contains("active") || optionClass.contains("selected") || optionClass.contains("checked"));
                 
-                // Also check if an inner checkbox element is selected
                 try {
                     WebElement checkbox = sizeOption.findElement(By.tagName("input"));
                     if (checkbox.isSelected()) {
@@ -864,13 +803,11 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
                     selectedSizesList.add(sizeText);
                     selectedSizeIndices.add(itemNumber);
                     
-                    // Locate the existing quantity input for this size
                     By quantityInputLocator = By.xpath("(//input[@placeholder='-'])[" + itemNumber + "]");
                     WebElement qtyInput = wait.until(ExpectedConditions.elementToBeClickable(quantityInputLocator));
                     scrollToElement(qtyInput);
                     
-                    // Read current quantity value from the input field to exclude it
-                    int currentQty = 1; // default fallback
+                    int currentQty = 1; 
                     try {
                         String existingVal = qtyInput.getAttribute("value");
                         if (existingVal != null && !existingVal.trim().isEmpty()) {
@@ -878,7 +815,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
                         }
                     } catch (Exception ignored) {}
 
-                    // Generate a new random quantity between 1 and 5 that excludes the current quantity
                     int updatedRandomQty;
                     do {
                         updatedRandomQty = 1 + random.nextInt(5);
@@ -895,7 +831,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
                 }
             }
 
-            // Fallback: If no pre-selected sizes were detected, select a default random size
             if (selectedSizesList.isEmpty()) {
                 System.out.println("No pre-selected sizes detected. Selecting a fallback random size...");
                 int randomIndex = random.nextInt(sizeOptions.size());
@@ -923,7 +858,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
                 System.out.println("Fallback Size: '" + sizeText + "' at index [" + itemNumber + "] with Quantity: " + fallbackQty);
             }
             
-            // 5. Close the size dropdown successfully
             try {
                 scrollToElement(sizeTagsDropdown);
                 click(sizeTagsDropdown);
@@ -939,168 +873,12 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         }
     }
     
-//    public void editedRawMaterialAndFillQuantities() {
-//        Random random = new Random();
-//        
-//        // 1. Dynamically check and ensure the correct size buttons/tags are clicked or tracked based on the edit flow
-//        System.out.println("Checking active/selected sizes for raw material allocation...");
-//        
-//        // Define possible sizes and their exact toggle XPaths provided
-//        String[][] sizeToggles = {
-//            {"Xs", "(//span[normalize-space()='Size - Xs'])[1]"},
-//            {"M", "(//span[normalize-space()='Size - M'])[1]"},
-//            {"L", "(//span[normalize-space()='Size - L'])[1]"},
-//            {"Xxl", "(//span[normalize-space()='Size - Xxl'])[1]"},
-//            {"Xl", "(//span[normalize-space()='Size - Xl'])[1]"},
-//            {"S", "(//span[normalize-space()='Size - S'])[1]"}
-//        };
-//
-//        for (String[] sizeInfo : sizeToggles) {
-//            String sizeName = sizeInfo[0];
-//            String toggleXpath = sizeInfo[1];
-//            try {
-//                List<WebElement> sizeElements = driver.findElements(By.xpath(toggleXpath));
-//                if (!sizeElements.isEmpty()) {
-//                    WebElement sizeEl = sizeElements.get(0);
-//                    scrollToElement(sizeEl);
-//                    
-//                    // Check if it needs to be clicked or is already active
-//                    String parentClass = "";
-//                    try {
-//                        parentClass = sizeEl.findElement(By.xpath("./..")).getAttribute("class");
-//                    } catch (Exception ignored) {}
-//
-//                    boolean isActive = (parentClass != null && (parentClass.contains("active") || parentClass.contains("selected"))) || sizeEl.isEnabled();
-//                    
-//                    if (isActive) {
-//                        System.out.println("Size '" + sizeName + "' is detected as active/present for editing.");
-//                    }
-//                }
-//            } catch (Exception ignored) {}
-//        }
-//
-//        // 2. Calculate total required quantity across all selected/edited sizes
-//        int totalRequiredQty = 0;
-//        for (int qty : selectedQuantitiesList) {
-//            totalRequiredQty += qty;
-//        }
-//        System.out.println("Total Required Raw Material Quantity for Edit: " + totalRequiredQty);
-//
-//        boolean sufficientStockFound = false;
-//        int maxRetries = 5;
-//        int attempts = 0;
-//
-//        while (!sufficientStockFound && attempts < maxRetries) {
-//            attempts++;
-//            
-//            // 3. Open Raw Material Dropdown
-//            try {
-//                WebElement dropdownToggle = wait.until(ExpectedConditions.elementToBeClickable(
-//                    By.xpath("(//div[@class='w-100 d-flex justify-content-start align-items-center'])[1]")
-//                ));
-//                scrollToElement(dropdownToggle);
-//                dropdownToggle.click();
-//            } catch (Exception e) {
-//                scrollToElement(rawMaterialDropdown);
-//                click(rawMaterialDropdown);
-//            }
-//            sleep(1);
-//
-//            // 4. Select a random option from the 3rd options box
-//            By rawMaterialOptionLocator = By.xpath("(//div[@class='options_box'])[3]//div[@class='option']");
-//            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(rawMaterialOptionLocator));
-//            List<WebElement> rawMaterialOptions = driver.findElements(rawMaterialOptionLocator);
-//
-//            if (rawMaterialOptions.isEmpty()) {
-//                throw new RuntimeException("No raw material options available in options box [3] during edit!");
-//            }
-//
-//            int rmIndex = random.nextInt(rawMaterialOptions.size());
-//            int rmItemNumber = rmIndex + 1;
-//
-//            By specificRmOption = By.xpath("((//div[@class='options_box'])[3]//div[@class='option'])[" + rmItemNumber + "]");
-//            WebElement chosenRm = wait.until(ExpectedConditions.elementToBeClickable(specificRmOption));
-//            
-//            String rmText = chosenRm.getText().trim();
-//            scrollToElement(chosenRm);
-//            chosenRm.click();
-//            sleep(1);
-//            System.out.println("Edit Attempt " + attempts + " - Selected Raw Material: " + rmText);
-//
-//            // 5. Enter a high quantity (1000000) into the first selected size's input box to trigger stock validation
-//            String firstSize = selectedSizesList.get(0);
-//            int firstSizeInputIndex = getRawMaterialIndexForSize(firstSize);
-//            
-//            By firstInputLocator = By.xpath("(//input[@placeholder='-'])[" + firstSizeInputIndex + "]");
-//            WebElement firstQtyInput = wait.until(ExpectedConditions.elementToBeClickable(firstInputLocator));
-//            scrollToElement(firstQtyInput);
-//            
-//            firstQtyInput.clear();
-//            firstQtyInput.sendKeys("1000000");
-//            sleep(1);
-//
-//            // 6. Check non-intrusively for the stock error validation message
-//            int availableStock = 1000000; 
-//            try {
-//                By errorMsgLocator = By.xpath("(//span[@class='text-danger error-stock-msg'])[1]");
-//                org.openqa.selenium.support.ui.WebDriverWait shortWait = new org.openqa.selenium.support.ui.WebDriverWait(driver, java.time.Duration.ofSeconds(2));
-//                WebElement errorMsgElement = shortWait.until(ExpectedConditions.visibilityOf(driver.findElement(errorMsgLocator)));
-//                
-//                String errorText = errorMsgElement.getText();
-//                System.out.println("Stock Validation Message (Edit): " + errorText);
-//                
-//                String numericStock = errorText.replaceAll("[^0-9]", "");
-//                if (!numericStock.isEmpty()) {
-//                    availableStock = Integer.parseInt(numericStock);
-//                }
-//            } catch (Exception e) {
-//                System.out.println("No stock validation error displayed during edit. Proceeding with stock as sufficient.");
-//                availableStock = 1000000; 
-//            }
-//
-//            System.out.println("Available Stock detected (Edit): " + availableStock);
-//
-//            // 7. Validate if available stock is sufficient
-//            if (availableStock >= totalRequiredQty) {
-//                System.out.println("Sufficient stock found for edit! Filling updated quantities...");
-//                
-//                for (int i = 0; i < selectedSizesList.size(); i++) {
-//                    String targetSize = selectedSizesList.get(i);
-//                    int exactQty = selectedQuantitiesList.get(i);
-//                    int rmInputIndex = getRawMaterialIndexForSize(targetSize);
-//                    
-//                    By rmQtyInputLocator = By.xpath("(//input[@placeholder='-'])[" + rmInputIndex + "]");
-//                    WebElement rmQtyInput = wait.until(ExpectedConditions.elementToBeClickable(rmQtyInputLocator));
-//                    scrollToElement(rmQtyInput);
-//                    
-//                    rmQtyInput.clear();
-//                    rmQtyInput.sendKeys(String.valueOf(exactQty));
-//                    sleep(1);
-//                    
-//                    System.out.println("Entered Updated Raw Material Quantity: " + exactQty + " for size: " + targetSize + " at index [" + rmInputIndex + "]");
-//                }
-//                sufficientStockFound = true;
-//            } else {
-//                System.out.println("Stock is low during edit (" + availableStock + " < " + totalRequiredQty + "). Retrying with a different raw material...");
-//                try {
-//                    firstQtyInput.clear();
-//                } catch (Exception ignored) {}
-//            }
-//        }
-//
-//        if (!sufficientStockFound) {
-//            throw new RuntimeException("Failed to find a raw material with sufficient stock for edit after " + maxRetries + " attempts!");
-//        }
-//    }
-    
     public void verifyEditedTotalAmountAndAddNotesAndSave() {
-        // 1. Verify Edited Total Amount Reflection
         waitFor(totalCostText);
         scrollToElement(totalCostText);
         String displayedTotalText = totalCostText.getText().trim();
         System.out.println("Displayed Edited Total Cost Text on UI: " + displayedTotalText);
         
-        // Calculate expected total (Updated Making Cost * Updated Total Quantity Sum)
         double expectedTotalCost = lastMakingCost * totalQuantitySum;
         System.out.println("Calculated Expected Edited Total Cost: " + String.format(java.util.Locale.US, "%.2f", expectedTotalCost));
         
@@ -1108,7 +886,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             throw new RuntimeException("Edited total amount field is empty or not reflecting correctly!");
         }
 
-        // 2. Update/Add Notes for Edit
         waitFor(addNotesInput);
         scrollToElement(addNotesInput);
         addNotesInput.clear();
@@ -1116,7 +893,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         sleep(1);
         System.out.println("Entered Edited Notes successfully.");
 
-        // 3. Update/Add Description for Edit
         waitFor(addDescriptionInput);
         scrollToElement(addDescriptionInput);
         addDescriptionInput.clear();
@@ -1148,27 +924,22 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         System.out.println("      EDITED MANUFACTURE ORDER LISTING PAGE VERIFICATION     ");
         System.out.println("=============================================================");
 
-        // ANSI Color Codes for Console Output
         String RESET = "\u001B[0m";
         String GREEN = "\u001B[32m";
         String RED = "\u001B[31m";
 
-        // Define Expected Values from updated test run variables
         String expectedVendor = (selectedVendorText != null) ? selectedVendorText.trim() : "";
         String expectedQty = String.valueOf(totalQuantitySum);
         
-        // Calculate expected total amount using updated making cost and quantity sum
         double calculatedTotalAmount = lastMakingCost * totalQuantitySum;
         String expectedAmountStr = String.format(java.util.Locale.US, "%.2f", calculatedTotalAmount);
         String expectedStatus = "Open";
 
-        // Locate elements on the listing table using your specific XPaths
         By vendorCellLocator = By.xpath("(//td)[4]");
         By qtyCellLocator = By.xpath("(//td)[5]");
         By amountCellLocator = By.xpath("(//td)[6]");
         By statusCellLocator = By.xpath("(//td)[7]");
 
-        // Wait for listing data to load
         WebElement vendorCell = wait.until(ExpectedConditions.visibilityOfElementLocated(vendorCellLocator));
         String actualVendor = vendorCell.getText().trim();
         
@@ -1182,17 +953,14 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         wait.until(ExpectedConditions.visibilityOfElementLocated(listingRowLocator));
         sleep(1);
 
-        // 1. Updated Vendor Name Verification
         boolean vendorMatch = actualVendor.contains(expectedVendor) || expectedVendor.contains(actualVendor);
         printComparison("Updated Vendor", expectedVendor, actualVendor, vendorMatch, GREEN, RED, RESET);
         if (!vendorMatch) allPassed = false;
 
-        // 2. Updated Overall Quantity Verification
         boolean qtyMatch = actualQty.replaceAll("[^0-9]", "").equals(expectedQty);
         printComparison("Updated Quantity", expectedQty, actualQty, qtyMatch, GREEN, RED, RESET);
         if (!qtyMatch) allPassed = false;
 
-        // 3. Updated Total Amount Verification
         boolean amountMatch = false;
         try {
             double expectedNumericAmount = Double.parseDouble(expectedAmountStr);
@@ -1204,7 +972,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         printComparison("Updated Amount", expectedAmountStr, actualAmount, amountMatch, GREEN, RED, RESET);
         if (!amountMatch) allPassed = false;
 
-        // 4. Status Verification
         boolean statusMatch = actualStatus.equalsIgnoreCase(expectedStatus);
         printComparison("Status", expectedStatus, actualStatus, statusMatch, GREEN, RED, RESET);
         if (!statusMatch) allPassed = false;
@@ -1224,18 +991,15 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         System.out.println("        EDITED MANUFACTURE ORDER PREVIEW PAGE VERIFICATION   ");
         System.out.println("=============================================================");
 
-        // ANSI Color Codes for Console Output
         String RESET = "\u001B[0m";
         String GREEN = "\u001B[32m";
         String RED = "\u001B[31m";
 
-        // Define Expected Values from updated test run variables
         String expectedQty = String.valueOf(totalQuantitySum);
         double calculatedTotalAmount = lastMakingCost * totalQuantitySum;
         String expectedAmountStr = String.format(java.util.Locale.US, "%.2f", calculatedTotalAmount);
 
         try {
-            // 1. Locate and click the 3-dot action button in the first row
             By threeDotLocator = By.xpath("(//i[@class='bi bi-three-dots-vertical'])[1]");
             WebElement threeDotBtn = wait.until(ExpectedConditions.elementToBeClickable(threeDotLocator));
             scrollToElement(threeDotBtn);
@@ -1246,27 +1010,23 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             }
             sleep(1);
 
-            // 2. Click Preview option from the dropdown menu
             WebElement previewBtn = wait.until(ExpectedConditions.elementToBeClickable(
                 By.xpath("//div[@class='dropdown-menu actions-dropdown-menu dropdown-menu-right dropdown_button_wrapper show']//a[1]")
             ));
             previewBtn.click();
             sleep(2);
 
-            // 3. Capture Preview Page actual values using precise XPaths
             String actualPreviewDate = driver.findElement(By.xpath("(//p[@class='card_coupon_code modal_para_dark'])[4]")).getText().trim();
             String actualPreviewAddress = driver.findElement(By.xpath("(//p[@class='card_coupon_code modal_para_dark'])[5]")).getText().trim();
             String actualPreviewProductName = driver.findElement(By.xpath("(//p[@class='font_14 m-0 fw-bold'])[1]")).getText().trim();
             String actualPreviewQty = driver.findElement(By.xpath("//body[1]/div[1]/main[1]/div[1]/div[2]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/table[1]/tbody[1]/tr[1]/td[2]")).getText().trim();
             String actualPreviewAmount = driver.findElement(By.xpath("(//p[@class='d-flex justify-content-start align-items-center m-0'])[2]")).getText().trim();
             
-            // Notes & Terms verification fields
             String actualNotes = driver.findElement(By.xpath("(//p[@class='info_dd mb-0'])[1]")).getText().trim();
             String actualTerms = driver.findElement(By.xpath("(//p[@class='info_dd mb-0'])[2]")).getText().trim();
 
             boolean previewPassed = true;
 
-            // 4. Perform Assertions & Comparisons for Edited Values
             boolean dateMatch = actualPreviewDate.contains(selectedDateText);
             printComparison("Edited Preview Date", selectedDateText, actualPreviewDate, dateMatch, GREEN, RED, RESET);
             if (!dateMatch) previewPassed = false;
@@ -1308,11 +1068,8 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         }
     }
     
-
-    
     //TC-03
     public void verifySaveAsDraft() {
-        // 2. Add Notes
         waitFor(addNotesInput);
         scrollToElement(addNotesInput);
         addNotesInput.clear();
@@ -1320,7 +1077,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         sleep(1);
         System.out.println("Entered Notes successfully.");
 
-        // 3. Add Description
         waitFor(addDescriptionInput);
         scrollToElement(addDescriptionInput);
         addDescriptionInput.clear();
@@ -1328,7 +1084,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         sleep(1);
         System.out.println("Entered Description successfully.");
 
-        // 4. Click Save Button
         waitFor(saveAsDraftBtn);
         scrollToElement(saveAsDraftBtn);
         click(saveAsDraftBtn);
@@ -1336,7 +1091,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         System.out.println("Clicked Save Button successfully.");
     }
     
- // Step 2: Verify it on the listing page (Status = Draft)
     public void verifyDraftManufactureOrderOnListingPage() {
     	clickCustomProductTab();
         System.out.println("\n=============================================================");
@@ -1379,7 +1133,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         System.out.println(GREEN + "✅ DRAFT LISTING PAGE DETAILS MATCHED SUCCESSFULLY!" + RESET + "\n");
     }
 
-    // Step 3: Handle the cancel test & actual deletion workflow
     public void performDraftDeletionWorkflow() {
         String RESET = "\u001B[0m";
         String GREEN = "\u001B[32m";
@@ -1389,9 +1142,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             By moIdCellLocator = By.xpath("(//td)[2]");
             String actualMoId = driver.findElement(moIdCellLocator).getText().trim();
 
-            // =============================================================
-            //                   FIRST ATTEMPT: CANCEL FLOW                
-            // =============================================================
             System.out.println("--- Executing Delete-Cancel Workflow ---");
             
             By threeDotLocator = By.xpath("(//i[@class='bi bi-three-dots-vertical'])[1]");
@@ -1422,9 +1172,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
                 throw new AssertionError("Manufacture Order disappeared after clicking cancel on delete popup!");
             }
 
-            // =============================================================
-            //                  SECOND ATTEMPT: CONFIRM DELETE             
-            // =============================================================
             System.out.println("--- Executing Delete-Confirm Workflow ---");
 
             threeDotBtn = wait.until(ExpectedConditions.elementToBeClickable(threeDotLocator));
@@ -1453,11 +1200,8 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         }
     }
     
-    
-
     //TC-04
     public void verifyCancelItemsOptionIsDisplayed() {
-        // ANSI Color Codes for Console Output
         String RESET = "\u001B[0m";
         String GREEN = "\u001B[32m";
         String RED = "\u001B[31m";
@@ -1466,21 +1210,17 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         System.out.println("          VERIFY CANCEL ITEMS OPTION ON PREVIEW PAGE         ");
         System.out.println("=============================================================");
         clickCustomProductTab();
-        // 1. Click 3-dot action button on listing page using repo element
         click(threeDotBtn);
         sleep(1);
 
-        // 2. Click Preview option to navigate to preview page using repo element
         click(previewbtn);
         sleep(2);
 
-        // 3. Verify initial status is active/open
         WebElement initialStatus = wait.until(ExpectedConditions.visibilityOfElementLocated(
             By.xpath("(//span[@class='status-chip active'])[1]")
         ));
         System.out.println("Preview Page Initial Status: " + initialStatus.getText().trim());
 
-        // 4. Click the preview action 3-dot button
         WebElement prevThreeDot = wait.until(ExpectedConditions.elementToBeClickable(
             By.xpath("(//div[@class='material_action_dropdown js-tag-toggle'])[1]")
         ));
@@ -1488,7 +1228,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         prevThreeDot.click();
         sleep(1);
 
-        // 5. Verify that 'Cancel Items' option is displayed
         WebElement cancelOpt = wait.until(ExpectedConditions.visibilityOfElementLocated(
             By.xpath("(//li[normalize-space()='Cancel Items'])[1]")
         ));
@@ -1506,14 +1245,12 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         System.out.println("           CANCELLING ITEMS IN MANUFACTURE ORDER             ");
         System.out.println("=============================================================");
 
-        // 1. Click 'Cancel Items' option from dropdown
         WebElement cancelOpt = wait.until(ExpectedConditions.elementToBeClickable(
             By.xpath("(//li[normalize-space()='Cancel Items'])[1]")
         ));
         cancelOpt.click();
         sleep(1);
 
-        // 2. Select the checkbox to choose all items details on the confirmation popup
         WebElement selectAllCheckbox = wait.until(ExpectedConditions.elementToBeClickable(
             By.xpath("(//input[@id='select_all_cancel_items'])[1]")
         ));
@@ -1523,7 +1260,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         }
         sleep(1);
 
-        // 3. Enter a random cancellation reason into the textarea
         WebElement reasonInput = wait.until(ExpectedConditions.visibilityOfElementLocated(
             By.xpath("(//textarea[@id='cancel_reason'])[1]")
         ));
@@ -1534,13 +1270,12 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         sleep(1);
         System.out.println("Entered cancellation reason: " + randomReason);
 
-        // 4. Click Yes Confirm Button
         WebElement confirmBtn = wait.until(ExpectedConditions.elementToBeClickable(
             By.xpath("(//button[@id='btn_confirm_cancel_items'])[1]")
         ));
         scrollToElement(confirmBtn);
         confirmBtn.click();
-        sleep(3); // Wait for cancellation action to process
+        sleep(3); 
         System.out.println("✅ Clicked confirmation button for cancellation successfully.");
         System.out.println("=============================================================\n");
     }
@@ -1554,7 +1289,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         System.out.println("       VERIFYING CANCELLED STATUS ACROSS PAGES               ");
         System.out.println("=============================================================");
 
-        // 1. Verify status on Preview page is changed to inactive/cancelled
         WebElement cancelledStatusPreview = wait.until(ExpectedConditions.visibilityOfElementLocated(
             By.xpath("(//span[@class='status-chip inactive'])[1]")
         ));
@@ -1562,12 +1296,10 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         String previewStatusText = cancelledStatusPreview.getText().trim();
         System.out.println("Preview Page Status: " + previewStatusText);
 
-        // 2. Click Back Button using the repository element (`backBtn`)
         click(backBtn);
         sleep(2);
         clickCustomProductTab();
 
-        // 3. Verify listing page status using repository element (`listingPageStatusLocator` i.e. `(//td)[7]`)
         waitFor(listingPageStatusLocator);
         scrollToElement(listingPageStatusLocator);
         String listingStatusText = listingPageStatusLocator.getText().trim();
@@ -1581,9 +1313,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         System.out.println(GREEN + "✅ Manufacture Order status successfully verified as 'Cancelled' across Preview and Listing pages!" + RESET);
         System.out.println("=============================================================\n");
     }
-    
-
-    
+      
     //TC-05
     public void convertAndVerifyManufactureOrderAsIssued() {
         System.out.println("\n=============================================================");
@@ -1596,21 +1326,15 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         String expectedStatus = "Issued";
 
         try {
-            // 0. Ensure we are back on the listing page and elements are loaded
-         
-            // 2. Click "Mark as Issued" button from the dropdown
             WebElement issuedBtn = wait.until(ExpectedConditions.elementToBeClickable(markAsIssuedBtn));
             issuedBtn.click();
             sleep(1);
 
-            // 3. Click "Yes, Issued" on the confirmation popup
             WebElement confirmIssuedBtn = wait.until(ExpectedConditions.elementToBeClickable(confirmMarkAsIssuedBtn));
             confirmIssuedBtn.click();
             sleep(2);
 
-            // 4. Wait dynamically until the status on the Details page changes to "Issued" (up to 10 seconds)
             System.out.println("Waiting for details page status to update to 'Issued'...");
-            boolean statusUpdated = wait.until(ExpectedConditions.textToBePresentInElement(detailsPageStatusLocator, expectedStatus));
             
             WebElement detailsStatus = wait.until(ExpectedConditions.visibilityOf(detailsPageStatusLocator));
             String actualDetailsStatus = detailsStatus.getText().trim();
@@ -1620,13 +1344,11 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
                 throw new AssertionError("Details page status did not reflect 'Issued'! Current text found: " + actualDetailsStatus);
             }
 
-            // 5. Click Back Button to return to listing page
             WebElement backButton = wait.until(ExpectedConditions.elementToBeClickable(backBtn));
             backButton.click();
             sleep(2);
             
             clickCustomProductTab();
-            // 6. Verify Status on Listing Page
             WebElement listingStatus = wait.until(ExpectedConditions.visibilityOf(listingPageStatusLocator));
             String actualListingStatus = listingStatus.getText().trim();
             boolean listingStatusMatch = actualListingStatus.equalsIgnoreCase(expectedStatus);
@@ -1651,19 +1373,16 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         System.out.println("     MANDATORY FIELDS VALIDATION ERROR MESSAGE CHECK         ");
         System.out.println("=============================================================");
 
-        // ANSI Color Codes for Console Output
         String RESET = "\u001B[0m";
         String GREEN = "\u001B[32m";
         String RED = "\u001B[31m";
 
-        // 1. Click Save/Submit button while the form is completely empty
         waitFor(saveBtn);
         scrollToElement(saveBtn);
         click(saveBtn);
         sleep(1);
         System.out.println("Clicked Save button with empty fields to trigger validations.");
 
-        // 2. Define the exact XPaths for the error/validation spans provided
         By vendorErrLocator = By.xpath("(//span[normalize-space()='Please select a vendor'])[1]");
         By dateErrLocator = By.xpath("(//span[normalize-space()='Please select an expected delivery date'])[1]");
         By addressErrLocator = By.xpath("(//span[normalize-space()='Please select a delivery address'])[1]");
@@ -1673,7 +1392,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
 
         boolean allErrorsPassed = true;
 
-        // 3. Verify Vendor Validation Message
         try {
             WebElement vendorErr = wait.until(ExpectedConditions.visibilityOfElementLocated(vendorErrLocator));
             scrollToElement(vendorErr);
@@ -1685,7 +1403,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             allErrorsPassed = false;
         }
 
-        // 4. Verify Delivery Date Validation Message
         try {
             WebElement dateErr = wait.until(ExpectedConditions.visibilityOfElementLocated(dateErrLocator));
             scrollToElement(dateErr);
@@ -1697,7 +1414,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             allErrorsPassed = false;
         }
 
-        // 5. Verify Delivery Address Validation Message
         try {
             WebElement addressErr = wait.until(ExpectedConditions.visibilityOfElementLocated(addressErrLocator));
             scrollToElement(addressErr);
@@ -1709,7 +1425,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             allErrorsPassed = false;
         }
 
-        // 6. Verify Product Name Validation Message
         try {
             WebElement prodNameErr = wait.until(ExpectedConditions.visibilityOfElementLocated(productNameErrLocator));
             scrollToElement(prodNameErr);
@@ -1721,7 +1436,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             allErrorsPassed = false;
         }
 
-        // 7. Verify Making Cost Validation Message
         try {
             WebElement makingCostErr = wait.until(ExpectedConditions.visibilityOfElementLocated(makingCostErrLocator));
             scrollToElement(makingCostErr);
@@ -1733,7 +1447,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             allErrorsPassed = false;
         }
 
-        // 8. Verify Size Selection Validation Message
         try {
             WebElement sizeErr = wait.until(ExpectedConditions.visibilityOfElementLocated(sizeErrLocator));
             scrollToElement(sizeErr);
@@ -1753,20 +1466,16 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             throw new AssertionError("Mandatory fields validation message check failed.");
         }
         System.out.println("=============================================================\n");
-    }
-
-  
+    } 
 
     //TC-07
     public void addProductDetailsForSecondProduct() {
-        // 1. Click the 'Add Product' button to open a new product form block/window
         waitFor(addProductBtn);
         scrollToElement(addProductBtn);
         click(addProductBtn);
         sleep(2);
         System.out.println("Clicked 'Add Product' button for second product.");
 
-        // 2. Enter Product Name using index [2] xpath
         By productNameInput2 = By.xpath("(//input[@id='product_name'])[2]");
         WebElement prodNameInput = wait.until(ExpectedConditions.visibilityOfElementLocated(productNameInput2));
         scrollToElement(prodNameInput);
@@ -1776,7 +1485,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         sleep(1);
         System.out.println("Entered Second Product Name: " + randomProductName);
 
-        // 3. Enter Dynamic Making Cost using index [2] xpath
         By makingCostInput2 = By.xpath("(//input[@id='making_cost'])[2]");
         WebElement costInput = wait.until(ExpectedConditions.visibilityOfElementLocated(makingCostInput2));
         scrollToElement(costInput);
@@ -1791,14 +1499,12 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         sleep(1);
         System.out.println("Entered Second Product Making Cost: " + makingCostStr);
 
-        // 4. Click Size Tags Dropdown using index [2] xpath to open the second menu container
         By sizeTagsDropdown2 = By.xpath("(//div[@class='tag_input js-tag-toggle'])[2]");
         WebElement sizeDropdown2 = wait.until(ExpectedConditions.elementToBeClickable(sizeTagsDropdown2));
         scrollToElement(sizeDropdown2);
         sizeDropdown2.click();
         sleep(1);
 
-        // 5. Locate all size options inside the second tag menu box
         By sizeOptionsLocator2 = By.xpath("(//div[@class='tag_menu js-tag_menu'])[2]//label[@class='tag_option']");
         wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(sizeOptionsLocator2));
         List<WebElement> sizeOptions2 = driver.findElements(sizeOptionsLocator2);
@@ -1816,13 +1522,12 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
                 chosenIndices.add(random.nextInt(sizeOptions2.size()));
             }
 
-            int sizeCount = sizeOptions2.size(); // N, works for any server
+            int sizeCount = sizeOptions2.size(); 
 
             for (int index : chosenIndices) {
-                int itemNumber = index + 1; // 1-based position inside the second tag menu
-                selectedSizeIndices.add(itemNumber); // same convention as first product
+                int itemNumber = index + 1; 
+                selectedSizeIndices.add(itemNumber); 
 
-                // Click the option scoped to the second menu (no hardcoded global index)
                 By specificOption = By.xpath("((//div[@class='tag_menu js-tag_menu'])[2]//label[@class='tag_option'])[" + itemNumber + "]");
                 WebElement specificSizeEl = wait.until(ExpectedConditions.elementToBeClickable(specificOption));
 
@@ -1833,7 +1538,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
                 specificSizeEl.click();
                 sleep(1);
 
-                // Second product size inputs come after product 1's size + raw material inputs (2N)
                 int inputIndex = (2 * sizeCount) + itemNumber;
                 By quantityInputLocator = By.xpath("(//input[@placeholder='-'])[" + inputIndex + "]");
                 WebElement qtyInput = wait.until(ExpectedConditions.elementToBeClickable(quantityInputLocator));
@@ -1852,7 +1556,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             
             secondProductExpectedCost = lastMakingCost * totalQuantitySum;
             
-            // 6. Close the second size dropdown
             try {
                 scrollToElement(sizeDropdown2);
                 sizeDropdown2.click();
@@ -1875,7 +1578,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
     public void selectRawMaterialAndFillQuantitiesForSecondProduct() {
         Random random = new Random();
         
-        // Calculate total required quantity across all selected sizes for the second product
         int totalRequiredQty = 0;
         for (int qty : selectedQuantitiesList) {
             totalRequiredQty += qty;
@@ -1889,7 +1591,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         while (!sufficientStockFound && attempts < maxRetries) {
             attempts++;
             
-            // 1. Open Raw Material Dropdown for Second Product
             try {
                 WebElement dropdownToggle2 = wait.until(ExpectedConditions.elementToBeClickable(
                     By.xpath("(//div[@class='w-100 text-left pl-2 field_wrapper'])[2]")
@@ -1905,7 +1606,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             }
             sleep(1);
 
-            // 2. Select a random option from the 4th options box
             By rawMaterialOptionLocator2 = By.xpath("(//div[@class='options_box'])[4]//div[@class='option']");
             wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(rawMaterialOptionLocator2));
             List<WebElement> rawMaterialOptions2 = driver.findElements(rawMaterialOptionLocator2);
@@ -1926,8 +1626,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             sleep(1);
             System.out.println("Attempt " + attempts + " - Selected Raw Material for 2nd Product: " + rmText);
 
-            // 3. Enter a high quantity (1000000) into the first selected size's input box with offset +14 to trigger validation
-            int firstSizeInputIndex = getSecondProductRawMaterialIndex(selectedSizeIndices.get(0));             // 8 + 14 = 22
+            int firstSizeInputIndex = getSecondProductRawMaterialIndex(selectedSizeIndices.get(0));             
             
             By firstInputLocator = By.xpath("(//input[@placeholder='-'])[" + firstSizeInputIndex + "]");
             WebElement firstQtyInput = wait.until(ExpectedConditions.elementToBeClickable(firstInputLocator));
@@ -1937,10 +1636,8 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             firstQtyInput.sendKeys("1000000");
             sleep(1);
 
-            // 4. Check non-intrusively for the stock error validation message using the correct error class
             int availableStock = 1000000; 
             try {
-                // FIXED: Use the specific error-stock-msg class and check multiple elements if needed, or target index [2] for the second product block
                 By errorMsgLocator = By.xpath("((//span[contains(@class, 'error-stock-msg')])[2]) | (//span[contains(text(),'Available stock:')])[2]");
                 
                 org.openqa.selenium.support.ui.WebDriverWait shortWait = new org.openqa.selenium.support.ui.WebDriverWait(driver, java.time.Duration.ofSeconds(2));
@@ -1960,7 +1657,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
 
             System.out.println("Available Stock detected for 2nd Product: " + availableStock);
 
-            // 5. Validate if available stock is sufficient
             if (availableStock >= totalRequiredQty) {
                 System.out.println("Sufficient stock found for 2nd product! Filling exact quantities...");
                 
@@ -1980,7 +1676,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
                     System.out.println("Entered Exact Raw Material Quantity: " + exactQty + " for size: " + targetSize + " at index [" + rmInputIndex + "]");
                 }
                 
-                // Store the total quantity for the second product so listing verification passes
                 secondProductTotalQuantity = totalRequiredQty;
                 sufficientStockFound = true;
             } else {
@@ -1997,7 +1692,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
     }
 
     public void verifyIndividualAndCombinedTotals() {
-        // 1. Verify 1st Product Total Amount
         By prod1TotalLoc = By.xpath("(//p[@class='d-flex justify-content-start align-items-center m-0'])[1]");
         WebElement prod1TotalEl = wait.until(ExpectedConditions.visibilityOfElementLocated(prod1TotalLoc));
         scrollToElement(prod1TotalEl);
@@ -2008,7 +1702,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             throw new RuntimeException("1st product total amount text box is empty!");
         }
 
-        // 2. Verify 2nd Product Total Amount
         By prod2TotalLoc = By.xpath("(//p[@class='d-flex justify-content-start align-items-center m-0'])[2]");
         WebElement prod2TotalEl = wait.until(ExpectedConditions.visibilityOfElementLocated(prod2TotalLoc));
         scrollToElement(prod2TotalEl);
@@ -2019,7 +1712,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             throw new RuntimeException("2nd product total amount text box is empty!");
         }
 
-        // 3. Verify Combined Total Amount
         By combinedTotalLoc = By.xpath("(//p[@class='d-flex justify-content-start align-items-center m-0'])[3]");
         WebElement combinedTotalEl = wait.until(ExpectedConditions.visibilityOfElementLocated(combinedTotalLoc));
         scrollToElement(combinedTotalEl);
@@ -2030,37 +1722,9 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             throw new RuntimeException("Combined total amount text box is empty!");
         }
         
-        // Optional calculation cross-check (extracting numeric values from strings if currency symbols are attached)
         double expectedCombinedCost = firstProductExpectedCost + secondProductExpectedCost;
         System.out.println("Calculated Expected Combined Cost: " + String.format(java.util.Locale.US, "%.2f", expectedCombinedCost));
         System.out.println("All product and combined totals verified successfully!");
-    }
-    
-    
-    
-    public void verifyAddNotesAndSave() {
-        // 1. Add Notes
-        waitFor(addNotesInput);
-        scrollToElement(addNotesInput);
-        addNotesInput.clear();
-        addNotesInput.sendKeys("Automated Notes: Order created successfully with verified pricing.");
-        sleep(1);
-        System.out.println("Entered Notes successfully.");
-
-        // 2. Add Description
-        waitFor(addDescriptionInput);
-        scrollToElement(addDescriptionInput);
-        addDescriptionInput.clear();
-        addDescriptionInput.sendKeys("Automated Description: Checking end-to-end manufacture order creation workflow.");
-        sleep(1);
-        System.out.println("Entered Description successfully.");
-
-        // 3. Click Save Button
-        waitFor(saveBtn);
-        scrollToElement(saveBtn);
-        click(saveBtn);
-        sleep(10);
-        System.out.println("Clicked Save Button successfully.");
     }
     
     public int firstProductTotalQuantity = 0;
@@ -2077,7 +1741,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
 
         String expectedVendor = (selectedVendorText != null) ? selectedVendorText.trim() : "";
         
-        // Combine quantities from both products safely
         int combinedExpectedQty = firstProductTotalQuantity + secondProductTotalQuantity;
         String expectedQty = String.valueOf(combinedExpectedQty);
         
@@ -2103,17 +1766,14 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         wait.until(ExpectedConditions.visibilityOfElementLocated(listingRowLocator));
         sleep(1);
 
-        // 1. Vendor Name Verification
         boolean vendorMatch = actualVendor.contains(expectedVendor) || expectedVendor.contains(actualVendor);
         printComparison("Vendor Name", expectedVendor, actualVendor, vendorMatch, GREEN, RED, RESET);
         if (!vendorMatch) allPassed = false;
 
-        // 2. Combined Overall Quantity Verification
         boolean qtyMatch = actualQty.replaceAll("[^0-9]", "").equals(expectedQty);
         printComparison("Combined Quantity", expectedQty, actualQty, qtyMatch, GREEN, RED, RESET);
         if (!qtyMatch) allPassed = false;
 
-        // 3. Combined Total Amount Verification
         boolean amountMatch = false;
         try {
             double expectedNumericAmount = Double.parseDouble(expectedAmountStr);
@@ -2125,7 +1785,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         printComparison("Combined Total Amount", expectedAmountStr, actualAmount, amountMatch, GREEN, RED, RESET);
         if (!amountMatch) allPassed = false;
 
-        // 4. Status Verification
         boolean statusMatch = actualStatus.equalsIgnoreCase(expectedStatus);
         printComparison("Status", expectedStatus, actualStatus, statusMatch, GREEN, RED, RESET);
         if (!statusMatch) allPassed = false;
@@ -2139,8 +1798,7 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         }
         System.out.println("=============================================================\n");
     }
-    
-    
+        
     public void verifyManufactureOrderPreviewModalDetails() {
         System.out.println("\n=============================================================");
         System.out.println("          MANUFACTURE ORDER PREVIEW MODAL VERIFICATION       ");
@@ -2150,24 +1808,20 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         String GREEN = "\u001B[32m";
         String RED = "\u001B[31m";
 
-        // 1. Click on the three-dot action button on the listing page
         By threeDotBtnLocator = By.xpath("(//i[@class='bi bi-three-dots-vertical'])[1]"); 
         WebElement threeDotBtn = wait.until(ExpectedConditions.elementToBeClickable(threeDotBtnLocator));
         scrollToElement(threeDotBtn);
         threeDotBtn.click();
         sleep(1);
 
-        // 2. Click on the Preview button from the dropdown
         By previewBtnLocator = By.xpath("//div[@class='dropdown-menu actions-dropdown-menu dropdown-menu-right dropdown_button_wrapper show']//a[1]"); 
-        // Note: Update previewBtnLocator xpath if your app uses specific icon or text for preview
         WebElement previewBtn = wait.until(ExpectedConditions.elementToBeClickable(previewBtnLocator));
         scrollToElement(previewBtn);
         previewBtn.click();
-        sleep(2); // Wait for preview modal/drawer to fully load
+        sleep(2); 
 
         boolean allPassed = true;
 
-        // --- FIRST PRODUCT VERIFICATION ---
         String actualFirstProdName = driver.findElement(By.xpath("(//td)[1]")).getText().trim();
         String actualFirstProdQty = driver.findElement(By.xpath("(//td)[2]")).getText().trim();
         String actualFirstProdMakingCost = driver.findElement(By.xpath("(//td)[3]")).getText().trim();
@@ -2182,7 +1836,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         printComparison("1st Product Quantity", String.valueOf(firstProductTotalQuantity), actualFirstProdQty, p1QtyMatch, GREEN, RED, RESET);
         if (!p1QtyMatch) allPassed = false;
 
-        // --- SECOND PRODUCT VERIFICATION ---
         String actualSecondProdName = driver.findElement(By.xpath("(//td)[9]")).getText().trim();
         String actualSecondProdQty = driver.findElement(By.xpath("(//td)[10]")).getText().trim();
         String actualSecondProdMakingCost = driver.findElement(By.xpath("(//td)[11]")).getText().trim();
@@ -2197,7 +1850,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         printComparison("2nd Product Quantity", String.valueOf(secondProductTotalQuantity), actualSecondProdQty, p2QtyMatch, GREEN, RED, RESET);
         if (!p2QtyMatch) allPassed = false;
 
-        // --- COMBINED TOTAL AMOUNT VERIFICATION ---
         By combinedTotalLocator = By.xpath("(//p[@class='d-flex justify-content-start align-items-center m-0'])[3]");
         WebElement combinedTotalElement = wait.until(ExpectedConditions.visibilityOfElementLocated(combinedTotalLocator));
         String actualCombinedText = combinedTotalElement.getText().trim();
@@ -2224,24 +1876,20 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             throw new AssertionError("Manufacture Order Preview modal verification failed.");
         }
         System.out.println("=============================================================\n");
-    }
-    
+    }  
     
     //TC-08
     public void exportManufactureOrderFlow() {
-        // 1. Click the export dropdown button
         waitFor(exportBtnDropdown);
         scrollToElement(exportBtnDropdown);
         click(exportBtnDropdown);
-        sleep(1); // Brief pause for dropdown animation to complete
+        sleep(1); 
 
-        // 2. Click the export option button from the menu
         waitFor(exportBtn);
         scrollToElement(exportBtn);
         click(exportBtn);
-        sleep(1); // Brief pause for the export configuration modal/popup to open
+        sleep(1); 
 
-        // 3. Click the "Include All" checkbox first to reveal/enable individual columns
         waitFor(includeCheckBox);
         scrollToElement(includeCheckBox);
         try {
@@ -2249,24 +1897,20 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
                 click(includeCheckBox);
             }
         } catch (Exception e) {
-            click(includeCheckBox); // Fallback standard click
+            click(includeCheckBox); 
         }
-        sleep(1); // Give it a moment to expand the column list
+        sleep(1); 
 
-        // 4. Capture and print all column names dynamically (1st required column + remaining columns up to 8)
         System.out.println("--- Capturing Export Column Names ---");
         
-        // Updated total columns to 8 to include the "Updated At" column
         int totalColumns = 8; 
         
         for (int i = 1; i <= totalColumns; i++) {
             String columnXpath;
             
             if (i == 1) {
-                // First column uses the required/selected class pattern
                 columnXpath = "(//div[contains(@data-section,'details')]//div[contains(@class,'section-body')]//label[contains(@class,'required') or contains(@class,'col-check-item')])[" + i + "]";
             } else {
-                // Remaining columns use the standard col-check-item pattern
                 columnXpath = "(//div[contains(@data-section,'details')]//div[contains(@class,'section-body')]//label[contains(@class,'col-check-item')])[" + i + "]";
             }
             
@@ -2276,7 +1920,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
                 
                 String columnName = columnLabel.getText().trim();
                 
-                // Fallback if standard getText() is empty
                 if (columnName.isEmpty()) {
                     org.openqa.selenium.JavascriptExecutor js = (org.openqa.selenium.JavascriptExecutor) driver;
                     columnName = (String) js.executeScript("return arguments[0].innerText;", columnLabel);
@@ -2291,12 +1934,10 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         System.out.println("-------------------------------------");
         sleep(1);
 
-        // 5. Click the Download button to trigger the export generation
         waitFor(downloadBtn);
         scrollToElement(downloadBtn);
         click(downloadBtn);
 
-        // 6. Verify that the generation notification message is successfully displayed
         try {
             waitFor(generatingMsg);
             String generationText = generatingMsg.getText().trim();
@@ -2304,17 +1945,14 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         } catch (Exception e) {
             System.out.println("⚠️ Warning: Generating message notification was not detected or vanished too quickly.");
         }
-    }
-    
+    } 
     
     public void verifyAndDownloadExportFileFromHistory() {
-        // 1. Navigate to the Export History page
         waitFor(exportHistoryPage);
         scrollToElement(exportHistoryPage);
         click(exportHistoryPage);
-        sleep(2); // Allow export history table to load
+        sleep(2); 
         
-        // 2. Verify that the generated file name contains "manufacture-order"
         waitFor(fileName);
         scrollToElement(fileName);
         String generatedFileName = fileName.getText().trim();
@@ -2324,9 +1962,8 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             throw new RuntimeException("❌ File name in export history does not match 'manufacture-order'! Found: " + generatedFileName);
         }
         
-        // 3. Continuously check and refresh until the status changes from 'Pending' to 'Success'
         boolean isSuccess = false;
-        int maxPollAttempts = 30; // Max polls (approx 60-90 seconds)
+        int maxPollAttempts = 30; 
         int pollCount = 0;
         
         while (!isSuccess && pollCount < maxPollAttempts) {
@@ -2342,7 +1979,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
                 } else if (currentStatus.equalsIgnoreCase("Failed") || currentStatus.equalsIgnoreCase("Error")) {
                     throw new RuntimeException("❌ Export generation failed on the server!");
                 } else {
-                    // Still pending/processing, refresh the page and wait before checking again
                     driver.navigate().refresh();
                     sleep(3);
                 }
@@ -2357,33 +1993,28 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             throw new RuntimeException("❌ Export status remained Pending/Processing after max retries!");
         }
         
-        // 4. Click the three-dot actions menu for the completed export entry
         waitFor(threeDot);
         scrollToElement(threeDot);
         click(threeDot);
-        sleep(1); // Brief pause for actions dropdown menu to render
+        sleep(1); 
         
-        // 5. Click the download button from the actions dropdown menu
         waitFor(exportDownloadBtn);
         scrollToElement(exportDownloadBtn);
         click(exportDownloadBtn);
         System.out.println("⬇️ Export file download triggered successfully from Export History!");
-        sleep(3); // Allow download to initiate
-    }
-    
+        sleep(3); 
+    }  
     
     public void verifyExportedExcelColumns() {
         System.out.println("==================================================");
         System.out.println("🔍 Starting Exported Excel File Verification...");
         System.out.println("==================================================");
         
-        // 1. Locate the downloaded Excel file in the system's Downloads directory
         String downloadPath = System.getProperty("user.home") + "/Downloads";
         File dir = new File(downloadPath);
         
         System.out.println("📂 Scanning Downloads folder: " + downloadPath);
         
-        // Search for recent files matching manufacture-order or any recent .xlsx file
         File[] files = dir.listFiles((d, name) -> name.toLowerCase().endsWith(".xlsx") && name.toLowerCase().contains("manufacture-order"));
         
         if (files == null || files.length == 0) {
@@ -2395,7 +2026,6 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
             throw new RuntimeException("❌ No downloaded Excel file found in the Downloads folder: " + downloadPath);
         }
         
-        // Find the most recently downloaded file
         File latestFile = files[0];
         for (File f : files) {
             if (f.lastModified() > latestFile.lastModified()) {
@@ -2406,18 +2036,15 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         System.out.println("📥 Target Excel File Identified: " + latestFile.getAbsolutePath());
         System.out.println("⏱️ File Last Modified: " + new java.util.Date(latestFile.lastModified()));
         
-        // Give a brief visual pause so you can see the file target in the console
         sleep(2);
 
-        // 2. Read the Excel file using Apache POI
         System.out.println("📖 Opening Excel workbook and reading sheets...");
         try (FileInputStream fis = new FileInputStream(latestFile);
              Workbook workbook = WorkbookFactory.create(fis)) {
             
-            Sheet sheet = workbook.getSheetAt(0); // Access the first sheet
+            Sheet sheet = workbook.getSheetAt(0); 
             System.out.println("📄 Active Sheet Name: " + sheet.getSheetName());
             
-            // 3. Column names are located in the 2nd row (Index 1 since Apache POI rows are 0-indexed)
             Row headerRow = sheet.getRow(1);
             if (headerRow == null) {
                 System.out.println("⚠️ Row index 1 (2nd row) is empty. Falling back to row index 0 (1st row)...");
@@ -2456,36 +2083,1346 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         } catch (Exception e) {
             throw new RuntimeException("❌ Failed to read or parse the downloaded Excel file: " + e.getMessage(), e);
         }
+    }  
+    
+    //TC-09
+    public void clickAddManufactureOrderForExistingProduct() {
+        scrollToElement(addManufactureOrderBtn);
+        click(addManufactureOrderBtn);
+        sleep(1);
+        
+        wait.until(ExpectedConditions.visibilityOf(addExistingProductBtn));
+        scrollToElement(addExistingProductBtn);
+        click(addExistingProductBtn);
+        sleep(1);
+    }
+    
+    public static List<String> availableProductsText = new ArrayList<>();
+    public static String selectedProductText = "";
+    public static List<String> availableSizesText = new ArrayList<>();
+    public static int totalEnteredQuantity = 0;
+    public static int makingCostValue = 0;
+    public static double expectedTotalAmount = 0.0;
+    public static String savedNoteText = "";
+    public static String savedDescText = "";
+    
+    public void selectProductAndCaptureSizes() {
+        String CYAN = "\u001B[36m";
+        String GREEN = "\u001B[32m";
+        String RESET = "\u001B[0m";
+
+        By itemDropdownLocator = By.xpath("(//div[@class='select-box d-flex justify-content-start align-items-center'])[1]");
+        WebElement itemDropdownElement = wait.until(ExpectedConditions.elementToBeClickable(itemDropdownLocator));
+        scrollToElement(itemDropdownElement);
+        
+        try {
+            itemDropdownElement.click();
+        } catch (Exception ex) {
+            ((org.openqa.selenium.JavascriptExecutor) driver).executeScript("arguments[0].click();", itemDropdownElement);
+        }
+        sleep(1);
+        
+        By productOptionLocator = By.xpath("(//div[@class='options_box'])[3]//div[@class='option']");
+        wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(productOptionLocator));
+        List<WebElement> productOptions = driver.findElements(productOptionLocator);
+        
+        availableProductsText.clear();
+        for (WebElement option : productOptions) {
+            availableProductsText.add(option.getText().trim());
+        }
+        System.out.println(CYAN + "Available Products List: " + availableProductsText + RESET);
+        
+        if (!productOptions.isEmpty()) {
+            Random random = new Random();
+            int index = random.nextInt(productOptions.size());
+            int itemNumber = index + 1;
+            
+            By specificProduct = By.xpath("((//div[@class='options_box'])[3]//div[@class='option'])[" + itemNumber + "]");
+            WebElement chosenProduct = wait.until(ExpectedConditions.elementToBeClickable(specificProduct));
+            
+            selectedProductText = chosenProduct.getText().trim();
+            scrollToElement(chosenProduct);
+            chosenProduct.click();
+            sleep(1);
+            System.out.println(GREEN + "Selected Product: " + selectedProductText + RESET);
+        } else {
+            throw new RuntimeException("No product options available in options box [3]!");
+        }
+        
+        By sizeWrapperLocator = By.xpath("//div[@class='w-100 size_wrapper']");
+        wait.until(ExpectedConditions.visibilityOfElementLocated(sizeWrapperLocator));
+        WebElement sizeWrapper = driver.findElement(sizeWrapperLocator);
+        
+        List<WebElement> sizeElements = sizeWrapper.findElements(By.xpath(".//span | .//button | .//div[contains(@class, 'size')]"));
+        if (sizeElements.isEmpty()) {
+            sizeElements = sizeWrapper.findElements(By.xpath("./*")); 
+        }
+        
+        availableSizesText.clear();
+        for (WebElement sizeElem : sizeElements) {
+            String sizeText = sizeElem.getText().trim();
+            if (!sizeText.isEmpty()) {
+                availableSizesText.add(sizeText);
+            }
+        }
+        
+        if (availableSizesText.isEmpty()) {
+            availableSizesText.add(sizeWrapper.getText().trim());
+        }
+        
+        System.out.println(CYAN + "Captured Sizes from Size Wrapper: " + availableSizesText + RESET);
+    }
+       
+    public void fillQuantitiesForCapturedSizes() {
+        if (availableSizesText == null || availableSizesText.isEmpty()) {
+            throw new RuntimeException("No available sizes captured! Please select a product and capture sizes first.");
+        }
+
+        String GREEN = "\u001B[32m";
+        String YELLOW = "\u001B[33m";
+        String RESET = "\u001B[0m";
+
+        Random random = new Random();
+
+        for (String size : availableSizesText) {
+            String cleanSize = size.trim();
+            
+            if (cleanSize.contains("-") || cleanSize.contains("–") || cleanSize.contains("—") || cleanSize.contains(":")) {
+                String[] parts = cleanSize.split("[-–—:]");
+                cleanSize = parts[parts.length - 1].trim();
+            } else {
+                cleanSize = cleanSize.replaceAll("(?i)^size", "").trim();
+            }
+
+            String dynamicXpath = "(//input[@aria-label='Quantity for size " + cleanSize + "'])[1]";
+            By quantityInputLocator = By.xpath(dynamicXpath);
+
+            try {
+                WebElement quantityInput = wait.until(ExpectedConditions.elementToBeClickable(quantityInputLocator));
+                scrollToElement(quantityInput);
+                
+                int randomQty = random.nextInt(10) + 1;
+                
+                quantityInput.clear();
+                quantityInput.sendKeys(String.valueOf(randomQty));
+                
+                System.out.println(GREEN + "Filled quantity '" + randomQty + "' for size: " + cleanSize + RESET);
+                
+            } catch (Exception e) {
+                System.out.println(YELLOW + "⚠️ Warning: Could not find or fill quantity input for size '" + cleanSize + "' (Original text: '" + size + "') with XPath: " + dynamicXpath + RESET);
+            }
+        }
+    }
+    
+    public void verifyTotalsAndEnterMakingCost() {
+        String GREEN = "\u001B[32m";
+        String CYAN = "\u001B[36m";
+        String YELLOW = "\u001B[33m";
+        String RESET = "\u001B[0m";
+
+        int calculatedSum = 0;
+        if (availableSizesText != null && !availableSizesText.isEmpty()) {
+            for (String size : availableSizesText) {
+                String cleanSize = size.trim();
+                
+                if (cleanSize.contains("-") || cleanSize.contains("–") || cleanSize.contains("—") || cleanSize.contains(":")) {
+                    String[] parts = cleanSize.split("[-–—:]");
+                    cleanSize = parts[parts.length - 1].trim();
+                } else {
+                    cleanSize = cleanSize.replaceAll("(?i)^size", "").trim();
+                }
+
+                By quantityInputLocator = By.xpath("(//input[@aria-label='Quantity for size " + cleanSize + "'])[1]");
+                try {
+                    WebElement inputElem = driver.findElement(quantityInputLocator);
+                    String val = inputElem.getAttribute("value");
+                    if (val != null && !val.isEmpty()) {
+                        calculatedSum += Integer.parseInt(val.trim());
+                    }
+                } catch (Exception e) {
+                }
+            }
+        }
+        
+        totalEnteredQuantity = calculatedSum;
+
+        By totalQtyCellLocator = By.xpath("(//td[@class='total_qty_cell'])[1]");
+        WebElement totalQtyCell = wait.until(ExpectedConditions.visibilityOfElementLocated(totalQtyCellLocator));
+        scrollToElement(totalQtyCell);
+        
+        String displayedQtyText = totalQtyCell.getText().replaceAll("[^0-9]", "").trim();
+        int displayedTotalQty = displayedQtyText.isEmpty() ? 0 : Integer.parseInt(displayedQtyText);
+        
+        if (displayedTotalQty == totalEnteredQuantity) {
+            System.out.println(GREEN + "✅ Total Quantity Verified Successfully! Displayed: " + displayedTotalQty + " matches calculated sum: " + totalEnteredQuantity + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Mismatch! Displayed Total Qty (" + displayedTotalQty + ") does not match calculated sum (" + totalEnteredQuantity + ")" + RESET);
+        }
+
+        Random random = new Random();
+        makingCostValue = random.nextInt(101) + 100; 
+        
+        By makingCostInputLocator = By.xpath("(//input[@placeholder='-'])[1]");
+        WebElement makingCostInput = wait.until(ExpectedConditions.elementToBeClickable(makingCostInputLocator));
+        scrollToElement(makingCostInput);
+        
+        makingCostInput.clear();
+        makingCostInput.sendKeys(String.valueOf(makingCostValue));
+        System.out.println(CYAN + "Entered Making Cost: " + makingCostValue + RESET);
+        sleep(1); 
+
+        By totalAmountCellLocator = By.xpath("(//td[@class='d-flex align-items-center'])[1]");
+        WebElement totalAmountCell = wait.until(ExpectedConditions.visibilityOfElementLocated(totalAmountCellLocator));
+        scrollToElement(totalAmountCell);
+        
+        String displayedAmountText = totalAmountCell.getText().replaceAll("[^0-9.]", "").trim();
+        double displayedTotalAmount = displayedAmountText.isEmpty() ? 0.0 : Double.parseDouble(displayedAmountText);
+        
+        expectedTotalAmount = (double) displayedTotalQty * makingCostValue; 
+        
+        if (Math.abs(displayedTotalAmount - expectedTotalAmount) < 0.01) {
+            System.out.println(GREEN + "✅ Total Amount Verified Successfully! Displayed Amount: " + displayedTotalAmount + " matches expected (" + displayedTotalQty + " * " + makingCostValue + " = " + expectedTotalAmount + ")" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Amount Mismatch! Displayed Total Amount (" + displayedTotalAmount + ") does not match expected (" + expectedTotalAmount + ")" + RESET);
+        }
+
+        By summaryLocator = By.xpath("(//p[@class='d-flex justify-content-start align-items-center m-0'])[2]");
+        WebElement summaryElement = wait.until(ExpectedConditions.visibilityOfElementLocated(summaryLocator));
+        scrollToElement(summaryElement);
+        
+        String summaryText = summaryElement.getText().replaceAll("[^0-9.]", "").trim();
+        double displayedSummaryAmount = summaryText.isEmpty() ? 0.0 : Double.parseDouble(summaryText);
+        
+        if (Math.abs(displayedSummaryAmount - expectedTotalAmount) < 0.01) {
+            System.out.println(GREEN + "✅ Summary Total Amount Verified Successfully! Summary Amount: " + displayedSummaryAmount + " matches expected (" + expectedTotalAmount + ")" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Summary Amount Mismatch! Summary Amount (" + displayedSummaryAmount + ") does not match expected (" + expectedTotalAmount + ")" + RESET);
+        }
+    }
+    
+    public void addNotesDescriptionAndSave() {
+        String GREEN = "\u001B[32m";
+        String CYAN = "\u001B[36m";
+        String RESET = "\u001B[0m";
+
+        savedNoteText = "Automated Note - " + java.util.UUID.randomUUID().toString().substring(0, 8);
+        savedDescText = "Automated Description - " + java.util.UUID.randomUUID().toString().substring(0, 8);
+
+        waitFor(addNotesInput);
+        scrollToElement(addNotesInput);
+        addNotesInput.clear(); 
+        sleep(1);
+        addNotesInput.sendKeys(savedNoteText);
+        sleep(1);
+        System.out.println(GREEN + "Cleared and entered Notes successfully: " + CYAN + savedNoteText + RESET);
+
+        waitFor(addDescriptionInput);
+        scrollToElement(addDescriptionInput);
+        addDescriptionInput.clear(); 
+        sleep(1);
+        addDescriptionInput.sendKeys(savedDescText);
+        sleep(1);
+        System.out.println(GREEN + "Cleared and entered Description successfully: " + CYAN + savedDescText + RESET);
+
+        waitFor(saveBtn);
+        scrollToElement(saveBtn);
+        click(saveBtn);
+        sleep(10);
+        System.out.println(GREEN + "Clicked Save Button successfully." + RESET);
+    }   
+    
+    public void verifyManufactureOrderOnForExistingProductListingPage() {
+        String GREEN = "\u001B[32m";
+        String CYAN = "\u001B[36m";
+        String YELLOW = "\u001B[33m";
+        String RESET = "\u001B[0m";
+
+        System.out.println(CYAN + "=== Starting Verification on Manufacture Order Listing Page ===" + RESET);
+
+        By vendorCellLocator = By.xpath("(//td)[4]");
+        WebElement vendorCell = wait.until(ExpectedConditions.visibilityOfElementLocated(vendorCellLocator));
+        scrollToElement(vendorCell);
+        String displayedVendor = vendorCell.getText().trim();
+        
+        String displayedVendorBase = displayedVendor.split("\\s+")[0];
+        String expectedVendorBase = selectedVendorText.isEmpty() ? "" : selectedVendorText.split("\\s+")[0];
+        
+        if (!expectedVendorBase.isEmpty() && displayedVendorBase.equalsIgnoreCase(expectedVendorBase)) {
+            System.out.println(GREEN + "✅ Vendor Verified Successfully on Listing! Displayed base: '" + displayedVendorBase + "' matches expected base: '" + expectedVendorBase + "' (Full displayed: '" + displayedVendor + "')" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Vendor Mismatch on Listing! Displayed base: '" + displayedVendorBase + "', Expected base: '" + expectedVendorBase + "'" + RESET);
+        }
+
+        By totalQtyCellLocator = By.xpath("(//td)[5]");
+        WebElement totalQtyCell = wait.until(ExpectedConditions.visibilityOfElementLocated(totalQtyCellLocator));
+        scrollToElement(totalQtyCell);
+        String displayedQtyText = totalQtyCell.getText().replaceAll("[^0-9]", "").trim();
+        int displayedQty = displayedQtyText.isEmpty() ? 0 : Integer.parseInt(displayedQtyText);
+        
+        if (displayedQty == totalEnteredQuantity) {
+            System.out.println(GREEN + "✅ Total Quantities Verified Successfully on Listing! Displayed: " + displayedQty + " matches expected: " + totalEnteredQuantity + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Total Quantities Mismatch on Listing! Displayed: " + displayedQty + ", Expected: " + totalEnteredQuantity + RESET);
+        }
+
+        By totalAmountCellLocator = By.xpath("(//td)[6]");
+        WebElement totalAmountCell = wait.until(ExpectedConditions.visibilityOfElementLocated(totalAmountCellLocator));
+        scrollToElement(totalAmountCell);
+        String displayedAmountText = totalAmountCell.getText().replaceAll("[^0-9.]", "").trim();
+        double displayedAmount = displayedAmountText.isEmpty() ? 0.0 : Double.parseDouble(displayedAmountText);
+        
+        double expectedAmount = (double) totalEnteredQuantity * makingCostValue;
+        if (Math.abs(displayedAmount - expectedAmount) < 0.01) {
+            System.out.println(GREEN + "✅ Total Amount Verified Successfully on Listing! Displayed: " + displayedAmount + " matches expected: " + expectedAmount + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Total Amount Mismatch on Listing! Displayed: " + displayedAmount + ", Expected: " + expectedAmount + RESET);
+        }
+
+        By statusCellLocator = By.xpath("(//td)[7]");
+        WebElement statusCell = wait.until(ExpectedConditions.visibilityOfElementLocated(statusCellLocator));
+        scrollToElement(statusCell);
+        String displayedStatus = statusCell.getText().trim();
+        
+        if (displayedStatus.equalsIgnoreCase("Open")) {
+            System.out.println(GREEN + "✅ Status Verified Successfully on Listing! Displayed: '" + displayedStatus + "' matches expected: 'Open'" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Status Mismatch on Listing! Displayed: '" + displayedStatus + "', Expected: 'Open'" + RESET);
+        }
+
+        By createdAtCellLocator = By.xpath("(//td)[8]");
+        WebElement createdAtCell = wait.until(ExpectedConditions.visibilityOfElementLocated(createdAtCellLocator));
+        scrollToElement(createdAtCell);
+        String displayedDate = createdAtCell.getText().trim();
+        
+        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        String expectedDate = today.format(formatter);
+        
+        if (displayedDate.contains(expectedDate)) {
+            System.out.println(GREEN + "✅ Created At Date Verified Successfully on Listing! Displayed: '" + displayedDate + "' matches today's date: '" + expectedDate + "'" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Date Mismatch on Listing! Displayed: '" + displayedDate + "', Expected today's date: '" + expectedDate + "'" + RESET);
+        }
+    }
+    
+    public void verifyManufactureOrderOnPreviewPage() {
+        String GREEN = "\u001B[32m";
+        String CYAN = "\u001B[36m";
+        String YELLOW = "\u001B[33m";
+        String RESET = "\u001B[0m";
+
+        System.out.println(CYAN + "=== Starting Navigation to Preview Page ===" + RESET);
+
+        waitFor(threeDotBtn);
+        scrollToElement(threeDotBtn);
+        click(threeDotBtn);
+        sleep(1);
+
+        waitFor(previewbtn);
+        scrollToElement(previewbtn);
+        click(previewbtn);
+        sleep(2); 
+        System.out.println(GREEN + "Successfully opened Preview Page/Modal." + RESET);
+
+        System.out.println(CYAN + "=== Verifying Details on Preview Page ===" + RESET);
+
+        By createdAtLocator = By.xpath("(//p[@class='card_coupon_code modal_para_dark'])[3]");
+        WebElement createdAtElem = wait.until(ExpectedConditions.visibilityOfElementLocated(createdAtLocator));
+        scrollToElement(createdAtElem);
+        String displayedCreatedAt = createdAtElem.getText().trim();
+        
+        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        String expectedDate = today.format(formatter);
+        
+        if (displayedCreatedAt.contains(expectedDate)) {
+            System.out.println(GREEN + "✅ Preview Created At Verified: '" + displayedCreatedAt + "' matches today's date: '" + expectedDate + "'" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Preview Created At Mismatch: '" + displayedCreatedAt + "', Expected: '" + expectedDate + "'" + RESET);
+        }
+
+        By deliveryDateLocator = By.xpath("(//p[@class='card_coupon_code modal_para_dark'])[4]");
+        WebElement deliveryDateElem = wait.until(ExpectedConditions.visibilityOfElementLocated(deliveryDateLocator));
+        scrollToElement(deliveryDateElem);
+        String displayedDeliveryDate = deliveryDateElem.getText().trim();
+        
+        if (displayedDeliveryDate.contains(selectedDateText)) {
+            System.out.println(GREEN + "✅ Preview Delivery Date Verified: '" + displayedDeliveryDate + "' matches expected: '" + selectedDateText + "'" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Preview Delivery Date Mismatch: '" + displayedDeliveryDate + "', Expected: '" + selectedDateText + "'" + RESET);
+        }
+
+        By addressLocator = By.xpath("(//p[@class='card_coupon_code modal_para_dark m-0'])[1]");
+        WebElement addressElem = wait.until(ExpectedConditions.visibilityOfElementLocated(addressLocator));
+        scrollToElement(addressElem);
+        String displayedAddress = addressElem.getText().trim();
+        
+        String expectedAddressBase = selectedAddressText.isEmpty() ? "" : selectedAddressText.split("\\s+")[0];
+        if (displayedAddress.contains(expectedAddressBase)) {
+            System.out.println(GREEN + "✅ Preview Delivery Address Verified: '" + displayedAddress + "' contains expected base: '" + expectedAddressBase + "'" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Preview Delivery Address Mismatch: '" + displayedAddress + "', Expected to contain: '" + expectedAddressBase + "'" + RESET);
+        }
+
+        By productCellLocator = By.xpath("(//td)[1]");
+        WebElement productCell = wait.until(ExpectedConditions.visibilityOfElementLocated(productCellLocator));
+        String displayedProduct = productCell.getText().trim();
+        if (displayedProduct.contains(selectedProductText)) {
+            System.out.println(GREEN + "✅ Preview Product Verified: '" + displayedProduct + "' matches expected: '" + selectedProductText + "'" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Preview Product Mismatch: '" + displayedProduct + "', Expected: '" + selectedProductText + "'" + RESET);
+        }
+
+        By qtyCellLocator = By.xpath("(//td)[2]");
+        WebElement qtyCell = wait.until(ExpectedConditions.visibilityOfElementLocated(qtyCellLocator));
+        int displayedPreviewQty = Integer.parseInt(qtyCell.getText().replaceAll("[^0-9]", "").trim());
+        if (displayedPreviewQty == totalEnteredQuantity) {
+            System.out.println(GREEN + "✅ Preview Total Quantity Verified: " + displayedPreviewQty + " matches expected: " + totalEnteredQuantity + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Preview Total Quantity Mismatch: " + displayedPreviewQty + ", Expected: " + totalEnteredQuantity + RESET);
+        }
+
+        By costCellLocator = By.xpath("(//td)[3]");
+        WebElement costCell = wait.until(ExpectedConditions.visibilityOfElementLocated(costCellLocator));
+        double displayedMakingCost = Double.parseDouble(costCell.getText().replaceAll("[^0-9.]", "").trim());
+        if (Math.abs(displayedMakingCost - makingCostValue) < 0.01) {
+            System.out.println(GREEN + "✅ Preview Making Cost Verified: " + displayedMakingCost + " matches expected: " + makingCostValue + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Preview Making Cost Mismatch: " + displayedMakingCost + ", Expected: " + makingCostValue + RESET);
+        }
+
+        By amountCellLocator = By.xpath("(//td)[4]");
+        WebElement amountCell = wait.until(ExpectedConditions.visibilityOfElementLocated(amountCellLocator));
+        double displayedTotalAmount = Double.parseDouble(amountCell.getText().replaceAll("[^0-9.]", "").trim());
+        double expectedAmount = (double) totalEnteredQuantity * makingCostValue;
+        if (Math.abs(displayedTotalAmount - expectedAmount) < 0.01) {
+            System.out.println(GREEN + "✅ Preview Total Amount Verified: " + displayedTotalAmount + " matches expected: " + expectedAmount + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Preview Total Amount Mismatch: " + displayedTotalAmount + ", Expected: " + expectedAmount + RESET);
+        }
+
+        By sizeWrapperPreviewLocator = By.xpath("(//div[@class='w-100 size_wrapper'])[1]");
+        WebElement sizeWrapperPreview = wait.until(ExpectedConditions.visibilityOfElementLocated(sizeWrapperPreviewLocator));
+        String sizeWrapperText = sizeWrapperPreview.getText().trim();
+        
+        System.out.println(CYAN + "Sizes displayed in Preview Wrapper: " + sizeWrapperText + RESET);
+        boolean allSizesPresent = true;
+        for (String size : availableSizesText) {
+            String cleanSize = size.trim();
+            if (cleanSize.contains("-") || cleanSize.contains("–") || cleanSize.contains("—") || cleanSize.contains(":")) {
+                cleanSize = cleanSize.split("[-–—:]")[1].trim();
+            } else {
+                cleanSize = cleanSize.replaceAll("(?i)^size", "").trim();
+            }
+            if (!sizeWrapperText.contains(cleanSize)) {
+                allSizesPresent = false;
+                System.out.println(YELLOW + "⚠️ Size '" + cleanSize + "' was not found in the preview size wrapper!" + RESET);
+            }
+        }
+        if (allSizesPresent) {
+            System.out.println(GREEN + "✅ All captured sizes successfully verified inside the preview size wrapper!" + RESET);
+        }
+
+        By notesLocator = By.xpath("(//p[@class='info_dd mb-0'])[1]");
+        WebElement notesElem = wait.until(ExpectedConditions.visibilityOfElementLocated(notesLocator));
+        String displayedNotes = notesElem.getText().trim();
+        if (displayedNotes.contains(savedNoteText)) {
+            System.out.println(GREEN + "✅ Preview Notes Verified Successfully: '" + displayedNotes + "'" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Preview Notes Mismatch! Displayed: '" + displayedNotes + "', Expected to contain: '" + savedNoteText + "'" + RESET);
+        }
+
+        By descLocator = By.xpath("(//p[@class='info_dd mb-0'])[2]");
+        WebElement descElem = wait.until(ExpectedConditions.visibilityOfElementLocated(descLocator));
+        String displayedDesc = descElem.getText().trim();
+        if (displayedDesc.contains(savedDescText)) {
+            System.out.println(GREEN + "✅ Preview Description Verified Successfully: '" + displayedDesc + "'" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Preview Description Mismatch! Displayed: '" + displayedDesc + "', Expected to contain: '" + savedDescText + "'" + RESET);
+        }
     }
     
     
+    //TC-MO-10
+    public void clickEditForExistingProductManufactureOrder() {
+        By threeDotLocator = By.xpath("(//i[@class='bi bi-three-dots-vertical'])[1]");
+        WebElement threeDotBtn = wait.until(ExpectedConditions.elementToBeClickable(threeDotLocator));
+        scrollToElement(threeDotBtn);
+        try {
+            threeDotBtn.click();
+        } catch (Exception ex) {
+            ((org.openqa.selenium.JavascriptExecutor) driver).executeScript("arguments[0].click();", threeDotBtn);
+        }
+        sleep(1);
+
+        WebElement editButton = wait.until(ExpectedConditions.elementToBeClickable(editBtn));
+        scrollToElement(editButton);
+        editButton.click();
+        sleep(2);
+        System.out.println("Navigated to Edit Manufacture Order page successfully.");
+    }
     
+    public void verifyTotalsAndEnterMakingCostForEdit() {
+        String GREEN = "\u001B[32m";
+        String CYAN = "\u001B[36m";
+        String YELLOW = "\u001B[33m";
+        String RESET = "\u001B[0m";
+
+        int calculatedSum = 0;
+        if (availableSizesText != null && !availableSizesText.isEmpty()) {
+            for (String size : availableSizesText) {
+                String cleanSize = size.trim();
+                
+                if (cleanSize.contains("-") || cleanSize.contains("–") || cleanSize.contains("—") || cleanSize.contains(":")) {
+                    String[] parts = cleanSize.split("[-–—:]");
+                    cleanSize = parts[parts.length - 1].trim();
+                } else {
+                    cleanSize = cleanSize.replaceAll("(?i)^size", "").trim();
+                }
+
+                By quantityInputLocator = By.xpath("(//input[@aria-label='Quantity for size " + cleanSize + "'])[1]");
+                try {
+                    WebElement inputElem = driver.findElement(quantityInputLocator);
+                    String val = inputElem.getAttribute("value");
+                    if (val != null && !val.isEmpty()) {
+                        calculatedSum += Integer.parseInt(val.trim());
+                    }
+                } catch (Exception e) {
+                }
+            }
+        }
+        
+        totalEnteredQuantity = calculatedSum;
+
+        By totalQtyCellLocator = By.xpath("(//td[@class='total_qty_cell'])[1]");
+        WebElement totalQtyCell = wait.until(ExpectedConditions.visibilityOfElementLocated(totalQtyCellLocator));
+        scrollToElement(totalQtyCell);
+        
+        String displayedQtyText = totalQtyCell.getText().replaceAll("[^0-9]", "").trim();
+        int displayedTotalQty = displayedQtyText.isEmpty() ? 0 : Integer.parseInt(displayedQtyText);
+        
+        if (displayedTotalQty == totalEnteredQuantity) {
+            System.out.println(GREEN + "✅ Total Quantity Verified Successfully! Displayed: " + displayedTotalQty + " matches calculated sum: " + totalEnteredQuantity + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Mismatch! Displayed Total Qty (" + displayedTotalQty + ") does not match calculated sum (" + totalEnteredQuantity + ")" + RESET);
+        }
+
+        Random random = new Random();
+        makingCostValue = random.nextInt(101) + 100; 
+        
+        By makingCostInputLocator = By.xpath("(//input[@type='number'])[1]");
+        WebElement makingCostInput = wait.until(ExpectedConditions.elementToBeClickable(makingCostInputLocator));
+        scrollToElement(makingCostInput);
+        
+        makingCostInput.clear();
+        makingCostInput.sendKeys(String.valueOf(makingCostValue));
+        System.out.println(CYAN + "Entered Making Cost (Edit): " + makingCostValue + RESET);
+        sleep(1); 
+
+        By totalAmountCellLocator = By.xpath("(//td[@class='d-flex align-items-center'])[1]");
+        WebElement totalAmountCell = wait.until(ExpectedConditions.visibilityOfElementLocated(totalAmountCellLocator));
+        scrollToElement(totalAmountCell);
+        
+        String displayedAmountText = totalAmountCell.getText().replaceAll("[^0-9.]", "").trim();
+        double displayedTotalAmount = displayedAmountText.isEmpty() ? 0.0 : Double.parseDouble(displayedAmountText);
+        
+        expectedTotalAmount = (double) displayedTotalQty * makingCostValue; 
+        
+        if (Math.abs(displayedTotalAmount - expectedTotalAmount) < 0.01) {
+            System.out.println(GREEN + "✅ Total Amount Verified Successfully! Displayed Amount: " + displayedTotalAmount + " matches expected (" + displayedTotalQty + " * " + makingCostValue + " = " + expectedTotalAmount + ")" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Amount Mismatch! Displayed Total Amount (" + displayedTotalAmount + ") does not match expected (" + expectedTotalAmount + ")" + RESET);
+        }
+
+        By summaryLocator = By.xpath("(//p[@class='d-flex justify-content-start align-items-center m-0'])[2]");
+        WebElement summaryElement = wait.until(ExpectedConditions.visibilityOfElementLocated(summaryLocator));
+        scrollToElement(summaryElement);
+        
+        String summaryText = summaryElement.getText().replaceAll("[^0-9.]", "").trim();
+        double displayedSummaryAmount = summaryText.isEmpty() ? 0.0 : Double.parseDouble(summaryText);
+        
+        if (Math.abs(displayedSummaryAmount - expectedTotalAmount) < 0.01) {
+            System.out.println(GREEN + "✅ Summary Total Amount Verified Successfully! Summary Amount: " + displayedSummaryAmount + " matches expected (" + expectedTotalAmount + ")" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Summary Amount Mismatch! Summary Amount (" + displayedSummaryAmount + ") does not match expected (" + expectedTotalAmount + ")" + RESET);
+        }
+    }
     
+    //TC-MO-11
+    public void verifyDraftManufactureOrderForExistingProductOnListingPage() {
+        System.out.println("\n=============================================================");
+        System.out.println("      DRAFT MANUFACTURE ORDER LISTING VERIFICATION           ");
+        System.out.println("=============================================================");
+
+        String RESET = "\u001B[0m";
+        String GREEN = "\u001B[32m";
+        String RED = "\u001B[31m";
+
+        String expectedVendor = (selectedVendorText != null) ? selectedVendorText.trim() : "";
+        String expectedStatus = "Draft";
+
+        By moIdCellLocator = By.xpath("(//td)[2]");
+        By vendorCellLocator = By.xpath("(//td)[4]");
+        By statusCellLocator = By.xpath("(//td)[7]");
+
+        WebElement moIdCell = wait.until(ExpectedConditions.visibilityOfElementLocated(moIdCellLocator));
+        String actualMoId = moIdCell.getText().trim();
+        String actualVendor = driver.findElement(vendorCellLocator).getText().trim();
+        String actualStatus = driver.findElement(statusCellLocator).getText().trim();
+
+        boolean allPassed = true;
+
+        boolean moIdMatch = !actualMoId.isEmpty();
+        printComparison("MO ID", "Valid ID", actualMoId, moIdMatch, GREEN, RED, RESET);
+        if (!moIdMatch) allPassed = false;
+
+        boolean vendorMatch = actualVendor.contains(expectedVendor) || expectedVendor.contains(actualVendor);
+        printComparison("Vendor Name", expectedVendor, actualVendor, vendorMatch, GREEN, RED, RESET);
+        if (!vendorMatch) allPassed = false;
+
+        boolean statusMatch = actualStatus.equalsIgnoreCase(expectedStatus);
+        printComparison("Status", expectedStatus, actualStatus, statusMatch, GREEN, RED, RESET);
+        if (!statusMatch) allPassed = false;
+
+        if (!allPassed) {
+            throw new AssertionError("Draft Manufacture Order listing verification failed.");
+        }
+        System.out.println(GREEN + "✅ DRAFT LISTING PAGE DETAILS MATCHED SUCCESSFULLY!" + RESET + "\n");
+    }
+     
+    //TC-MO-12
+    public void verifyCancelItemsOptionIsDisplayedForExistingProduct() {
+        String RESET = "\u001B[0m";
+        String GREEN = "\u001B[32m";
+        String RED = "\u001B[31m";
+
+        System.out.println("\n=============================================================");
+        System.out.println("          VERIFY CANCEL ITEMS OPTION ON PREVIEW PAGE         ");
+        System.out.println("=============================================================");
+        click(threeDotBtn);
+        sleep(1);
+
+        click(previewbtn);
+        sleep(2);
+
+        WebElement initialStatus = wait.until(ExpectedConditions.visibilityOfElementLocated(
+            By.xpath("(//span[@class='status-chip active'])[1]")
+        ));
+        System.out.println("Preview Page Initial Status: " + initialStatus.getText().trim());
+
+        WebElement prevThreeDot = wait.until(ExpectedConditions.elementToBeClickable(
+            By.xpath("(//div[@class='material_action_dropdown js-tag-toggle'])[1]")
+        ));
+        scrollToElement(prevThreeDot);
+        prevThreeDot.click();
+        sleep(1);
+
+        WebElement cancelOpt = wait.until(ExpectedConditions.visibilityOfElementLocated(
+            By.xpath("(//li[normalize-space()='Cancel Items'])[1]")
+        ));
+        scrollToElement(cancelOpt);
+        if (!cancelOpt.isDisplayed()) {
+            System.out.println(RED + "❌ 'Cancel Items' option is NOT displayed!" + RESET);
+            throw new AssertionError("'Cancel Items' option is not displayed on the preview page!");
+        }
+        System.out.println(GREEN + "✅ 'Cancel Items' option is successfully displayed." + RESET);
+        System.out.println("=============================================================\n");
+    }   
     
+    public void verifyManufactureOrderStatusIsCancelledForExistingProduct() {
+        String RESET = "\u001B[0m";
+        String GREEN = "\u001B[32m";
+        String RED = "\u001B[31m";
+        
+        System.out.println("\n=============================================================");
+        System.out.println("       VERIFYING CANCELLED STATUS ACROSS PAGES               ");
+        System.out.println("=============================================================");
+
+        WebElement cancelledStatusPreview = wait.until(ExpectedConditions.visibilityOfElementLocated(
+            By.xpath("(//span[@class='status-chip inactive'])[1]")
+        ));
+        scrollToElement(cancelledStatusPreview);
+        String previewStatusText = cancelledStatusPreview.getText().trim();
+        System.out.println("Preview Page Status: " + previewStatusText);
+
+        click(backBtn);
+        sleep(2);
+
+        waitFor(listingPageStatusLocator);
+        scrollToElement(listingPageStatusLocator);
+        String listingStatusText = listingPageStatusLocator.getText().trim();
+        System.out.println("Listing Page Status: " + listingStatusText);
+
+        if (!listingStatusText.equalsIgnoreCase("Cancelled")) {
+            System.out.println(RED + "❌ Status verification FAILED! Expected 'Cancelled', found: " + listingStatusText + RESET);
+            throw new AssertionError("Expected listing page status to be 'Cancelled', but found: " + listingStatusText);
+        }
+        
+        System.out.println(GREEN + "✅ Manufacture Order status successfully verified as 'Cancelled' across Preview and Listing pages!" + RESET);
+        System.out.println("=============================================================\n");
+    }
     
-    //TC-01
+    //TC-MO-13
+    public void convertAndVerifyExistingManufactureOrderAsIssued() {
+        System.out.println("\n=============================================================");
+        System.out.println("      CONVERT MANUFACTURE ORDER TO ISSUED & VERIFY           ");
+        System.out.println("=============================================================");
+
+        String RESET = "\u001B[0m";
+        String GREEN = "\u001B[32m";
+        String RED = "\u001B[31m";
+        String expectedStatus = "Issued";
+
+        try {
+            WebElement issuedBtn = wait.until(ExpectedConditions.elementToBeClickable(markAsIssuedBtn));
+            issuedBtn.click();
+            sleep(1);
+
+            WebElement confirmIssuedBtn = wait.until(ExpectedConditions.elementToBeClickable(confirmMarkAsIssuedBtn));
+            confirmIssuedBtn.click();
+            sleep(2);
+
+            System.out.println("Waiting for details page status to update to 'Issued'...");
+            
+            WebElement detailsStatus = wait.until(ExpectedConditions.visibilityOf(detailsPageStatusLocator));
+            String actualDetailsStatus = detailsStatus.getText().trim();
+            boolean detailsStatusMatch = actualDetailsStatus.equalsIgnoreCase(expectedStatus);
+            printComparison("Details Page Status", expectedStatus, actualDetailsStatus, detailsStatusMatch, GREEN, RED, RESET);
+            if (!detailsStatusMatch) {
+                throw new AssertionError("Details page status did not reflect 'Issued'! Current text found: " + actualDetailsStatus);
+            }
+
+            WebElement backButton = wait.until(ExpectedConditions.elementToBeClickable(backBtn));
+            backButton.click();
+            sleep(2);
+            
+            WebElement listingStatus = wait.until(ExpectedConditions.visibilityOf(listingPageStatusLocator));
+            String actualListingStatus = listingStatus.getText().trim();
+            boolean listingStatusMatch = actualListingStatus.equalsIgnoreCase(expectedStatus);
+            printComparison("Listing Page Status", expectedStatus, actualListingStatus, listingStatusMatch, GREEN, RED, RESET);
+            if (!listingStatusMatch) {
+                throw new AssertionError("Listing page status did not reflect 'Issued'! Current text found: " + actualListingStatus);
+            }
+
+            System.out.println("=============================================================");
+            System.out.println(GREEN + "✅ ORDER SUCCESSFULLY CONVERTED TO ISSUED AND VERIFIED ON BOTH PAGES!" + RESET);
+            System.out.println("=============================================================\n");
+
+        } catch (Exception e) {
+            System.out.println(RED + "❌ Exception occurred during Mark as Issued workflow: " + e.getMessage() + RESET);
+            throw new RuntimeException(e);
+        }
+    }
+    
+    //TC-MO-14
+    public void verifyMandatoryFieldsValidationMessagesForExistingProduct() {
+        System.out.println("\n=============================================================");
+        System.out.println("  MANDATORY FIELDS VALIDATION (EXISTING PRODUCT) CHECK       ");
+        System.out.println("=============================================================");
+
+        String RESET = "\u001B[0m";
+        String GREEN = "\u001B[32m";
+        String RED = "\u001B[31m";
+
+        try {
+            By itemDropdownLocator = By.xpath("(//div[@class='select-box d-flex justify-content-start align-items-center'])[1]");
+            WebElement itemDropdownElement = wait.until(ExpectedConditions.elementToBeClickable(itemDropdownLocator));
+            scrollToElement(itemDropdownElement);
+            itemDropdownElement.click();
+            sleep(1);
+            itemDropdownElement.click();
+        } catch (Exception ignored) {
+        }
+
+        waitFor(saveBtn);
+        scrollToElement(saveBtn);
+        click(saveBtn);
+        sleep(1);
+        System.out.println("Clicked Save button with empty fields to trigger validations.");
+
+        By vendorErrLocator = By.xpath("(//span[normalize-space()='Please select a vendor'])[1]");
+        By dateErrLocator = By.xpath("(//span[normalize-space()='Please select an expected delivery date'])[1]");
+        By addressErrLocator = By.xpath("(//span[normalize-space()='Please select a delivery address'])[1]");
+        By productItemErrLocator = By.xpath("(//span[normalize-space()='Please select a product item'])[1]");
+        By makingCostErrLocator = By.xpath("(//span[normalize-space()='Please enter a valid making cost'])[1]");
+
+        boolean allErrorsPassed = true;
+
+        try {
+            WebElement vendorErr = wait.until(ExpectedConditions.visibilityOfElementLocated(vendorErrLocator));
+            scrollToElement(vendorErr);
+            boolean isDisplayed = vendorErr.isDisplayed();
+            printComparison("Vendor Validation", "Displayed", vendorErr.getText().trim(), isDisplayed, GREEN, RED, RESET);
+            if (!isDisplayed) allErrorsPassed = false;
+        } catch (Exception e) {
+            printComparison("Vendor Validation", "Displayed", "Not Found", false, GREEN, RED, RESET);
+            allErrorsPassed = false;
+        }
+
+        try {
+            WebElement dateErr = wait.until(ExpectedConditions.visibilityOfElementLocated(dateErrLocator));
+            scrollToElement(dateErr);
+            boolean isDisplayed = dateErr.isDisplayed();
+            printComparison("Delivery Date Val", "Displayed", dateErr.getText().trim(), isDisplayed, GREEN, RED, RESET);
+            if (!isDisplayed) allErrorsPassed = false;
+        } catch (Exception e) {
+            printComparison("Delivery Date Val", "Displayed", "Not Found", false, GREEN, RED, RESET);
+            allErrorsPassed = false;
+        }
+
+        try {
+            WebElement addressErr = wait.until(ExpectedConditions.visibilityOfElementLocated(addressErrLocator));
+            scrollToElement(addressErr);
+            boolean isDisplayed = addressErr.isDisplayed();
+            printComparison("Address Val", "Displayed", addressErr.getText().trim(), isDisplayed, GREEN, RED, RESET);
+            if (!isDisplayed) allErrorsPassed = false;
+        } catch (Exception e) {
+            printComparison("Address Val", "Displayed", "Not Found", false, GREEN, RED, RESET);
+            allErrorsPassed = false;
+        }
+
+        try {
+            WebElement prodItemErr = wait.until(ExpectedConditions.visibilityOfElementLocated(productItemErrLocator));
+            scrollToElement(prodItemErr);
+            boolean isDisplayed = prodItemErr.isDisplayed();
+            printComparison("Product Item Val", "Displayed", prodItemErr.getText().trim(), isDisplayed, GREEN, RED, RESET);
+            if (!isDisplayed) allErrorsPassed = false;
+        } catch (Exception e) {
+            printComparison("Product Item Val", "Displayed", "Not Found", false, GREEN, RED, RESET);
+            allErrorsPassed = false;
+        }
+
+        try {
+            WebElement makingCostErr = wait.until(ExpectedConditions.visibilityOfElementLocated(makingCostErrLocator));
+            scrollToElement(makingCostErr);
+            boolean isDisplayed = makingCostErr.isDisplayed();
+            printComparison("Making Cost Val", "Displayed", makingCostErr.getText().trim(), isDisplayed, GREEN, RED, RESET);
+            if (!isDisplayed) allErrorsPassed = false;
+        } catch (Exception e) {
+            printComparison("Making Cost Val", "Displayed", "Not Found", false, GREEN, RED, RESET);
+            allErrorsPassed = false;
+        }
+
+        System.out.println("=============================================================");
+        if (allErrorsPassed) {
+            System.out.println(GREEN + "✅ ALL EXISTING PRODUCT VALIDATION MESSAGES VERIFIED SUCCESSFULLY!" + RESET);
+        } else {
+            System.out.println(RED + "❌ SOME EXISTING PRODUCT VALIDATION MESSAGES FAILED OR WERE MISSING!" + RESET);
+            throw new AssertionError("Existing product mandatory fields validation message check failed.");
+        }
+        System.out.println("=============================================================\n");
+    }
+     
+    //TC-MO-15
+    public static List<String> availableSizesTextItem2 = new ArrayList<>();
+    public static String selectedProductTextItem2 = "";
+    public static List<String> availableProductsTextItem2 = new ArrayList<>();
+    public static int totalEnteredQuantityItem2 = 0;
+    public static int makingCostValueItem2 = 0;
+    public static double expectedTotalAmountItem2 = 0.0;
+
+    public void selectSecondProductAndCaptureSizes() {
+        String CYAN = "\u001B[36m";
+        String GREEN = "\u001B[32m";
+        String RESET = "\u001B[0m";
+        
+        waitFor(addItemBtn);
+        scrollToElement(addItemBtn);
+        click(addItemBtn);
+        sleep(2); 
+        System.out.println(GREEN + "Clicked 'Add Item' button successfully." + RESET);
+
+        By itemDropdownLocator2 = By.xpath("(//div[@class='select-box d-flex justify-content-start align-items-center'])[2]");
+        WebElement itemDropdownElement2 = wait.until(ExpectedConditions.elementToBeClickable(itemDropdownLocator2));
+        scrollToElement(itemDropdownElement2);
+        
+        try {
+            itemDropdownElement2.click();
+        } catch (Exception ex) {
+            ((org.openqa.selenium.JavascriptExecutor) driver).executeScript("arguments[0].click();", itemDropdownElement2);
+        }
+        sleep(1);
+        
+        By optionsBoxLocator2 = By.xpath("(//div[@class='options_box'])[4]");
+        wait.until(ExpectedConditions.visibilityOfElementLocated(optionsBoxLocator2));
+
+        By productOptionLocator2 = By.xpath("(//div[@class='options_box'])[4]//div[@class='option']");
+        List<WebElement> productOptions2 = driver.findElements(productOptionLocator2);
+        
+        availableProductsTextItem2.clear();
+        for (WebElement option : productOptions2) {
+            availableProductsTextItem2.add(option.getText().trim());
+        }
+        System.out.println(CYAN + "Available Products List (Item 2): " + availableProductsTextItem2 + RESET);
+        
+        if (!productOptions2.isEmpty()) {
+            Random random = new Random();
+            int index = random.nextInt(productOptions2.size());
+            int itemNumber = index + 1;
+            
+            By specificProduct2 = By.xpath("((//div[@class='options_box'])[4]//div[@class='option'])[" + itemNumber + "]");
+            WebElement chosenProduct2 = wait.until(ExpectedConditions.elementToBeClickable(specificProduct2));
+            
+            selectedProductTextItem2 = chosenProduct2.getText().trim();
+            scrollToElement(chosenProduct2);
+            chosenProduct2.click();
+            sleep(1);
+            System.out.println(GREEN + "Selected Product (Item 2): " + selectedProductTextItem2 + RESET);
+        } else {
+            throw new RuntimeException("No product options available in options box [4]!");
+        }
+        
+        By sizeWrapperLocator2 = By.xpath("(//div[@class='w-100 size_wrapper'])[2]");
+        wait.until(ExpectedConditions.visibilityOfElementLocated(sizeWrapperLocator2));
+        WebElement sizeWrapper2 = driver.findElement(sizeWrapperLocator2);
+        
+        List<WebElement> sizeElements2 = sizeWrapper2.findElements(By.xpath(".//span | .//button | .//div[contains(@class, 'size')]"));
+        if (sizeElements2.isEmpty()) {
+            sizeElements2 = sizeWrapper2.findElements(By.xpath("./*")); 
+        }
+        
+        availableSizesTextItem2.clear();
+        for (WebElement sizeElem : sizeElements2) {
+            String sizeText = sizeElem.getText().trim();
+            if (!sizeText.isEmpty()) {
+                availableSizesTextItem2.add(sizeText);
+            }
+        }
+        
+        if (availableSizesTextItem2.isEmpty()) {
+            availableSizesTextItem2.add(sizeWrapper2.getText().trim());
+        }
+        
+        System.out.println(CYAN + "Captured Sizes from Size Wrapper (Item 2): " + availableSizesTextItem2 + RESET);
+    }
+
+    public void fillQuantitiesForSecondProduct() {
+        if (availableSizesTextItem2 == null || availableSizesTextItem2.isEmpty()) {
+            throw new RuntimeException("No available sizes captured for Item 2! Please select a product and capture sizes first.");
+        }
+
+        String GREEN = "\u001B[32m";
+        String YELLOW = "\u001B[33m";
+        String RESET = "\u001B[0m";
+
+        Random random = new Random();
+        int calculatedSum2 = 0;
+
+        for (String size : availableSizesTextItem2) {
+            String cleanSize = size.trim();
+            
+            if (cleanSize.contains("-") || cleanSize.contains("–") || cleanSize.contains("—") || cleanSize.contains(":")) {
+                String[] parts = cleanSize.split("[-–—:]");
+                cleanSize = parts[parts.length - 1].trim();
+            } else {
+                cleanSize = cleanSize.replaceAll("(?i)^size", "").trim();
+            }
+
+            String dynamicXpath2 = "(//input[@aria-label='Quantity for size " + cleanSize + "'])[2]";
+            By quantityInputLocator2 = By.xpath(dynamicXpath2);
+
+            try {
+                WebElement quantityInput2 = wait.until(ExpectedConditions.elementToBeClickable(quantityInputLocator2));
+                scrollToElement(quantityInput2);
+                
+                int randomQty2 = random.nextInt(10) + 1;
+                calculatedSum2 += randomQty2;
+                
+                quantityInput2.clear();
+                quantityInput2.sendKeys(String.valueOf(randomQty2));
+                
+                System.out.println(GREEN + "Filled quantity '" + randomQty2 + "' for size: " + cleanSize + " (Item 2)" + RESET);
+                
+            } catch (Exception e) {
+                System.out.println(YELLOW + "⚠️ Warning: Could not find or fill quantity input for size '" + cleanSize + "' (Item 2) with XPath: " + dynamicXpath2 + RESET);
+            }
+        }
+        
+        totalEnteredQuantityItem2 = calculatedSum2;
+        System.out.println("\u001B[36mTotal Expected Quantity Sum (Item 2): " + totalEnteredQuantityItem2 + RESET);
+    }
+    
+    public void verifyTotalsAndEnterMakingCostForSecondProduct() {
+        String GREEN = "\u001B[32m";
+        String CYAN = "\u001B[36m";
+        String YELLOW = "\u001B[33m";
+        String RESET = "\u001B[0m";
+
+        By totalQtyCellLocator2 = By.xpath("(//td[@class='total_qty_cell'])[2]");
+        WebElement totalQtyCell2 = wait.until(ExpectedConditions.visibilityOfElementLocated(totalQtyCellLocator2));
+        scrollToElement(totalQtyCell2);
+        
+        String displayedQtyText2 = totalQtyCell2.getText().replaceAll("[^0-9]", "").trim();
+        int displayedTotalQty2 = displayedQtyText2.isEmpty() ? 0 : Integer.parseInt(displayedQtyText2);
+        
+        if (displayedTotalQty2 == totalEnteredQuantityItem2) {
+            System.out.println(GREEN + "✅ Total Quantity Verified Successfully (Item 2)! Displayed: " + displayedTotalQty2 + " matches calculated sum: " + totalEnteredQuantityItem2 + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Mismatch (Item 2)! Displayed Total Qty (" + displayedTotalQty2 + ") does not match calculated sum (" + totalEnteredQuantityItem2 + ")" + RESET);
+        }
+
+        Random random = new Random();
+        makingCostValueItem2 = random.nextInt(101) + 100; 
+        
+        By makingCostInputLocator2 = By.xpath("(//input[@type='number'])[2]");
+        WebElement makingCostInput2 = wait.until(ExpectedConditions.elementToBeClickable(makingCostInputLocator2));
+        scrollToElement(makingCostInput2);
+        
+        makingCostInput2.clear();
+        makingCostInput2.sendKeys(String.valueOf(makingCostValueItem2));
+        System.out.println(CYAN + "Entered Making Cost (Item 2): " + makingCostValueItem2 + RESET);
+        sleep(1); 
+
+        By totalAmountCellLocator2 = By.xpath("(//td[@class='d-flex align-items-center'])[2]");
+        WebElement totalAmountCell2 = wait.until(ExpectedConditions.visibilityOfElementLocated(totalAmountCellLocator2));
+        scrollToElement(totalAmountCell2);
+        
+        String displayedAmountText2 = totalAmountCell2.getText().replaceAll("[^0-9.]", "").trim();
+        double displayedTotalAmount2 = displayedAmountText2.isEmpty() ? 0.0 : Double.parseDouble(displayedAmountText2);
+        
+        expectedTotalAmountItem2 = (double) displayedTotalQty2 * makingCostValueItem2;
+        
+        if (Math.abs(displayedTotalAmount2 - expectedTotalAmountItem2) < 0.01) {
+            System.out.println(GREEN + "✅ Total Amount Verified Successfully (Item 2)! Displayed Amount: " + displayedTotalAmount2 + " matches expected (" + displayedTotalQty2 + " * " + makingCostValueItem2 + " = " + expectedTotalAmountItem2 + ")" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Amount Mismatch (Item 2)! Displayed Total Amount (" + displayedTotalAmount2 + ") does not match expected (" + expectedTotalAmountItem2 + ")" + RESET);
+        }
+    }
+    
+    public void verifyGrandTotal() {
+        String GREEN = "\u001B[32m";
+        String CYAN = "\u001B[36m";
+        String YELLOW = "\u001B[33m";
+        String RESET = "\u001B[0m";
+
+        System.out.println(CYAN + "=== Verifying Grand Total for Multiple Products ===" + RESET);
+
+        double expectedGrandTotal = expectedTotalAmount + expectedTotalAmountItem2;
+        System.out.println(CYAN + "Expected Item 1 Total: " + expectedTotalAmount + RESET);
+        System.out.println(CYAN + "Expected Item 2 Total: " + expectedTotalAmountItem2 + RESET);
+        System.out.println(CYAN + "Calculated Expected Grand Total: " + expectedGrandTotal + RESET);
+
+        By summaryLocator = By.xpath("(//p[contains(@class, 'd-flex') and contains(@class, 'justify-content-start')])[last()]");
+        WebElement summaryElement = wait.until(ExpectedConditions.visibilityOfElementLocated(summaryLocator));
+        scrollToElement(summaryElement);
+        
+        String summaryText = summaryElement.getText().replaceAll("[^0-9.]", "").trim();
+        double displayedSummaryAmount = summaryText.isEmpty() ? 0.0 : Double.parseDouble(summaryText);
+
+        if (Math.abs(displayedSummaryAmount - expectedGrandTotal) < 0.01) {
+            System.out.println(GREEN + "✅ Grand Total Verified Successfully! Summary Amount: " + displayedSummaryAmount + " matches expected grand total (" + expectedGrandTotal + ")" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Grand Total Mismatch! Summary Amount (" + displayedSummaryAmount + ") does not match expected grand total (" + expectedGrandTotal + ")" + RESET);
+            throw new AssertionError("Grand total verification failed! Displayed: " + displayedSummaryAmount + ", Expected: " + expectedGrandTotal);
+        }
+    } 
+    
+    public void verifyManufactureOrderOnForMultipleProductsListingPage() {
+        String GREEN = "\u001B[32m";
+        String CYAN = "\u001B[36m";
+        String YELLOW = "\u001B[33m";
+        String RESET = "\u001B[0m";
+
+        System.out.println(CYAN + "=== Starting Verification on Manufacture Order Listing Page (Multiple Products) ===" + RESET);
+
+        By vendorCellLocator = By.xpath("(//td)[4]");
+        WebElement vendorCell = wait.until(ExpectedConditions.visibilityOfElementLocated(vendorCellLocator));
+        scrollToElement(vendorCell);
+        String displayedVendor = vendorCell.getText().trim();
+        
+        String displayedVendorBase = displayedVendor.split("\\s+")[0];
+        String expectedVendorBase = selectedVendorText.isEmpty() ? "" : selectedVendorText.split("\\s+")[0];
+        
+        if (!expectedVendorBase.isEmpty() && displayedVendorBase.equalsIgnoreCase(expectedVendorBase)) {
+            System.out.println(GREEN + "✅ Vendor Verified Successfully on Listing! Displayed base: '" + displayedVendorBase + "' matches expected base: '" + expectedVendorBase + "'" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Vendor Mismatch on Listing! Displayed base: '" + displayedVendorBase + "', Expected base: '" + expectedVendorBase + "'" + RESET);
+        }
+
+        int expectedCombinedQty = totalEnteredQuantity + totalEnteredQuantityItem2;
+
+        By totalQtyCellLocator = By.xpath("(//td)[5]");
+        WebElement totalQtyCell = wait.until(ExpectedConditions.visibilityOfElementLocated(totalQtyCellLocator));
+        scrollToElement(totalQtyCell);
+        String displayedQtyText = totalQtyCell.getText().replaceAll("[^0-9]", "").trim();
+        int displayedQty = displayedQtyText.isEmpty() ? 0 : Integer.parseInt(displayedQtyText);
+        
+        if (displayedQty == expectedCombinedQty) {
+            System.out.println(GREEN + "✅ Total Quantities Verified Successfully on Listing! Displayed: " + displayedQty + " matches expected combined quantity: " + expectedCombinedQty + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Total Quantities Mismatch on Listing! Displayed: " + displayedQty + ", Expected: " + expectedCombinedQty + RESET);
+        }
+
+        By totalAmountCellLocator = By.xpath("(//td)[6]");
+        WebElement totalAmountCell = wait.until(ExpectedConditions.visibilityOfElementLocated(totalAmountCellLocator));
+        scrollToElement(totalAmountCell);
+        String displayedAmountText = totalAmountCell.getText().replaceAll("[^0-9.]", "").trim();
+        double displayedAmount = displayedAmountText.isEmpty() ? 0.0 : Double.parseDouble(displayedAmountText);
+        
+        double expectedItem1Total = (double) totalEnteredQuantity * makingCostValue;
+        double expectedItem2Total = (double) totalEnteredQuantityItem2 * makingCostValueItem2;
+        double expectedGrandTotalAmount = expectedItem1Total + expectedItem2Total;
+
+        if (Math.abs(displayedAmount - expectedGrandTotalAmount) < 0.01) {
+            System.out.println(GREEN + "✅ Grand Total Amount Verified Successfully on Listing! Displayed: " + displayedAmount + " matches expected grand total: " + expectedGrandTotalAmount + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Grand Total Amount Mismatch on Listing! Displayed: " + displayedAmount + ", Expected: " + expectedGrandTotalAmount + RESET);
+        }
+
+        By statusCellLocator = By.xpath("(//td)[7]");
+        WebElement statusCell = wait.until(ExpectedConditions.visibilityOfElementLocated(statusCellLocator));
+        scrollToElement(statusCell);
+        String displayedStatus = statusCell.getText().trim();
+        
+        if (displayedStatus.equalsIgnoreCase("Open")) {
+            System.out.println(GREEN + "✅ Status Verified Successfully on Listing! Displayed: '" + displayedStatus + "' matches expected: 'Open'" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Status Mismatch on Listing! Displayed: '" + displayedStatus + "', Expected: 'Open'" + RESET);
+        }
+
+        By createdAtCellLocator = By.xpath("(//td)[8]");
+        WebElement createdAtCell = wait.until(ExpectedConditions.visibilityOfElementLocated(createdAtCellLocator));
+        scrollToElement(createdAtCell);
+        String displayedDate = createdAtCell.getText().trim();
+        
+        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        String expectedDate = today.format(formatter);
+        
+        if (displayedDate.contains(expectedDate)) {
+            System.out.println(GREEN + "✅ Created At Date Verified Successfully on Listing! Displayed: '" + displayedDate + "' matches today's date: '" + expectedDate + "'" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Date Mismatch on Listing! Displayed: '" + displayedDate + "', Expected today's date: '" + expectedDate + "'" + RESET);
+        }
+    }
+    
+    public void verifyManufactureOrderOnPreviewPageForMultipleProducts() {
+        String GREEN = "\u001B[32m";
+        String CYAN = "\u001B[36m";
+        String YELLOW = "\u001B[33m";
+        String RESET = "\u001B[0m";
+
+        System.out.println(CYAN + "=== Starting Navigation to Preview Page ===" + RESET);
+
+        waitFor(threeDotBtn);
+        scrollToElement(threeDotBtn);
+        click(threeDotBtn);
+        sleep(1);
+
+        waitFor(previewbtn);
+        scrollToElement(previewbtn);
+        click(previewbtn);
+        sleep(2); 
+        System.out.println(GREEN + "Successfully opened Preview Page/Modal." + RESET);
+
+        System.out.println(CYAN + "=== Verifying Header Details on Preview Page ===" + RESET);
+
+        By createdAtLocator = By.xpath("(//p[@class='card_coupon_code modal_para_dark'])[3]");
+        WebElement createdAtElem = wait.until(ExpectedConditions.visibilityOfElementLocated(createdAtLocator));
+        scrollToElement(createdAtElem);
+        String displayedCreatedAt = createdAtElem.getText().trim();
+        
+        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        String expectedDate = today.format(formatter);
+        
+        if (displayedCreatedAt.contains(expectedDate)) {
+            System.out.println(GREEN + "✅ Preview Created At Verified: '" + displayedCreatedAt + "' matches today's date: '" + expectedDate + "'" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Preview Created At Mismatch: '" + displayedCreatedAt + "', Expected: '" + expectedDate + "'" + RESET);
+        }
+
+        By deliveryDateLocator = By.xpath("(//p[@class='card_coupon_code modal_para_dark'])[4]");
+        WebElement deliveryDateElem = wait.until(ExpectedConditions.visibilityOfElementLocated(deliveryDateLocator));
+        scrollToElement(deliveryDateElem);
+        String displayedDeliveryDate = deliveryDateElem.getText().trim();
+        
+        if (displayedDeliveryDate.contains(selectedDateText)) {
+            System.out.println(GREEN + "✅ Preview Delivery Date Verified: '" + displayedDeliveryDate + "' matches expected: '" + selectedDateText + "'" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Preview Delivery Date Mismatch: '" + displayedDeliveryDate + "', Expected: '" + selectedDateText + "'" + RESET);
+        }
+
+        By addressLocator = By.xpath("(//p[@class='card_coupon_code modal_para_dark m-0'])[1]");
+        WebElement addressElem = wait.until(ExpectedConditions.visibilityOfElementLocated(addressLocator));
+        scrollToElement(addressElem);
+        String displayedAddress = addressElem.getText().trim();
+        
+        String expectedAddressBase = selectedAddressText.isEmpty() ? "" : selectedAddressText.split("\\s+")[0];
+        if (displayedAddress.contains(expectedAddressBase)) {
+            System.out.println(GREEN + "✅ Preview Delivery Address Verified: '" + displayedAddress + "' contains expected base: '" + expectedAddressBase + "'" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Preview Delivery Address Mismatch: '" + displayedAddress + "', Expected to contain: '" + expectedAddressBase + "'" + RESET);
+        }
+
+        System.out.println(CYAN + "=== Verifying Item 1 Details on Preview ===" + RESET);
+        
+        By productCellLocator = By.xpath("(//td)[1]");
+        WebElement productCell = wait.until(ExpectedConditions.visibilityOfElementLocated(productCellLocator));
+        String displayedProduct = productCell.getText().trim();
+        if (displayedProduct.contains(selectedProductText)) {
+            System.out.println(GREEN + "✅ Preview Product (Item 1) Verified: '" + displayedProduct + "'" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Preview Product Mismatch (Item 1): '" + displayedProduct + "', Expected: '" + selectedProductText + "'" + RESET);
+        }
+
+        By qtyCellLocator = By.xpath("(//td)[2]");
+        WebElement qtyCell = wait.until(ExpectedConditions.visibilityOfElementLocated(qtyCellLocator));
+        int displayedPreviewQty = Integer.parseInt(qtyCell.getText().replaceAll("[^0-9]", "").trim());
+        if (displayedPreviewQty == totalEnteredQuantity) {
+            System.out.println(GREEN + "✅ Preview Total Quantity (Item 1) Verified: " + displayedPreviewQty + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Preview Total Quantity Mismatch (Item 1): " + displayedPreviewQty + ", Expected: " + totalEnteredQuantity + RESET);
+        }
+
+        By costCellLocator = By.xpath("(//td)[3]");
+        WebElement costCell = wait.until(ExpectedConditions.visibilityOfElementLocated(costCellLocator));
+        double displayedMakingCost = Double.parseDouble(costCell.getText().replaceAll("[^0-9.]", "").trim());
+        if (Math.abs(displayedMakingCost - makingCostValue) < 0.01) {
+            System.out.println(GREEN + "✅ Preview Making Cost (Item 1) Verified: " + displayedMakingCost + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Preview Making Cost Mismatch (Item 1): " + displayedMakingCost + ", Expected: " + makingCostValue + RESET);
+        }
+
+        By amountCellLocator = By.xpath("(//td)[4]");
+        WebElement amountCell = wait.until(ExpectedConditions.visibilityOfElementLocated(amountCellLocator));
+        double displayedTotalAmount = Double.parseDouble(amountCell.getText().replaceAll("[^0-9.]", "").trim());
+        double expectedAmount = (double) totalEnteredQuantity * makingCostValue;
+        if (Math.abs(displayedTotalAmount - expectedAmount) < 0.01) {
+            System.out.println(GREEN + "✅ Preview Total Amount (Item 1) Verified: " + displayedTotalAmount + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Preview Total Amount Mismatch (Item 1): " + displayedTotalAmount + ", Expected: " + expectedAmount + RESET);
+        }
+
+        By sizeWrapperPreviewLocator = By.xpath("(//div[@class='w-100 size_wrapper'])[1]");
+        WebElement sizeWrapperPreview = wait.until(ExpectedConditions.visibilityOfElementLocated(sizeWrapperPreviewLocator));
+        String sizeWrapperText = sizeWrapperPreview.getText().trim();
+        boolean allSizesPresent1 = true;
+        for (String size : availableSizesText) {
+            String cleanSize = size.trim();
+            if (cleanSize.contains("-") || cleanSize.contains("–") || cleanSize.contains("—") || cleanSize.contains(":")) {
+                cleanSize = cleanSize.split("[-–—:]")[1].trim();
+            } else {
+                cleanSize = cleanSize.replaceAll("(?i)^size", "").trim();
+            }
+            if (!sizeWrapperText.contains(cleanSize)) {
+                allSizesPresent1 = false;
+                System.out.println(YELLOW + "⚠️ Size '" + cleanSize + "' not found in Item 1 preview wrapper!" + RESET);
+            }
+        }
+        if (allSizesPresent1) {
+            System.out.println(GREEN + "✅ All captured sizes verified inside Item 1 preview wrapper!" + RESET);
+        }
+
+        if (selectedProductTextItem2 != null && !selectedProductTextItem2.isEmpty()) {
+            System.out.println(CYAN + "=== Verifying Item 2 Details on Preview ===" + RESET);
+
+            By productCellLocator2 = By.xpath("(//td)[6]");
+            WebElement productCell2 = wait.until(ExpectedConditions.visibilityOfElementLocated(productCellLocator2));
+            String displayedProduct2 = productCell2.getText().trim();
+            if (displayedProduct2.contains(selectedProductTextItem2)) {
+                System.out.println(GREEN + "✅ Preview Product (Item 2) Verified: '" + displayedProduct2 + "'" + RESET);
+            } else {
+                System.out.println(YELLOW + "⚠️ Preview Product Mismatch (Item 2): '" + displayedProduct2 + "', Expected: '" + selectedProductTextItem2 + "'" + RESET);
+            }
+
+            By qtyCellLocator2 = By.xpath("(//td)[7]");
+            WebElement qtyCell2 = wait.until(ExpectedConditions.visibilityOfElementLocated(qtyCellLocator2));
+            int displayedPreviewQty2 = Integer.parseInt(qtyCell2.getText().replaceAll("[^0-9]", "").trim());
+            if (displayedPreviewQty2 == totalEnteredQuantityItem2) {
+                System.out.println(GREEN + "✅ Preview Total Quantity (Item 2) Verified: " + displayedPreviewQty2 + RESET);
+            } else {
+                System.out.println(YELLOW + "⚠️ Preview Total Quantity Mismatch (Item 2): " + displayedPreviewQty2 + ", Expected: " + totalEnteredQuantityItem2 + RESET);
+            }
+
+            By costCellLocator2 = By.xpath("(//td)[8]");
+            WebElement costCell2 = wait.until(ExpectedConditions.visibilityOfElementLocated(costCellLocator2));
+            double displayedMakingCost2 = Double.parseDouble(costCell2.getText().replaceAll("[^0-9.]", "").trim());
+            if (Math.abs(displayedMakingCost2 - makingCostValueItem2) < 0.01) {
+                System.out.println(GREEN + "✅ Preview Making Cost (Item 2) Verified: " + displayedMakingCost2 + RESET);
+            } else {
+                System.out.println(YELLOW + "⚠️ Preview Making Cost Mismatch (Item 2): " + displayedMakingCost2 + ", Expected: " + makingCostValueItem2 + RESET);
+            }
+
+            By amountCellLocator2 = By.xpath("(//td)[9]");
+            WebElement amountCell2 = wait.until(ExpectedConditions.visibilityOfElementLocated(amountCellLocator2));
+            double displayedTotalAmount2 = Double.parseDouble(amountCell2.getText().replaceAll("[^0-9.]", "").trim());
+            double expectedAmount2 = (double) totalEnteredQuantityItem2 * makingCostValueItem2;
+            if (Math.abs(displayedTotalAmount2 - expectedAmount2) < 0.01) {
+                System.out.println(GREEN + "✅ Preview Total Amount (Item 2) Verified: " + displayedTotalAmount2 + RESET);
+            } else {
+                System.out.println(YELLOW + "⚠️ Preview Total Amount Mismatch (Item 2): " + displayedTotalAmount2 + ", Expected: " + expectedAmount2 + RESET);
+            }
+
+            By sizeWrapperPreviewLocator2 = By.xpath("(//div[@class='form_content_wrapper add-bg'])[3]");
+            WebElement sizeWrapperPreview2 = wait.until(ExpectedConditions.visibilityOfElementLocated(sizeWrapperPreviewLocator2));
+            String sizeWrapperText2 = sizeWrapperPreview2.getText().trim();
+            boolean allSizesPresent2 = true;
+            for (String size : availableSizesTextItem2) {
+                String cleanSize = size.trim();
+                if (cleanSize.contains("-") || cleanSize.contains("–") || cleanSize.contains("—") || cleanSize.contains(":")) {
+                    cleanSize = cleanSize.split("[-–—:]")[1].trim();
+                } else {
+                    cleanSize = cleanSize.replaceAll("(?i)^size", "").trim();
+                }
+                if (!sizeWrapperText2.contains(cleanSize)) {
+                    allSizesPresent2 = false;
+                    System.out.println(YELLOW + "⚠️ Size '" + cleanSize + "' not found in Item 2 preview wrapper!" + RESET);
+                }
+            }
+            if (allSizesPresent2) {
+                System.out.println(GREEN + "✅ All captured sizes verified inside Item 2 preview wrapper!" + RESET);
+            }
+
+            By grandTotalLocator = By.xpath("(//div[@class='d-flex justify-content-between align-items-center mt-4 total_row'])[1]");
+            WebElement grandTotalElem = wait.until(ExpectedConditions.visibilityOfElementLocated(grandTotalLocator));
+            scrollToElement(grandTotalElem);
+            
+            String grandTotalText = grandTotalElem.getText().replaceAll("[^0-9.]", "").trim();
+            double displayedGrandTotal = grandTotalText.isEmpty() ? 0.0 : Double.parseDouble(grandTotalText);
+            double expectedGrandTotal = expectedAmount + expectedAmount2;
+
+            if (Math.abs(displayedGrandTotal - expectedGrandTotal) < 0.01) {
+                System.out.println(GREEN + "✅ Preview Grand Total Verified Successfully: " + displayedGrandTotal + " matches expected (" + expectedGrandTotal + ")" + RESET);
+            } else {
+                System.out.println(YELLOW + "⚠️ Preview Grand Total Mismatch! Displayed: " + displayedGrandTotal + ", Expected: " + expectedGrandTotal + RESET);
+            }
+        }
+
+        By notesLocator = By.xpath("(//p[@class='info_dd mb-0'])[1]");
+        WebElement notesElem = wait.until(ExpectedConditions.visibilityOfElementLocated(notesLocator));
+        String displayedNotes = notesElem.getText().trim();
+        if (displayedNotes.contains(savedNoteText)) {
+            System.out.println(GREEN + "✅ Preview Notes Verified Successfully: '" + displayedNotes + "'" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Preview Notes Mismatch! Displayed: '" + displayedNotes + "', Expected to contain: '" + savedNoteText + "'" + RESET);
+        }
+
+        By descLocator = By.xpath("(//p[@class='info_dd mb-0'])[2]");
+        WebElement descElem = wait.until(ExpectedConditions.visibilityOfElementLocated(descLocator));
+        String displayedDesc = descElem.getText().trim();
+        if (displayedDesc.contains(savedDescText)) {
+            System.out.println(GREEN + "✅ Preview Description Verified Successfully: '" + displayedDesc + "'" + RESET);
+        } else {
+            System.out.println(YELLOW + "⚠️ Preview Description Mismatch! Displayed: '" + displayedDesc + "', Expected to contain: '" + savedDescText + "'" + RESET);
+        }
+    }
+    
+  //TC-MO-01
     public void createNewManufactureOrderFlow() {
-    	clickAddManufactureOrder();
-        selectRandomVendor();
-        selectRandomDeliveryDate();
-        selectRandomDeliveryAddress();
+    	clickAddManufactureOrderForCustomProduct();
+    	selectVendorDateAndAddress();
         addProductDetails();
         selectRawMaterialAndFillQuantities();
         verifyTotalAmountAndAddNotesAndSave();
         verifyManufactureOrderOnListingPage();
         verifyManufactureOrderPreviewPage();
-        
     }
     
-    //TC-02
+  //TC-MO-02
     public void editManufactureOrderFlow() {
-        System.out.println("\n=============================================================");
-        System.out.println("          STARTING EDIT MANUFACTURE ORDER FLOW               ");
-        System.out.println("=============================================================");
         clickEditManufactureOrder();
-        editRandomVendor();
-        selectRandomDeliveryDate();
-        editRandomDeliveryAddress();
+        editVendorDateAndAddress();
         editProductDetails();
         selectRawMaterialAndFillQuantities();
         verifyEditedTotalAmountAndAddNotesAndSave();
@@ -2493,21 +3430,17 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         verifyEditedManufactureOrderPreviewPage();
     }
     
-  //TC-03
+  //TC-MO-03
     public void createDraftManufactureOrderFlow() {
-        clickAddManufactureOrder();
-        selectRandomVendor();
-        selectRandomDeliveryDate();
-        selectRandomDeliveryAddress();
+    	clickAddManufactureOrderForCustomProduct();
+    	selectVendorDateAndAddress();
         verifySaveAsDraft(); // This clicks the Save as Draft button
     }
     
-    //TC-04
+    //TC-MO-04
     public void cancelManufactureOrderFlow() {
-    	clickAddManufactureOrder();
-        selectRandomVendor();
-        selectRandomDeliveryDate();
-        selectRandomDeliveryAddress();
+    	clickAddManufactureOrderForCustomProduct();
+    	selectVendorDateAndAddress();
         addProductDetails();
         selectRawMaterialAndFillQuantities();
         verifyTotalAmountAndAddNotesAndSave();
@@ -2516,12 +3449,10 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
 		verifyManufactureOrderStatusIsCancelled();
 	}
     
-    //TC-05
+    //TC-MO-05
     public void markAsIssuedManufactureOrderFlow() {
-    	clickAddManufactureOrder();
-        selectRandomVendor();
-        selectRandomDeliveryDate();
-        selectRandomDeliveryAddress();
+    	clickAddManufactureOrderForCustomProduct();
+    	selectVendorDateAndAddress();
         addProductDetails();
         selectRawMaterialAndFillQuantities();
         verifyTotalAmountAndAddNotesAndSave();
@@ -2530,31 +3461,108 @@ public class ManufactureOrder_Page extends ManufactureOrder_ObjRepo {
         convertAndVerifyManufactureOrderAsIssued();       
     }
     
-    //TC-07
+    //TC-MO-07
     public void verifyMultipleProductsAndTotalsFlow() {
-		clickAddManufactureOrder();
-		selectRandomVendor();
-		selectRandomDeliveryDate();
-		selectRandomDeliveryAddress();
+    	clickAddManufactureOrderForCustomProduct();
+    	selectVendorDateAndAddress();
 		addProductDetails();
 		selectRawMaterialAndFillQuantities();
 		addProductDetailsForSecondProduct();
 		selectRawMaterialAndFillQuantitiesForSecondProduct();
 		verifyIndividualAndCombinedTotals();  
-		verifyAddNotesAndSave();
+		addNotesDescriptionAndSave();
 		verifyManufactureOrderForMultipleProductsOnListingPage();
 		verifyManufactureOrderPreviewModalDetails();
 	}
    
-   //TC-08
+   //TC-MO-08
     public void verfiyExportFunctionalityFlow() {
     	exportManufactureOrderFlow();
     	verifyAndDownloadExportFileFromHistory();
     	verifyExportedExcelColumns();
     }
     
+    //TC-MO-09
+    public void createManufactureOrderExistingProductFlow() {
+    	clickAddManufactureOrderForExistingProduct();
+    	selectVendorDateAndAddress();
+    	selectProductAndCaptureSizes();
+    	fillQuantitiesForCapturedSizes();
+    	verifyTotalsAndEnterMakingCost();
+    	addNotesDescriptionAndSave();
+    	verifyManufactureOrderOnForExistingProductListingPage();
+    	verifyManufactureOrderOnPreviewPage();
+    }    
     
+    //TC-MO-10
+    public void editManufactureOrderExistingProductFlow() {
+    	clickEditForExistingProductManufactureOrder();
+    	editVendorDateAndAddress();
+    	selectProductAndCaptureSizes();
+    	fillQuantitiesForCapturedSizes();
+    	verifyTotalsAndEnterMakingCostForEdit();
+    	addNotesDescriptionAndSave();
+    	verifyManufactureOrderOnForExistingProductListingPage();
+    	verifyManufactureOrderOnPreviewPage();
+    }
     
+    //TC-MO-11
+    public void createExistingDraftManufactureOrderFlow() {
+    	clickAddManufactureOrderForExistingProduct();
+    	selectVendorDateAndAddress();
+    	verifySaveAsDraft();
+    	verifyDraftManufactureOrderForExistingProductOnListingPage();
+    	performDraftDeletionWorkflow();
+    }
+    
+    //TC-MO-12
+    public void cancelExistingProductManufactureOrderFlow() {
+    	clickAddManufactureOrderForExistingProduct();
+    	selectVendorDateAndAddress();
+    	selectProductAndCaptureSizes();
+    	fillQuantitiesForCapturedSizes();
+    	verifyTotalsAndEnterMakingCost();
+    	addNotesDescriptionAndSave();
+    	verifyCancelItemsOptionIsDisplayedForExistingProduct();
+    	cancelItemsInManufactureOrder();
+    	verifyManufactureOrderStatusIsCancelledForExistingProduct();
+    }
+    
+    //TC-MO-13
+    public void markAsIssuedForExistingProductManufactureOrderFlow() {
+    	clickAddManufactureOrderForExistingProduct();
+    	selectVendorDateAndAddress();
+    	selectProductAndCaptureSizes();
+    	fillQuantitiesForCapturedSizes();
+    	verifyTotalsAndEnterMakingCost();
+    	addNotesDescriptionAndSave();
+    	verifyManufactureOrderOnForExistingProductListingPage();
+    	verifyManufactureOrderOnPreviewPage();
+    	convertAndVerifyExistingManufactureOrderAsIssued();
+    }
+    
+    //TC-M0-14
+    public void mandatoryFieldValidationsForExistingProduct() {
+    	clickAddManufactureOrderForExistingProduct();
+    	verifyMandatoryFieldsValidationMessagesForExistingProduct();
+    }
+    
+    //TC-MO-15
+    public void verifyMultipleProductsAndTotalsFlowForExisting() {
+    	clickAddManufactureOrderForExistingProduct();
+    	selectVendorDateAndAddress();
+    	selectProductAndCaptureSizes();
+    	fillQuantitiesForCapturedSizes();
+    	verifyTotalsAndEnterMakingCost();
+    	selectSecondProductAndCaptureSizes();
+    	fillQuantitiesForSecondProduct();
+    	verifyTotalsAndEnterMakingCostForSecondProduct();
+    	verifyGrandTotal();
+        addNotesDescriptionAndSave();
+        verifyManufactureOrderOnForMultipleProductsListingPage();
+        verifyManufactureOrderOnPreviewPageForMultipleProducts();
+       
+    }
     
 	@Override
 	public boolean verifyExactText(WebElement ele, String expectedText) {

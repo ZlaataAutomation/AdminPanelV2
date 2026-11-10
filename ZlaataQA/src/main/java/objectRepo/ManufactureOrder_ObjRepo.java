@@ -36,6 +36,9 @@ public abstract class ManufactureOrder_ObjRepo extends BasePage{
     @FindBy(xpath = "(//a[@class='custom_product'])[1]")
     protected WebElement addCustomProductBtn;
     
+    @FindBy(xpath = "(//a[@class='existing_product'])[1]")
+    protected WebElement addExistingProductBtn;
+    
     @FindBy(xpath = "(//div[normalize-space()='Search the vendors'])[1]")
     protected WebElement vendorDropdown;
     
@@ -172,5 +175,12 @@ public abstract class ManufactureOrder_ObjRepo extends BasePage{
     @FindBy(xpath = "//div[@class='dropdown-menu actions-dropdown-menu dropdown-menu-right dropdown_button_wrapper show']//a[1]")
     protected WebElement exportDownloadBtn;
     
+    
+    //TC-09
+    @FindBy(xpath = "(//td[@class='total_qty_cell'])[1]")
+    protected WebElement totalQuantitiesCell;
+    
+    @FindBy(xpath = "(//button[normalize-space()='Add Item'])[1]")
+    protected WebElement addItemBtn;
     
 }
