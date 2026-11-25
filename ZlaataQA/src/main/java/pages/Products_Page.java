@@ -100,7 +100,7 @@ public class Products_Page extends Products_ObjRepo {
     private String lastSelectedProductType = "", lastSelectedBrand = "", lastSelectedCategory = "",
             lastSelectedColor = "", lastSelectedCollection = "", lastSelectedNeckline = "",
             lastSelectedSleeveType = "", lastSelectedRise = "", lastSelectedFit = "",
-            lastSelectedBarcodeType = "", lastSelectedSize = "", lastDeliveryDays = "", lastTrafficMessage = "";
+            lastSelectedBarcodeType = "", lastSelectedSize = "", lastDeliveryDays = "", lastTrafficMessage = "", lastSelectedRawMaterial="";
     private Map<String, String> lastVariantData = new HashMap<>();
 
     // --- Shared constants / helpers ---
@@ -239,7 +239,7 @@ public class Products_Page extends Products_ObjRepo {
 
         // Step 7: Barcode Protocol (index 14 = Protocol dropdown; 13 was the "i" info icon)
         WebElement barcodeDropdown = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("(//button[@type='button'])[14]")));
+                By.xpath("//div[@id='protocol']//button[@type='button']")));
         scrollToCenter(barcodeDropdown);
         lastSelectedBarcodeType = selectRandomCustomDropdownOption(barcodeDropdown, "Barcode Protocol");
 
@@ -287,8 +287,16 @@ public class Products_Page extends Products_ObjRepo {
             (lastSelectedProductType.isEmpty() ? "Unknown" : lastSelectedProductType) +
             "' (Is Set Type: " + isSetProduct + ")");
 
-        // Step 1: Select Color
-        lastSelectedColor = selectDropdownByIndex(2, "Color");
+        logAction("Configuring inventory for Product Type: '" +
+                (lastSelectedProductType.isEmpty() ? "Unknown" : lastSelectedProductType) +
+                "' (Is Set Type: " + isSetProduct + ")");
+
+       // Step 1: Select Color
+        WebElement colorDropdown = wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//span[normalize-space()='Select Color...']")
+        ));
+
+        lastSelectedColor = selectRandomCustomDropdownOption(colorDropdown, "Color");
         actionPause();
 
         // Step 2: Select Size
@@ -341,9 +349,14 @@ public class Products_Page extends Products_ObjRepo {
             }
         }
         actionPause();
+        
+     // Step 4: Select Raw Material
+        WebElement rawMaterialDropdown = wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//span[normalize-space()='Select Raw Materials...']")
+        ));
 
-        // Step 4: Select Raw Material
-        selectDropdownByIndex(3, "Raw Material");
+        lastSelectedRawMaterial = selectRandomCustomDropdownOption(rawMaterialDropdown, "Raw Material");
+
         actionPause();
 
         // Step 5: Save & Next
@@ -374,7 +387,7 @@ public class Products_Page extends Products_ObjRepo {
         enterVariantPrice("Cost", costPrice);
         enterVariantPrice("Cut", cutPrice);
         selectVariantDropdown(3, "Fabric");
-        selectVariantDropdown(4, "Pattern");
+        //selectVariantDropdown(4, "Pattern");
 
         logSuccess("Captured Variant Details: " + lastVariantData);
         return lastVariantData;
@@ -389,7 +402,21 @@ public class Products_Page extends Products_ObjRepo {
 
     private void selectVariantDropdown(int buttonIndex, String key) {
         logAction("Selecting " + key + "...");
-        lastVariantData.put(key, selectDropdownByIndex(buttonIndex, key));
+        WebElement variantDropdown;
+        try {
+            // Create Product flow
+            variantDropdown = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("//span[normalize-space()='Select " + key + "...']")
+            ));
+
+        } catch (TimeoutException e) {
+            // Edit Product flow
+            variantDropdown = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("(//span[contains(@class,'selected-text-display') and contains(@class,'c-select__display--single')])[" 
+                            + buttonIndex + "]")
+            ));
+        }
+        lastVariantData.put(key, selectRandomCustomDropdownOption(variantDropdown, key));
         actionPause();
     }
 
@@ -1328,7 +1355,7 @@ public class Products_Page extends Products_ObjRepo {
 
 //Dedicated helper method to select Barcode Protocol reliably
 private String selectBarcodeDropdownSafely() {
-  By triggerLocator = By.xpath("(//button[@type='button'])[14]"); // was [13] (that is the "i" info icon)
+  By triggerLocator = By.xpath("//div[@id='protocol']//button[@type='button']"); // was [13] (that is the "i" info icon)
   By optionsLocator = By.xpath("//ul[contains(@class,'select-options-menu') or contains(@class,'dropdown-menu')]//li | //div[contains(@class,'dropdown-menu')]//a | //li[@class='option-item']");
   return selectRandomOptionWithRetry(
           () -> {
@@ -1434,7 +1461,7 @@ public void editInventorySetup() {
           "' (Is Set Type: " + isSetProduct + ")");
 
   // Step 1: Select Color
-  WebElement colorDropdownBtn = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("(//button[@type='button'])[2]")));
+  WebElement colorDropdownBtn = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("(//span[@class='selected-text-display c-select__display c-select__display--single'])[1]")));
   lastSelectedColor = selectRandomCustomDropdownOption(colorDropdownBtn, "Color");
   actionPause();
 
@@ -1507,7 +1534,7 @@ public void editInventorySetup() {
   actionPause();
 
   // Step 4: Select Raw Material
-  selectRandomCustomDropdownOption(wait.until(ExpectedConditions.elementToBeClickable(By.xpath("(//button[@type='button'])[3]"))), "Raw Material");
+  selectRandomCustomDropdownOption(wait.until(ExpectedConditions.elementToBeClickable(By.xpath("(//span[@class='selected-text-display c-select__display c-select__display--single'])[2]"))), "Raw Material");
   actionPause();
 
   // Step 5: Save & Next
@@ -2734,10 +2761,18 @@ public List<String> getLastSelectedTryAlongProducts() {
 
             // --- Step 2: Select Color ---
             // Variant 1 color dropdown is index 2, Variant 2 is index 6, etc.
-            int colorBtnIndex = (v == 1) ? 2 : 2 + ((v - 1) * 4);
-            By colorBtnLocator = By.xpath("(//button[@type='button'])[" + colorBtnIndex + "]");
-            WebElement colorDropdownBtn = wait.until(ExpectedConditions.elementToBeClickable(colorBtnLocator));
-            currentVariant.color = selectRandomCustomDropdownOption(colorDropdownBtn, "Color (Variant #" + v + ")");
+            By colorBtnLocator = By.xpath(
+            	    "(//button[contains(@class,'select-trigger-btn')]" +
+            	    "[.//span[contains(@class,'selected-text-display') " +
+            	    "and normalize-space()='Select Color...']])[1]"
+            	);
+
+            	WebElement colorDropdownBtn = wait.until(
+            	    ExpectedConditions.elementToBeClickable(colorBtnLocator)
+            	);
+
+            //WebElement colorDropdownBtn = wait.until(ExpectedConditions.elementToBeClickable(colorBtnLocator));
+            currentVariant.color = selectRandomCustomDropdownOption(colorDropdownBtn,"Color (Variant #" + v + ")");
             actionPause();
 
             // --- Step 3: Select Size ---
@@ -2803,10 +2838,16 @@ public List<String> getLastSelectedTryAlongProducts() {
 
             // --- Step 5: Select Raw Material ---
             // Variant 1 raw material button is index 3, Variant 2 is index 7, etc.
-            int rawMatBtnIndex = (v == 1) ? 3 : 3 + ((v - 1) * 4);
-            By rawMatLocator = By.xpath("(//button[@type='button'])[" + rawMatBtnIndex + "]");
-            WebElement rawMaterialDropdownBtn = wait.until(ExpectedConditions.elementToBeClickable(rawMatLocator));
-            currentVariant.rawMaterial = selectRandomCustomDropdownOption(rawMaterialDropdownBtn, "Raw Material (Variant #" + v + ")");
+            By rawMatLocator = By.xpath(
+            	    "(//button[contains(@class,'select-trigger-btn')]" +
+            	    "[.//span[contains(@class,'selected-text-display') " +
+            	    "and normalize-space()='Select Raw Materials...']])[1]"
+            	);
+
+            	WebElement rawMaterialDropdownBtn = wait.until(
+            	    ExpectedConditions.elementToBeClickable(rawMatLocator)
+            	);
+            currentVariant.rawMaterial = selectRandomCustomDropdownOption(rawMaterialDropdownBtn,"Raw Material (Variant #" + v + ")");
             actionPause();
 
             configuredVariants.add(currentVariant);
@@ -2857,7 +2898,7 @@ public List<String> getLastSelectedTryAlongProducts() {
         actionPause();
 
         logAction("Selecting Variant #1 Secondary Color...");
-        WebElement secondaryColorBtn1 = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("(//button[@type='button'])[1]")));
+        WebElement secondaryColorBtn1 = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("(//span[@class='selected-text-display text-placeholder'][normalize-space()='Select Secondary Color...'])[1]")));
         String secondaryColor1 = selectRandomCustomDropdownOption(secondaryColorBtn1, "Variant #1 Secondary Color");
         multiVariantPreviewData.put("Variant #1 - Secondary Color", secondaryColor1);
         actionPause();
@@ -2872,12 +2913,12 @@ public List<String> getLastSelectedTryAlongProducts() {
         actionPause();
 
         logAction("Selecting Variant #1 Fabric...");
-        WebElement fabricDropdownBtn1 = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("(//button[@type='button'])[3]")));
+        WebElement fabricDropdownBtn1 = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("(//span[@class='selected-text-display text-placeholder'][normalize-space()='Select Fabric...'])[1]")));
         selectRandomCustomDropdownOption(fabricDropdownBtn1, "Variant #1 Fabric");
         actionPause();
 
         logAction("Selecting Variant #1 Pattern...");
-        WebElement patternDropdownBtn1 = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("(//button[@type='button'])[4]")));
+        WebElement patternDropdownBtn1 = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("(//span[@class='selected-text-display text-placeholder'][normalize-space()='Select Pattern...'])[1]")));
         selectRandomCustomDropdownOption(patternDropdownBtn1, "Variant #1 Pattern");
         actionPause();
 

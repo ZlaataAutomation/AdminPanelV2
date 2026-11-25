@@ -104,7 +104,7 @@ public class ProductAccessories_Page extends Products_ObjRepo {
     private String lastGeneratedProductName, lastGeneratedSKU, lastGeneratedHSN;
     private String lastSelectedProductType = "", lastSelectedAccessoryType = "", lastSelectedBrand = "", lastSelectedCategory = "",
             lastSelectedColor = "", lastSelectedRise = "", lastSelectedFit = "",
-            lastSelectedBarcodeType = "", lastSelectedSize = "", lastDeliveryDays = "";
+            lastSelectedBarcodeType = "", lastSelectedSize = "", lastDeliveryDays = "", lastSelectedRawMaterial="";
     private Map<String, String> lastVariantData = new HashMap<>();
 
     // ===================== CONSTANTS =====================
@@ -278,10 +278,10 @@ public class ProductAccessories_Page extends Products_ObjRepo {
         enterText(hsnInput, lastGeneratedHSN);
 
         // Step 6: Type (button index 5)
-        lastSelectedAccessoryType = selectRandomOptionByXpath("(//button[@type='button'])[5]", "Type");
+        lastSelectedAccessoryType = selectRandomOptionByXpath("//div[@id='accessories_type']//button[@type='button']", "Type");
 
         // Step 7: Barcode (button index 7)
-        lastSelectedBarcodeType = selectRandomOptionByXpath("(//button[@type='button'])[7]", "Barcode");
+        lastSelectedBarcodeType = selectRandomOptionByXpath("//div[@id='protocol']//button[@type='button']", "Barcode");
 
         // Step 8: Save & Next
         clickSaveAndNext();
@@ -349,10 +349,15 @@ public class ProductAccessories_Page extends Products_ObjRepo {
         }
         actionPause();
 
-     // Select Raw Material (skip "Add Raw Material", it redirects to another page)
-        selectDropdownByIndex(3, "Raw Material", "Add Raw Material");
-        actionPause();
+     // Step 4: Select Raw Material
+        WebElement rawMaterialDropdown = wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//span[normalize-space()='Select Raw Materials...']")
+        ));
 
+        lastSelectedRawMaterial = selectRandomCustomDropdownOption(rawMaterialDropdown, "Raw Material");
+
+        actionPause();
+        
         // Save & Next
         clickSaveAndNext();
     }
@@ -373,9 +378,18 @@ public class ProductAccessories_Page extends Products_ObjRepo {
             "' (Is Set Type: " + isSetProduct + ")");
 
         // Step 1: Select Color
-        lastSelectedColor = selectDropdownByIndex(2, "Color");
-        actionPause();
+        logAction("Configuring inventory for Product Type: '" +
+                (lastSelectedProductType.isEmpty() ? "Unknown" : lastSelectedProductType) +
+                "' (Is Set Type: " + isSetProduct + ")");
 
+       // Step 1: Select Color
+        WebElement colorDropdown = wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//span[normalize-space()='Select Color...']")
+        ));
+
+        lastSelectedColor = selectRandomCustomDropdownOption(colorDropdown, "Color");
+        actionPause();
+        
         // Step 2: Select random Size
         logAction("Selecting random Size option...");
         try {
@@ -412,8 +426,13 @@ public class ProductAccessories_Page extends Products_ObjRepo {
             "' (Is Set Type: " + isSetProduct + ")");
 
         // Step 1: Select Color
-        lastSelectedColor = selectDropdownByIndex(2, "Color");
+        WebElement colorDropdown = wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//span[normalize-space()='Select Color...']")
+        ));
+
+        lastSelectedColor = selectRandomCustomDropdownOption(colorDropdown, "Color");
         actionPause();
+
 
         // Step 2: Select Size (accessories only have "Regular")
         logAction("Selecting the 'Regular' Size option...");
@@ -448,7 +467,7 @@ public class ProductAccessories_Page extends Products_ObjRepo {
         enterVariantPrice("Cost", costPrice);
         enterVariantPrice("Cut", cutPrice);
         selectVariantDropdown(3, "Fabric");
-        selectVariantDropdown(4, "Pattern");
+        //selectVariantDropdown(4, "Pattern");
 
         logSuccess("Captured Variant Details: " + lastVariantData);
         return lastVariantData;
@@ -463,7 +482,21 @@ public class ProductAccessories_Page extends Products_ObjRepo {
 
     private void selectVariantDropdown(int buttonIndex, String key) {
         logAction("Selecting " + key + "...");
-        lastVariantData.put(key, selectDropdownByIndex(buttonIndex, key));
+        WebElement variantDropdown;
+        try {
+            // Create Product flow
+            variantDropdown = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("//span[normalize-space()='Select " + key + "...']")
+            ));
+
+        } catch (TimeoutException e) {
+            // Edit Product flow
+            variantDropdown = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("(//span[contains(@class,'selected-text-display') and contains(@class,'c-select__display--single')])[" 
+                            + buttonIndex + "]")
+            ));
+        }
+        lastVariantData.put(key, selectRandomCustomDropdownOption(variantDropdown, key));
         actionPause();
     }
 
@@ -1313,15 +1346,34 @@ public class ProductAccessories_Page extends Products_ObjRepo {
 
     /** Opens the dropdown at (//button[@type='button'])[index] and selects a random option (with retry). */
     private String selectDropdownByIndexWithRetry(int buttonIndex, String fieldName) {
-        By triggerLocator = By.xpath("(//button[@type='button'])[" + buttonIndex + "]");
+
+        By triggerLocator;
+
+        switch (fieldName) {
+            case "Type":
+                triggerLocator = By.xpath("//div[@id='accessories_type']//button[@type='button']");
+                break;
+
+            case "Barcode":
+                triggerLocator = By.xpath("//div[@id='protocol']//button[@type='button']");
+                break;
+
+            default:
+                throw new IllegalArgumentException("Unsupported dropdown field: " + fieldName);
+        }
+
         return selectRandomOptionWithRetry(
                 () -> {
-                    WebElement trigger = wait.until(ExpectedConditions.elementToBeClickable(triggerLocator));
+                    WebElement trigger = wait.until(
+                            ExpectedConditions.elementToBeClickable(triggerLocator)
+                    );
                     scrollIntoView(trigger);
                     return trigger;
                 },
                 ExpectedConditions.presenceOfAllElementsLocatedBy(EDIT_DROPDOWN_OPTIONS),
-                fieldName, fieldName + " dropdown selection");
+                fieldName,
+                fieldName + " dropdown selection"
+        );
     }
 
     /** Builds a random code like prefix + N chars from A-Z0-9. */
@@ -1404,7 +1456,7 @@ public class ProductAccessories_Page extends Products_ObjRepo {
 
         // Step 1: Select Color
         WebElement colorDropdownBtn = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("(//button[@type='button'])[2]")));
+                By.xpath("(//span[@class='selected-text-display c-select__display c-select__display--single'])[1]")));
         lastSelectedColor = selectRandomCustomDropdownOption(colorDropdownBtn, "Color");
         actionPause();
 
@@ -1429,7 +1481,7 @@ public class ProductAccessories_Page extends Products_ObjRepo {
 
      // Step 4: Select Raw Material (skip "Add Raw Material", it redirects to another page)
         selectRandomCustomDropdownOption(wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("(//button[@type='button'])[3]"))), "Raw Material", "Add Raw Material");
+                By.xpath("(//span[@class='selected-text-display c-select__display c-select__display--single'])[2]"))), "Raw Material", "Add Raw Material");
         actionPause();
 
         // Step 5: Save & Next

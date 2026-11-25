@@ -41,7 +41,7 @@ public abstract class Products_ObjRepo extends BasePage {
     protected WebElement productNameInput;
     
  // Update XPath to target the button trigger instead of <select>
-    @FindBy(xpath = "(//button[@type='button'])[2]")
+    @FindBy(xpath = "//div[@id='brand_type']//button[@type='button']")
     protected WebElement brandDropdownBtn;   
 
     // Generic locator for dropdown option elements
@@ -54,34 +54,34 @@ public abstract class Products_ObjRepo extends BasePage {
     @FindBy(xpath = "(//input[@id='hsn'])[1]")
     protected WebElement hsnInput;
     
-    @FindBy(xpath = "(//button[@type='button'])[4]")
+    @FindBy(xpath = "//span[normalize-space()='Select Product Type...']")
     protected WebElement productTypeDropdown;
     
-    @FindBy(xpath = "(//button[@type='button'])[5]")
+    @FindBy(xpath = "//div[@id='category']//button[@type='button']")
     protected WebElement cateogryDropdown;
     
-    @FindBy(xpath = "(//button[@type='button'])[6]")
+    @FindBy(xpath = "//div[@id='collections']//button[@type='button']")
     protected WebElement collectionDropdown;
     
-    @FindBy(xpath = "(//button[@type='button'])[7]")
+    @FindBy(xpath = "//div[@id='neckline']//button[@type='button']")
     protected WebElement neckLineDropdown;
     
-    @FindBy(xpath = "(//button[@type='button'])[8]")
+    @FindBy(xpath = "//div[@id='sleeve_type']//button[@type='button']")
     protected WebElement sleeveTypeDropdown;
     
-    @FindBy(xpath = "(//button[@type='button'])[9]")
+    @FindBy(xpath = "//div[@id='occasion']//button[@type='button']")
     protected WebElement occasionDropdown;
     
-    @FindBy(xpath = "(//button[@type='button'])[10]")
+    @FindBy(xpath = "//div[@id='rise']//button[@type='button']")
     protected WebElement riseDropdown;
     
-    @FindBy(xpath = "(//button[@type='button'])[11]")
+    @FindBy(xpath = "//span[normalize-space()='Select Fit...']")
     protected WebElement fitDropdown;
     
-    @FindBy(xpath = "(//button[@type='button'])[12]")
+    @FindBy(xpath = "//div[@id='size_chart']//button[@type='button']")
     protected WebElement sizeChartDropdown;
     
-    @FindBy(xpath = "(//button[@type='button'])[14]//span[@class=\"selected-text-display text-placeholder\"]")
+    @FindBy(xpath = "//div[@id='protocol']//button[@type='button']")
     protected WebElement barCodeProtocolDropdown;
     
     @FindBy(xpath = "(//button[normalize-space()='Save & Next'])[1]")
