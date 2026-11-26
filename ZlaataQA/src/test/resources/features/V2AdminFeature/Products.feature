@@ -84,7 +84,7 @@ Examples:
   
   
   
-  @PM
+
 @TC_UI_Zlaata_PM_07
 Scenario Outline: TC_UI_Zlaata_PM_07 |Verify that admin can add multiple product variants with details through the Inventory Setup module and verify them on the Preview page| "<TD_ID>"
 

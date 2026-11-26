@@ -31,6 +31,8 @@ public class PageObjectManager {
    private SizeChart_Page size;
    private Products_Page products;
    private ProductAccessories_Page accessories;
+   private ClassificationCategory_Page category;
+   private ClassificationCollection_Page collection;
 
    
     public PageObjectManager(WebDriver driver) {
@@ -118,6 +120,14 @@ public class PageObjectManager {
 	
 	public ProductAccessories_Page getProductAccessories_Page() { 
 		return (accessories == null) ? accessories = new ProductAccessories_Page(driver) : accessories;
+	}
+	
+	public ClassificationCategory_Page getClassificationCategory_Page() {
+		return (category == null) ? category = new ClassificationCategory_Page(driver) : category;
+	}
+	
+	public ClassificationCollection_Page getClassificationCollection_Page() {
+		return (collection == null) ? collection = new ClassificationCollection_Page(driver) : collection;
 	}
 
 	
